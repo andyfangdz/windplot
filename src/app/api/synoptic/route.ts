@@ -10,9 +10,9 @@ const SYNOPTIC_ORIGIN = 'https://www.weather.gov';
 
 interface SynopticObservations {
   date_time: string[];
-  wind_speed_set_1: (number | null)[];
-  wind_direction_set_1: (number | null)[];
-  wind_gust_set_1: (number | null)[];
+  wind_speed_set_1?: (number | null)[];
+  wind_direction_set_1?: (number | null)[];
+  wind_gust_set_1?: (number | null)[];
 }
 
 interface SynopticStation {
@@ -73,9 +73,9 @@ export async function GET(request: NextRequest) {
       return {
         time: timeStr,
         timestamp: new Date(dt).getTime() / 1000,
-        wspd: obs.wind_speed_set_1[i] ?? null,
-        wgst: obs.wind_gust_set_1[i] ?? null,
-        wdir: obs.wind_direction_set_1[i] ?? null,
+        wspd: obs.wind_speed_set_1?.[i] ?? null,
+        wgst: obs.wind_gust_set_1?.[i] ?? null,
+        wdir: obs.wind_direction_set_1?.[i] ?? null,
       };
     });
 

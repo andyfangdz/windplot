@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { WindData, WindDataPoint } from '@/lib/types';
-import { getAirport } from '@/lib/airports';
+import { getAirport } from '@/app/actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    const airport = getAirport(icao);
+    const airport = await getAirport(icao);
     const windData: WindData = {
       icao,
       name: airport?.name || station.NAME || icao,

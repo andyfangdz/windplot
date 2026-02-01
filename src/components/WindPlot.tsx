@@ -1,19 +1,32 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import AirportSelector from './AirportSelector';
 import WindSpeedChart from './WindSpeedChart';
 import WindDirectionChart from './WindDirectionChart';
 import { WindData } from '@/lib/types';
-import { getAirport } from '@/lib/airports';
+import { getAirport, Airport, AirportSearchResult } from '@/app/actions';
 
-export default function WindPlot() {
-  const searchParams = useSearchParams();
+interface WindPlotProps {
+  initialIcao: string;
+  initialHours: number;
+  initialAirport: Airport | null;
+  favorites: AirportSearchResult[];
+}
+
+export default function WindPlot({
+  initialIcao,
+  initialHours,
+  initialAirport,
+  favorites,
+}: WindPlotProps) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   
-  const [icao, setIcao] = useState(searchParams.get('icao')?.toUpperCase() || 'KCDW');
-  const [hours, setHours] = useState(parseInt(searchParams.get('hours') || '4', 10));
+  const [icao, setIcao] = useState(initialIcao);
+  const [hours, setHours] = useState(initialHours);
+  const [airport, setAirport] = useState<Airport | null>(initialAirport);
   const [data, setData] = useState<WindData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +61,11 @@ export default function WindPlot() {
 
   const handleAirportChange = (newIcao: string) => {
     setIcao(newIcao);
+    // Fetch new airport data via server action
+    startTransition(async () => {
+      const newAirport = await getAirport(newIcao);
+      setAirport(newAirport);
+    });
     router.push(`?icao=${newIcao}&hours=${hours}`, { scroll: false });
   };
 
@@ -56,7 +74,6 @@ export default function WindPlot() {
     router.push(`?icao=${icao}&hours=${newHours}`, { scroll: false });
   };
 
-  const airport = getAirport(icao);
   const runways = airport?.runways || [];
 
   return (
@@ -76,6 +93,8 @@ export default function WindPlot() {
 
         <AirportSelector
           selectedIcao={icao}
+          selectedAirport={airport}
+          favorites={favorites}
           onSelect={handleAirportChange}
           hours={hours}
           onHoursChange={handleHoursChange}

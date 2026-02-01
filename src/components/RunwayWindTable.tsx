@@ -161,7 +161,11 @@ export default function RunwayWindTable({
 
   // Compute wind components based on selected source
   const { windComponents, hasGusts, sourceInfo } = useMemo(() => {
-    if (source === 'metar' && metarData) {
+    if (source === 'metar') {
+      // Only use METAR data when METAR is selected
+      if (!metarData) {
+        return { windComponents: [], hasGusts: false, sourceInfo: '' };
+      }
       const { components, hasGusts } = computeWindComponents(
         metarData.wdir,
         metarData.wspd,
@@ -180,7 +184,7 @@ export default function RunwayWindTable({
         hasGusts,
         sourceInfo: time ? `METAR @ ${time}Z` : 'METAR',
       };
-    } else if (synopticWind) {
+    } else if (source === '5min' && synopticWind) {
       const { components, hasGusts } = computeWindComponents(
         synopticWind.wdir,
         synopticWind.wspd,

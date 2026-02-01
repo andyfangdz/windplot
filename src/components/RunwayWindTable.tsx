@@ -171,11 +171,7 @@ export default function RunwayWindTable({
         runways
       );
       const time = metarData.obsTime
-        ? new Date(metarData.obsTime * 1000).toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-          })
+        ? new Date(metarData.obsTime * 1000).toISOString().slice(11, 16)
         : '';
       return {
         windComponents: components,

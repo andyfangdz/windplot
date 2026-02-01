@@ -125,7 +125,7 @@ export default function WindPlot({
             <WindSpeedChart observations={data.observations} />
             <WindDirectionChart observations={data.observations} runways={runways} />
             {runways.length > 0 && (
-              <RunwayWindTable observations={data.observations} runways={runways} />
+              <RunwayWindTable observations={data.observations} runways={runways} icao={icao} />
             )}
           </>
         )}

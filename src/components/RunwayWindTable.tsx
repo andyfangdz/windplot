@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { WindDataPoint } from '@/lib/types';
 import { Runway } from '@/app/actions';
 
 interface RunwayWindTableProps {
   observations: WindDataPoint[];
   runways: Runway[];
+  icao: string;
 }
 
 interface RunwayWindComponent {
@@ -18,6 +19,14 @@ interface RunwayWindComponent {
   gustCrosswind: number | null;
   gustCrosswindDir: 'L' | 'R' | '';
   isFavored: boolean;
+}
+
+interface MetarData {
+  wdir: number | null;
+  wspd: number | null;
+  wgst: number | null;
+  rawOb?: string;
+  obsTime?: number;
 }
 
 function calculateWindComponents(
@@ -36,147 +45,259 @@ function calculateWindComponents(
   return { headwind, crosswind, crosswindDir };
 }
 
+function computeWindComponents(
+  windDir: number | null,
+  windSpd: number | null,
+  gustSpd: number | null,
+  runways: Runway[]
+): { components: RunwayWindComponent[]; hasGusts: boolean } {
+  if (windDir === null || windSpd === null || !runways.length) {
+    return { components: [], hasGusts: false };
+  }
+
+  const hasGusts = gustSpd !== null && gustSpd > windSpd;
+  const results: RunwayWindComponent[] = [];
+
+  for (const runway of runways) {
+    // Low end
+    const lowHdg = runway.trueHdg;
+    const lowComponents = calculateWindComponents(windDir, windSpd, lowHdg);
+    const lowGustComponents = hasGusts
+      ? calculateWindComponents(windDir, gustSpd!, lowHdg)
+      : null;
+
+    results.push({
+      runway: runway.low,
+      headwind: lowComponents.headwind,
+      crosswind: lowComponents.crosswind,
+      crosswindDir: lowComponents.crosswindDir,
+      gustHeadwind: lowGustComponents?.headwind ?? null,
+      gustCrosswind: lowGustComponents?.crosswind ?? null,
+      gustCrosswindDir: lowGustComponents?.crosswindDir ?? '',
+      isFavored: false,
+    });
+
+    // High end
+    const highHdg = (runway.trueHdg + 180) % 360;
+    const highComponents = calculateWindComponents(windDir, windSpd, highHdg);
+    const highGustComponents = hasGusts
+      ? calculateWindComponents(windDir, gustSpd!, highHdg)
+      : null;
+
+    results.push({
+      runway: runway.high,
+      headwind: highComponents.headwind,
+      crosswind: highComponents.crosswind,
+      crosswindDir: highComponents.crosswindDir,
+      gustHeadwind: highGustComponents?.headwind ?? null,
+      gustCrosswind: highGustComponents?.crosswind ?? null,
+      gustCrosswindDir: highGustComponents?.crosswindDir ?? '',
+      isFavored: false,
+    });
+  }
+
+  // Find favored runway
+  if (results.length > 0) {
+    const maxHeadwind = Math.max(...results.map((r) => r.headwind));
+    const favoredCandidates = results.filter((r) => r.headwind === maxHeadwind);
+    const favored = favoredCandidates.reduce((best, curr) =>
+      curr.crosswind < best.crosswind ? curr : best
+    );
+    favored.isFavored = true;
+  }
+
+  results.sort((a, b) => b.headwind - a.headwind);
+
+  return { components: results, hasGusts };
+}
+
 export default function RunwayWindTable({
   observations,
   runways,
+  icao,
 }: RunwayWindTableProps) {
-  const { windComponents, hasGusts } = useMemo(() => {
-    if (!runways.length || !observations.length) return { windComponents: [], hasGusts: false };
+  const [source, setSource] = useState<'5min' | 'metar'>('5min');
+  const [metarData, setMetarData] = useState<MetarData | null>(null);
+  const [metarLoading, setMetarLoading] = useState(false);
 
+  // Fetch METAR when source changes to metar
+  useEffect(() => {
+    if (source === 'metar' && icao) {
+      setMetarLoading(true);
+      fetch(`https://aviationweather.gov/api/data/metar?ids=${icao}&format=json`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data) && data.length > 0) {
+            const latest = data[0];
+            setMetarData({
+              wdir: latest.wdir === 0 ? null : latest.wdir,
+              wspd: latest.wspd,
+              wgst: latest.wgst,
+              rawOb: latest.rawOb,
+              obsTime: latest.obsTime,
+            });
+          } else {
+            setMetarData(null);
+          }
+        })
+        .catch(() => setMetarData(null))
+        .finally(() => setMetarLoading(false));
+    }
+  }, [source, icao]);
+
+  // Get wind data from 5-min observations
+  const synopticWind = useMemo(() => {
     const recentObs = [...observations]
       .reverse()
       .find((o) => o.wdir !== null && o.wspd !== null);
+    if (!recentObs) return null;
+    return {
+      wdir: recentObs.wdir,
+      wspd: recentObs.wspd,
+      wgst: recentObs.wgst,
+      time: recentObs.time,
+    };
+  }, [observations]);
 
-    if (!recentObs || recentObs.wdir === null || recentObs.wspd === null) {
-      return { windComponents: [], hasGusts: false };
-    }
-
-    const windDir = recentObs.wdir;
-    const windSpd = recentObs.wspd;
-    const gustSpd = recentObs.wgst;
-    const hasGusts = gustSpd !== null && gustSpd > windSpd;
-
-    const results: RunwayWindComponent[] = [];
-
-    for (const runway of runways) {
-      // Low end
-      const lowHdg = runway.trueHdg;
-      const lowComponents = calculateWindComponents(windDir, windSpd, lowHdg);
-      const lowGustComponents = hasGusts
-        ? calculateWindComponents(windDir, gustSpd!, lowHdg)
-        : null;
-
-      results.push({
-        runway: runway.low,
-        headwind: lowComponents.headwind,
-        crosswind: lowComponents.crosswind,
-        crosswindDir: lowComponents.crosswindDir,
-        gustHeadwind: lowGustComponents?.headwind ?? null,
-        gustCrosswind: lowGustComponents?.crosswind ?? null,
-        gustCrosswindDir: lowGustComponents?.crosswindDir ?? '',
-        isFavored: false,
-      });
-
-      // High end
-      const highHdg = (runway.trueHdg + 180) % 360;
-      const highComponents = calculateWindComponents(windDir, windSpd, highHdg);
-      const highGustComponents = hasGusts
-        ? calculateWindComponents(windDir, gustSpd!, highHdg)
-        : null;
-
-      results.push({
-        runway: runway.high,
-        headwind: highComponents.headwind,
-        crosswind: highComponents.crosswind,
-        crosswindDir: highComponents.crosswindDir,
-        gustHeadwind: highGustComponents?.headwind ?? null,
-        gustCrosswind: highGustComponents?.crosswind ?? null,
-        gustCrosswindDir: highGustComponents?.crosswindDir ?? '',
-        isFavored: false,
-      });
-    }
-
-    // Find favored runway
-    if (results.length > 0) {
-      const maxHeadwind = Math.max(...results.map((r) => r.headwind));
-      const favoredCandidates = results.filter((r) => r.headwind === maxHeadwind);
-      const favored = favoredCandidates.reduce((best, curr) =>
-        curr.crosswind < best.crosswind ? curr : best
+  // Compute wind components based on selected source
+  const { windComponents, hasGusts, sourceInfo } = useMemo(() => {
+    if (source === 'metar' && metarData) {
+      const { components, hasGusts } = computeWindComponents(
+        metarData.wdir,
+        metarData.wspd,
+        metarData.wgst,
+        runways
       );
-      favored.isFavored = true;
+      const time = metarData.obsTime
+        ? new Date(metarData.obsTime * 1000).toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          })
+        : '';
+      return {
+        windComponents: components,
+        hasGusts,
+        sourceInfo: time ? `METAR @ ${time}Z` : 'METAR',
+      };
+    } else if (synopticWind) {
+      const { components, hasGusts } = computeWindComponents(
+        synopticWind.wdir,
+        synopticWind.wspd,
+        synopticWind.wgst,
+        runways
+      );
+      return {
+        windComponents: components,
+        hasGusts,
+        sourceInfo: `5-min @ ${synopticWind.time}`,
+      };
     }
+    return { windComponents: [], hasGusts: false, sourceInfo: '' };
+  }, [source, metarData, synopticWind, runways]);
 
-    results.sort((a, b) => b.headwind - a.headwind);
-
-    return { windComponents: results, hasGusts };
-  }, [observations, runways]);
-
-  if (windComponents.length === 0) {
-    return null;
-  }
+  if (!runways.length) return null;
+  if (source === '5min' && !synopticWind) return null;
 
   return (
     <div className="chart-section mt-4">
-      <div className="chart-title">🛬 Runway Wind Components</div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-[#8899a6] border-b border-[#38444d]">
-              <th className="py-2 px-3 text-left font-medium">Runway</th>
-              <th className="py-2 px-3 text-right font-medium">Headwind</th>
-              <th className="py-2 px-3 text-right font-medium">Crosswind</th>
-            </tr>
-          </thead>
-          <tbody>
-            {windComponents.map((wc) => (
-              <tr
-                key={wc.runway}
-                className={`border-b border-[#38444d]/50 ${
-                  wc.isFavored ? 'bg-[#1d9bf0]/20' : ''
-                }`}
-              >
-                <td className="py-2 px-3">
-                  <span
-                    className={`font-mono font-bold ${
-                      wc.isFavored ? 'text-[#1d9bf0]' : 'text-white'
+      <div className="flex items-center justify-between mb-3">
+        <div className="chart-title mb-0">🛬 Runway Wind Components</div>
+        <div className="flex gap-1 text-xs">
+          <button
+            onClick={() => setSource('5min')}
+            className={`px-2 py-1 rounded transition-colors ${
+              source === '5min'
+                ? 'bg-[#1d9bf0] text-white'
+                : 'bg-[#38444d] text-[#8899a6] hover:bg-[#4a5568]'
+            }`}
+          >
+            5-min
+          </button>
+          <button
+            onClick={() => setSource('metar')}
+            className={`px-2 py-1 rounded transition-colors ${
+              source === 'metar'
+                ? 'bg-[#1d9bf0] text-white'
+                : 'bg-[#38444d] text-[#8899a6] hover:bg-[#4a5568]'
+            }`}
+          >
+            METAR
+          </button>
+        </div>
+      </div>
+
+      {metarLoading && source === 'metar' ? (
+        <div className="text-center py-4">
+          <div className="inline-block animate-spin rounded-full h-5 w-5 border-2 border-[#1d9bf0] border-t-transparent"></div>
+        </div>
+      ) : windComponents.length === 0 ? (
+        <div className="text-center py-4 text-[#8899a6] text-sm">
+          No wind data available
+        </div>
+      ) : (
+        <>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-[#8899a6] border-b border-[#38444d]">
+                  <th className="py-2 px-3 text-left font-medium">Runway</th>
+                  <th className="py-2 px-3 text-right font-medium">Headwind</th>
+                  <th className="py-2 px-3 text-right font-medium">Crosswind</th>
+                </tr>
+              </thead>
+              <tbody>
+                {windComponents.map((wc) => (
+                  <tr
+                    key={wc.runway}
+                    className={`border-b border-[#38444d]/50 ${
+                      wc.isFavored ? 'bg-[#1d9bf0]/20' : ''
                     }`}
                   >
-                    {wc.runway}
-                  </span>
-                  {wc.isFavored && (
-                    <span className="ml-2 text-xs text-[#1d9bf0]">★ favored</span>
-                  )}
-                </td>
-                <td className="py-2 px-3 text-right font-mono">
-                  <span className={wc.headwind >= 0 ? 'text-green-400' : 'text-red-400'}>
-                    {wc.headwind >= 0 ? '+' : ''}{wc.headwind}
-                  </span>
-                  {wc.gustHeadwind !== null && (
-                    <span className={`text-[#8899a6] ${wc.gustHeadwind >= 0 ? '' : 'text-red-400/70'}`}>
-                      {' '}({wc.gustHeadwind >= 0 ? '+' : ''}{wc.gustHeadwind})
-                    </span>
-                  )}
-                  <span className="text-[#8899a6]"> kt</span>
-                </td>
-                <td className="py-2 px-3 text-right font-mono">
-                  <span className="text-yellow-400">
-                    {wc.crosswind}{wc.crosswindDir && ` ${wc.crosswindDir}`}
-                  </span>
-                  {wc.gustCrosswind !== null && (
-                    <span className="text-[#8899a6]">
-                      {' '}({wc.gustCrosswind}{wc.gustCrosswindDir && ` ${wc.gustCrosswindDir}`})
-                    </span>
-                  )}
-                  <span className="text-[#8899a6]"> kt</span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="text-xs text-[#8899a6] mt-2 text-center">
-        Based on most recent observation{hasGusts && ' • (gust values)'}
-      </p>
+                    <td className="py-2 px-3">
+                      <span
+                        className={`font-mono font-bold ${
+                          wc.isFavored ? 'text-[#1d9bf0]' : 'text-white'
+                        }`}
+                      >
+                        {wc.runway}
+                      </span>
+                      {wc.isFavored && (
+                        <span className="ml-2 text-xs text-[#1d9bf0]">★</span>
+                      )}
+                    </td>
+                    <td className="py-2 px-3 text-right font-mono">
+                      <span className={wc.headwind >= 0 ? 'text-green-400' : 'text-red-400'}>
+                        {wc.headwind >= 0 ? '+' : ''}{wc.headwind}
+                      </span>
+                      {wc.gustHeadwind !== null && (
+                        <span className="text-[#8899a6]">
+                          {' '}({wc.gustHeadwind >= 0 ? '+' : ''}{wc.gustHeadwind})
+                        </span>
+                      )}
+                      <span className="text-[#8899a6]"> kt</span>
+                    </td>
+                    <td className="py-2 px-3 text-right font-mono">
+                      <span className="text-yellow-400">
+                        {wc.crosswind}{wc.crosswindDir && ` ${wc.crosswindDir}`}
+                      </span>
+                      {wc.gustCrosswind !== null && (
+                        <span className="text-[#8899a6]">
+                          {' '}({wc.gustCrosswind}{wc.gustCrosswindDir && ` ${wc.gustCrosswindDir}`})
+                        </span>
+                      )}
+                      <span className="text-[#8899a6]"> kt</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-[#8899a6] mt-2 text-center">
+            {sourceInfo}{hasGusts && ' • (gust)'}
+          </p>
+        </>
+      )}
     </div>
   );
 }

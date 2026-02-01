@@ -38,10 +38,24 @@ const airports: Airport[] = airportsData.airports as Airport[];
 const airportsByIcao: Map<string, Airport> = new Map(
   airports.map((a) => [a.icao, a])
 );
+// Also index by FAA ID for searching
+const airportsByFaaId: Map<string, Airport> = new Map(
+  airports.filter((a) => a.faaId).map((a) => [a.faaId, a])
+);
 
-// Get airport by ICAO code (returns full data including runways)
-export async function getAirport(icao: string): Promise<Airport | null> {
-  return airportsByIcao.get(icao.toUpperCase()) || null;
+// Get airport by ICAO code or FAA ID (returns full data including runways)
+export async function getAirport(id: string): Promise<Airport | null> {
+  const upper = id.toUpperCase();
+  // Try ICAO first
+  const byIcao = airportsByIcao.get(upper);
+  if (byIcao) return byIcao;
+  // Try FAA ID (e.g., "N38" -> lookup in faaId map)
+  const byFaa = airportsByFaaId.get(upper);
+  if (byFaa) return byFaa;
+  // Try with K prefix (e.g., "N38" -> "KN38")
+  const withK = airportsByIcao.get(`K${upper}`);
+  if (withK) return withK;
+  return null;
 }
 
 // Get favorite airports (minimal data for quick-select buttons)
@@ -86,10 +100,16 @@ export async function searchAirports(
     addResult(exactMatch);
   }
 
-  // Second pass: ICAO starts with query
+  // Also check exact FAA ID match (e.g., "N38" -> "KN38")
+  const faaMatch = airportsByFaaId.get(q);
+  if (faaMatch && !seen.has(faaMatch.icao)) {
+    addResult(faaMatch);
+  }
+
+  // Second pass: ICAO or FAA ID starts with query
   for (const airport of airports) {
     if (results.length >= limit) break;
-    if (airport.icao.startsWith(q)) {
+    if (airport.icao.startsWith(q) || airport.faaId?.startsWith(q)) {
       addResult(airport);
     }
   }

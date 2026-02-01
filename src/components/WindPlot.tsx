@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import AirportSelector from './AirportSelector';
 import WindSpeedChart from './WindSpeedChart';
 import WindDirectionChart from './WindDirectionChart';
+import RunwayWindTable from './RunwayWindTable';
 import { WindData } from '@/lib/types';
 import { getAirport, Airport, AirportSearchResult } from '@/app/actions';
 
@@ -123,6 +124,9 @@ export default function WindPlot({
           <>
             <WindSpeedChart observations={data.observations} />
             <WindDirectionChart observations={data.observations} runways={runways} />
+            {runways.length > 0 && (
+              <RunwayWindTable observations={data.observations} runways={runways} />
+            )}
           </>
         )}
 

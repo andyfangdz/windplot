@@ -24,7 +24,7 @@ export default function WindPlot() {
     setError(null);
     
     try {
-      const response = await fetch(`/api/metar?icao=${icao}&hours=${hours}`);
+      const response = await fetch(`/api/synoptic?icao=${icao}&hours=${hours}`);
       if (!response.ok) {
         const err = await response.json();
         throw new Error(err.error || 'Failed to fetch data');
@@ -65,7 +65,7 @@ export default function WindPlot() {
         <header className="text-center mb-4">
           <h1 className="text-2xl font-bold mb-1">✈️ {icao} Wind</h1>
           <p className="text-[#8899a6] text-sm">
-            {data?.name || airport?.name || icao} • Last {hours}h
+            {data?.name || airport?.name || icao} • Last {hours}h (5-min obs)
           </p>
           {lastUpdate && (
             <p className="text-[#8899a6] text-xs mt-1">
@@ -84,7 +84,7 @@ export default function WindPlot() {
         {loading && !data && (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-[#1d9bf0] border-t-transparent"></div>
-            <p className="text-[#8899a6] mt-4">Loading METAR data...</p>
+            <p className="text-[#8899a6] mt-4">Loading weather data...</p>
           </div>
         )}
 
@@ -114,7 +114,7 @@ export default function WindPlot() {
         )}
 
         <footer className="text-center mt-6 text-xs text-[#8899a6]">
-          <p>Data from Aviation Weather Center</p>
+          <p>Data from Synoptic Data API (5-min resolution)</p>
           <button
             onClick={fetchData}
             disabled={loading}

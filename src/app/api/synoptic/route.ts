@@ -65,6 +65,14 @@ export async function GET(request: NextRequest) {
     const station = data.STATION[0];
     const obs = station.OBSERVATIONS;
 
+    // Check if we have any observations
+    if (!obs.date_time || obs.date_time.length === 0) {
+      return NextResponse.json(
+        { error: 'No recent observations available for this station' },
+        { status: 404 }
+      );
+    }
+
     // Transform to our format
     const observations: WindDataPoint[] = obs.date_time.map((dt, i) => {
       // date_time format: "2026-01-30T18:15:00-0500"

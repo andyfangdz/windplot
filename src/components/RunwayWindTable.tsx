@@ -158,11 +158,11 @@ export default function RunwayWindTable({
   }, [observations]);
 
   // Compute wind components based on selected source
-  const { windComponents, hasGusts, sourceInfo } = useMemo(() => {
+  const { windComponents, hasGusts, sourceInfo, sourceTime } = useMemo(() => {
     if (source === 'metar') {
       // Only use METAR data when METAR is selected
       if (!metarData) {
-        return { windComponents: [], hasGusts: false, sourceInfo: '' };
+        return { windComponents: [], hasGusts: false, sourceInfo: '', sourceTime: null };
       }
       const { components, hasGusts } = computeWindComponents(
         metarData.wdir,
@@ -170,10 +170,14 @@ export default function RunwayWindTable({
         metarData.wgst,
         runways
       );
+      const metarTime = metarData.obsTime
+        ? new Date(metarData.obsTime * 1000).toISOString().slice(11, 16) + 'Z'
+        : '';
       return {
         windComponents: components,
         hasGusts,
         sourceInfo: metarData.rawOb || 'METAR',
+        sourceTime: metarTime,
       };
     } else if (source === '5min' && synopticWind) {
       const { components, hasGusts } = computeWindComponents(
@@ -185,10 +189,11 @@ export default function RunwayWindTable({
       return {
         windComponents: components,
         hasGusts,
-        sourceInfo: `5-min @ ${synopticWind.time}`,
+        sourceInfo: `Last observation: ${synopticWind.time} local`,
+        sourceTime: null,
       };
     }
-    return { windComponents: [], hasGusts: false, sourceInfo: '' };
+    return { windComponents: [], hasGusts: false, sourceInfo: '', sourceTime: null };
   }, [source, metarData, synopticWind, runways]);
 
   if (!runways.length) return null;
@@ -288,9 +293,12 @@ export default function RunwayWindTable({
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-[#8899a6] mt-2 text-center">
-            {sourceInfo}{hasGusts && ' • (gust)'}
-          </p>
+          <div className="text-xs text-[#8899a6] mt-2 text-center">
+            <p className={`${source === 'metar' ? 'font-mono break-all' : ''}`}>
+              {sourceInfo}
+            </p>
+            {hasGusts && <p className="mt-1">• (gust values in parentheses)</p>}
+          </div>
         </>
       )}
     </div>

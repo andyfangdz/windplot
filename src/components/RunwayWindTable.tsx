@@ -170,13 +170,10 @@ export default function RunwayWindTable({
         metarData.wgst,
         runways
       );
-      const time = metarData.obsTime
-        ? new Date(metarData.obsTime * 1000).toISOString().slice(11, 16)
-        : '';
       return {
         windComponents: components,
         hasGusts,
-        sourceInfo: time ? `METAR @ ${time}Z` : 'METAR',
+        sourceInfo: metarData.rawOb || 'METAR',
       };
     } else if (source === '5min' && synopticWind) {
       const { components, hasGusts } = computeWindComponents(

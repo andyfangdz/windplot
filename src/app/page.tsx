@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import WindPlot from '@/components/WindPlot';
+import { getFavoriteAirports, getAirport } from './actions';
 
 export const metadata = {
   title: 'WindPlot - Aviation Wind Data',
@@ -17,10 +18,29 @@ function LoadingFallback() {
   );
 }
 
-export default function Home() {
+interface PageProps {
+  searchParams: Promise<{ icao?: string; hours?: string }>;
+}
+
+export default async function Home({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const icao = params.icao?.toUpperCase() || 'KCDW';
+  const hours = parseInt(params.hours || '4', 10);
+
+  // Fetch data server-side
+  const [favorites, initialAirport] = await Promise.all([
+    getFavoriteAirports(),
+    getAirport(icao),
+  ]);
+
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <WindPlot />
+      <WindPlot
+        initialIcao={icao}
+        initialHours={hours}
+        initialAirport={initialAirport}
+        favorites={favorites}
+      />
     </Suspense>
   );
 }

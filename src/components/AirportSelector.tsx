@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useTransition } from 'react';
 import {
-  getFavoriteAirports,
   searchAirports,
   getAirport,
+  AirportSearchResult,
   Airport,
-} from '@/lib/airports';
+} from '@/app/actions';
 
 interface AirportSelectorProps {
   selectedIcao: string;
+  selectedAirport: Airport | null;
+  favorites: AirportSearchResult[];
   onSelect: (icao: string) => void;
   hours: number;
   onHoursChange: (hours: number) => void;
@@ -17,26 +19,29 @@ interface AirportSelectorProps {
 
 export default function AirportSelector({
   selectedIcao,
+  selectedAirport,
+  favorites,
   onSelect,
   hours,
   onHoursChange,
 }: AirportSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Airport[]>([]);
+  const [searchResults, setSearchResults] = useState<AirportSearchResult[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const favorites = getFavoriteAirports();
-
-  // Handle search
+  // Handle search with server action
   useEffect(() => {
     if (searchQuery.length >= 2) {
-      const results = searchAirports(searchQuery, 10);
-      setSearchResults(results);
-      setShowDropdown(results.length > 0);
-      setHighlightedIndex(0);
+      startTransition(async () => {
+        const results = await searchAirports(searchQuery, 10);
+        setSearchResults(results);
+        setShowDropdown(results.length > 0);
+        setHighlightedIndex(0);
+      });
     } else {
       setSearchResults([]);
       setShowDropdown(false);
@@ -99,7 +104,6 @@ export default function AirportSelector({
     }
   };
 
-  const currentAirport = getAirport(selectedIcao);
   const isSelectedFavorite = favorites.some((f) => f.icao === selectedIcao);
 
   return (
@@ -155,19 +159,23 @@ export default function AirportSelector({
             placeholder="Search airports (ICAO or name)..."
             className="w-full px-4 py-2 rounded-lg bg-[#192734] text-white placeholder-[#8899a6] border border-[#38444d] focus:border-[#1d9bf0] focus:outline-none text-sm"
           />
-          <svg
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8899a6]"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
+          {isPending ? (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[#1d9bf0] border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <svg
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8899a6]"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          )}
         </div>
 
         {/* Search dropdown */}
@@ -202,11 +210,11 @@ export default function AirportSelector({
       </div>
 
       {/* Currently selected (if not a favorite) */}
-      {!isSelectedFavorite && currentAirport && (
+      {!isSelectedFavorite && selectedAirport && (
         <div className="text-center mt-2 text-xs text-[#8899a6]">
           Selected:{' '}
-          <span className="font-mono text-[#1d9bf0]">{currentAirport.icao}</span>{' '}
-          - {currentAirport.name}
+          <span className="font-mono text-[#1d9bf0]">{selectedAirport.icao}</span>{' '}
+          - {selectedAirport.name}
         </div>
       )}
     </div>

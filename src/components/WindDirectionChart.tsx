@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useCallback } from 'react';
 import { WindDataPoint } from '@/lib/types';
-import { Runway } from '@/lib/airports';
+import { Runway } from '@/app/actions';
 
 interface WindDirectionChartProps {
   observations: WindDataPoint[];

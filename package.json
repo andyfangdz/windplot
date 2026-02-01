@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "update-nasr": "node scripts/update-nasr.mjs",
+    "update-nasr:download": "node scripts/update-nasr.mjs --download"
   },
   "dependencies": {
     "chart.js": "^4.5.1",

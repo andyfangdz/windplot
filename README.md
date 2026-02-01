@@ -6,21 +6,35 @@ Real-time aviation wind data visualization for pilots. Shows wind speed, gusts, 
 
 - **Wind Speed/Gust Chart**: Time series showing sustained winds and gusts
 - **Wind Direction Radar**: Polar plot showing wind direction and speed with runway overlays
-- **Airport Selector**: Quick switching between KCDW, KFRG, KTEB, KMMU, KEWR
+- **Searchable Airport Database**: 2,200+ US airports from FAA NASR data
+- **Quick-select Favorites**: KCDW, KFRG, KTEB, KMMU, KEWR
 - **Time Range**: 1h to 24h of historical data
 - **Auto-refresh**: Updates every 5 minutes
 - **Mobile-friendly**: Dark theme optimized for mobile devices
 - **PWA Ready**: Add to home screen for app-like experience
 
-## Supported Airports
+## Airport Data
 
-| ICAO | Name | Runways |
-|------|------|---------|
-| KCDW | Essex County | 04/22 (030°), 10/28 (083°) |
-| KFRG | Republic | 01/19 (359°), 14/32 (132°) |
-| KTEB | Teterboro | 01/19 (010°), 06/24 (058°) |
-| KMMU | Morristown | 05/23 (049°), 13/31 (131°) |
-| KEWR | Newark Liberty | 04L/22R (040°), 04R/22L (043°), 11/29 (114°) |
+Airport and runway data is sourced from the FAA's NASR (National Airspace System Resources) 28-day subscription. This includes:
+
+- ICAO codes and names
+- Lat/lon coordinates
+- Runway identifiers and true headings
+- Runway dimensions and surface types
+
+### Updating Airport Data
+
+Airport data is bundled as a static JSON file. To update:
+
+```bash
+# Download fresh NASR data and regenerate airports-data.json
+npm run update-nasr:download
+
+# Or if data files already exist
+npm run update-nasr
+```
+
+The script fetches the current NASR subscription from the FAA and generates `src/lib/airports-data.json`.
 
 ## Development
 
@@ -46,20 +60,21 @@ npm run build
 npm start
 ```
 
-## Data Source
+## Data Sources
 
-Weather data from [Aviation Weather Center](https://aviationweather.gov) METAR API.
+- **Weather**: [Synoptic Data API](https://synopticdata.com/) (5-minute AWOS observations)
+- **Airports**: [FAA NASR Subscription](https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/NASR_Subscription/)
 
 ## URL Parameters
 
-- `?icao=KFRG` - Select airport
+- `?icao=KFRG` - Select airport (any valid ICAO)
 - `?hours=6` - Time range (1, 2, 4, 6, 12, 24)
 - `?icao=KTEB&hours=12` - Combined
 
 ## Tech Stack
 
-- Next.js 14+ (App Router)
-- React 18+
+- Next.js 16+ (App Router)
+- React 19+
 - Chart.js + react-chartjs-2
 - Tailwind CSS
 - TypeScript

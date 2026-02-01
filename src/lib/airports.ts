@@ -1,57 +1,88 @@
+import airportsData from './airports-data.json';
+
 export interface Runway {
+  id: string;
   low: string;
   high: string;
   trueHdg: number;
+  length: number;
+  width: number;
+  surface: string;
 }
 
 export interface Airport {
   icao: string;
+  faaId: string;
   name: string;
+  city: string;
+  state: string;
+  lat: number;
+  lon: number;
   runways: Runway[];
 }
 
-export const AIRPORTS: Record<string, Airport> = {
-  KCDW: {
-    icao: 'KCDW',
-    name: 'Essex County Airport',
-    runways: [
-      { low: '04', high: '22', trueHdg: 30 },
-      { low: '10', high: '28', trueHdg: 83 },
-    ],
-  },
-  KFRG: {
-    icao: 'KFRG',
-    name: 'Republic Airport',
-    runways: [
-      { low: '01', high: '19', trueHdg: 359 },
-      { low: '14', high: '32', trueHdg: 132 },
-    ],
-  },
-  KTEB: {
-    icao: 'KTEB',
-    name: 'Teterboro Airport',
-    runways: [
-      { low: '01', high: '19', trueHdg: 10 },
-      { low: '06', high: '24', trueHdg: 58 },
-    ],
-  },
-  KMMU: {
-    icao: 'KMMU',
-    name: 'Morristown Airport',
-    runways: [
-      { low: '05', high: '23', trueHdg: 49 },
-      { low: '13', high: '31', trueHdg: 131 },
-    ],
-  },
-  KEWR: {
-    icao: 'KEWR',
-    name: 'Newark Liberty International',
-    runways: [
-      { low: '04L', high: '22R', trueHdg: 40 },
-      { low: '04R', high: '22L', trueHdg: 43 },
-      { low: '11', high: '29', trueHdg: 114 },
-    ],
-  },
-};
+// Favorite airports (quick-select buttons)
+export const FAVORITE_ICAOS = ['KCDW', 'KFRG', 'KTEB', 'KMMU', 'KEWR'];
 
-export const AIRPORT_LIST = Object.values(AIRPORTS);
+// All airports from NASR data
+export const AIRPORTS: Airport[] = airportsData.airports as Airport[];
+
+// Map for quick lookup by ICAO
+export const AIRPORTS_BY_ICAO: Map<string, Airport> = new Map(
+  AIRPORTS.map((a) => [a.icao, a])
+);
+
+// Get airport by ICAO code
+export function getAirport(icao: string): Airport | undefined {
+  return AIRPORTS_BY_ICAO.get(icao.toUpperCase());
+}
+
+// Get favorite airports
+export function getFavoriteAirports(): Airport[] {
+  return FAVORITE_ICAOS.map((icao) => getAirport(icao)).filter(
+    (a): a is Airport => a !== undefined
+  );
+}
+
+// Search airports by ICAO or name (case-insensitive)
+export function searchAirports(query: string, limit = 20): Airport[] {
+  if (!query || query.length < 2) return [];
+
+  const q = query.toUpperCase();
+  const results: Airport[] = [];
+
+  // First pass: exact ICAO match
+  const exactMatch = AIRPORTS_BY_ICAO.get(q);
+  if (exactMatch) {
+    results.push(exactMatch);
+  }
+
+  // Second pass: ICAO starts with query
+  for (const airport of AIRPORTS) {
+    if (results.length >= limit) break;
+    if (airport.icao.startsWith(q) && !results.includes(airport)) {
+      results.push(airport);
+    }
+  }
+
+  // Third pass: name/city contains query
+  const lowerQ = query.toLowerCase();
+  for (const airport of AIRPORTS) {
+    if (results.length >= limit) break;
+    if (
+      !results.includes(airport) &&
+      (airport.name.toLowerCase().includes(lowerQ) ||
+        airport.city.toLowerCase().includes(lowerQ))
+    ) {
+      results.push(airport);
+    }
+  }
+
+  return results;
+}
+
+// Data metadata
+export const AIRPORTS_METADATA = {
+  generated: airportsData.generated,
+  count: airportsData.count,
+};

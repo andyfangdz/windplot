@@ -6,7 +6,7 @@ import AirportSelector from './AirportSelector';
 import WindSpeedChart from './WindSpeedChart';
 import WindDirectionChart from './WindDirectionChart';
 import { WindData } from '@/lib/types';
-import { AIRPORTS } from '@/lib/airports';
+import { getAirport } from '@/lib/airports';
 
 export default function WindPlot() {
   const searchParams = useSearchParams();
@@ -56,7 +56,7 @@ export default function WindPlot() {
     router.push(`?icao=${icao}&hours=${newHours}`, { scroll: false });
   };
 
-  const airport = AIRPORTS[icao];
+  const airport = getAirport(icao);
   const runways = airport?.runways || [];
 
   return (

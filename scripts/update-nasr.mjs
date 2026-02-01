@@ -111,12 +111,16 @@ function parseAirports() {
     const lon = parseFloat(row['LONG_DECIMAL']);
     const siteNo = row['SITE_NO']?.trim();
 
-    // Only include airports with ICAO codes (US airports start with K)
-    if (!icao || !icao.startsWith('K')) continue;
-    if (isNaN(lat) || isNaN(lon)) continue;
+    // Include airports with ICAO codes OR FAA IDs
+    // Skip if no valid identifier or coordinates
+    if ((!icao && !faaId) || isNaN(lat) || isNaN(lon)) continue;
+
+    // Use ICAO if available, otherwise construct from FAA ID (K + faaId for US)
+    const effectiveIcao = icao || (faaId ? `K${faaId}` : null);
+    if (!effectiveIcao) continue;
 
     airports.set(siteNo, {
-      icao,
+      icao: effectiveIcao,
       faaId,
       name,
       city,

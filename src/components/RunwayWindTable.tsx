@@ -124,21 +124,19 @@ export default function RunwayWindTable({
   useEffect(() => {
     if (source === 'metar' && icao) {
       setMetarLoading(true);
-      fetch(`https://aviationweather.gov/api/data/metar?ids=${icao}&format=json`)
-        .then((res) => res.json())
+      fetch(`/api/metar-latest?icao=${icao}`)
+        .then((res) => {
+          if (!res.ok) throw new Error('Failed to fetch');
+          return res.json();
+        })
         .then((data) => {
-          if (Array.isArray(data) && data.length > 0) {
-            const latest = data[0];
-            setMetarData({
-              wdir: latest.wdir === 0 ? null : latest.wdir,
-              wspd: latest.wspd,
-              wgst: latest.wgst,
-              rawOb: latest.rawOb,
-              obsTime: latest.obsTime,
-            });
-          } else {
-            setMetarData(null);
-          }
+          setMetarData({
+            wdir: data.wdir === 0 ? null : data.wdir,
+            wspd: data.wspd,
+            wgst: data.wgst,
+            rawOb: data.rawOb,
+            obsTime: data.obsTime,
+          });
         })
         .catch(() => setMetarData(null))
         .finally(() => setMetarLoading(false));

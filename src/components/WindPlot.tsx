@@ -79,7 +79,7 @@ export default function WindPlot({
 
   return (
     <div className="min-h-screen bg-[#0f1419] text-white p-4">
-      <div className="max-w-md mx-auto">
+      <div className="max-w-md lg:max-w-4xl mx-auto">
         <header className="text-center mb-4">
           <h1 className="text-2xl font-bold mb-1">✈️ {icao} Wind</h1>
           <p className="text-[#8899a6] text-sm">
@@ -92,14 +92,16 @@ export default function WindPlot({
           )}
         </header>
 
-        <AirportSelector
-          selectedIcao={icao}
-          selectedAirport={airport}
-          favorites={favorites}
-          onSelect={handleAirportChange}
-          hours={hours}
-          onHoursChange={handleHoursChange}
-        />
+        <div className="max-w-md mx-auto lg:max-w-none">
+          <AirportSelector
+            selectedIcao={icao}
+            selectedAirport={airport}
+            favorites={favorites}
+            onSelect={handleAirportChange}
+            hours={hours}
+            onHoursChange={handleHoursChange}
+          />
+        </div>
 
         {loading && !data && (
           <div className="text-center py-12">
@@ -122,10 +124,19 @@ export default function WindPlot({
 
         {data && data.observations.length > 0 && (
           <>
-            <WindSpeedChart observations={data.observations} />
-            <WindDirectionChart observations={data.observations} runways={runways} />
+            {/* Charts: stacked on mobile, side-by-side on desktop */}
+            <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
+              <div className="lg:min-w-0">
+                <WindSpeedChart observations={data.observations} />
+              </div>
+              <div className="lg:min-w-0">
+                <WindDirectionChart observations={data.observations} runways={runways} />
+              </div>
+            </div>
             {runways.length > 0 && (
-              <RunwayWindTable observations={data.observations} runways={runways} icao={icao} />
+              <div className="max-w-md mx-auto lg:max-w-lg">
+                <RunwayWindTable observations={data.observations} runways={runways} icao={icao} />
+              </div>
             )}
           </>
         )}

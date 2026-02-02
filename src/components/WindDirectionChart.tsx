@@ -1,12 +1,22 @@
 'use client';
 
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import { WindDataPoint } from '@/lib/types';
 import { Runway } from '@/app/actions';
 
 interface WindDirectionChartProps {
   observations: WindDataPoint[];
   runways: Runway[];
+}
+
+interface TooltipData {
+  x: number;
+  y: number;
+  time: string;
+  wdir: number | null;
+  wspd: number | null;
+  wgst: number | null;
+  isGust: boolean;
 }
 
 const RUNWAY_COLORS = ['#ffcc00', '#00ff88', '#ff6b6b', '#a78bfa'];
@@ -16,6 +26,8 @@ export default function WindDirectionChart({
   runways,
 }: WindDirectionChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [tooltip, setTooltip] = useState<TooltipData | null>(null);
+  const pointsRef = useRef<{ x: number; y: number; data: WindDataPoint; isGust: boolean }[]>([]);
 
   const drawChart = useCallback(() => {
     const canvas = canvasRef.current;
@@ -139,7 +151,9 @@ export default function WindDirectionChart({
       ctx.restore();
     });
 
-    // Plot wind observations
+    // Plot wind observations and track points for tooltips
+    const points: { x: number; y: number; data: WindDataPoint; isGust: boolean }[] = [];
+    
     observations.forEach((d) => {
       if (d.wdir === null) return;
       const rad = ((d.wdir - 90) * Math.PI) / 180;
@@ -156,6 +170,7 @@ export default function WindDirectionChart({
         ctx.strokeStyle = '#1d9bf0';
         ctx.lineWidth = 1.5;
         ctx.stroke();
+        points.push({ x, y, data: d, isGust: false });
       }
 
       // Plot gust
@@ -170,9 +185,52 @@ export default function WindDirectionChart({
         ctx.strokeStyle = '#f91880';
         ctx.lineWidth = 1.5;
         ctx.stroke();
+        points.push({ x, y, data: d, isGust: true });
       }
     });
+    
+    pointsRef.current = points;
   }, [observations, runways]);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const hitRadius = 12;
+
+    // Find closest point
+    let closest: typeof pointsRef.current[0] | null = null;
+    let minDist = hitRadius;
+
+    for (const point of pointsRef.current) {
+      const dist = Math.sqrt((point.x - x) ** 2 + (point.y - y) ** 2);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = point;
+      }
+    }
+
+    if (closest) {
+      setTooltip({
+        x: closest.x,
+        y: closest.y,
+        time: closest.data.time,
+        wdir: closest.data.wdir,
+        wspd: closest.data.wspd,
+        wgst: closest.data.wgst,
+        isGust: closest.isGust,
+      });
+    } else {
+      setTooltip(null);
+    }
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setTooltip(null);
+  }, []);
 
   useEffect(() => {
     drawChart();
@@ -180,11 +238,49 @@ export default function WindDirectionChart({
     return () => window.removeEventListener('resize', drawChart);
   }, [drawChart]);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseleave', handleMouseLeave);
+    return () => {
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, [handleMouseMove, handleMouseLeave]);
+
+  // Format direction as cardinal
+  const formatDirection = (deg: number | null) => {
+    if (deg === null) return '—';
+    const dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+    return dirs[Math.round(deg / 22.5) % 16];
+  };
+
   return (
     <div className="chart-section">
       <div className="chart-title">🧭 Wind Direction & Speed</div>
       <div className="h-[280px] relative">
         <canvas ref={canvasRef} className="w-full h-full" />
+        {tooltip && (
+          <div
+            className="absolute pointer-events-none z-10 px-3 py-2 rounded-lg text-sm"
+            style={{
+              left: Math.min(tooltip.x + 12, 280),
+              top: tooltip.y - 60,
+              backgroundColor: 'rgba(25, 39, 52, 0.95)',
+              border: '1px solid #38444d',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            }}
+          >
+            <div className="font-semibold text-white mb-1">🕐 {tooltip.time}</div>
+            <div className="text-[#8899a6] text-xs space-y-0.5">
+              <div>🧭 Direction: {tooltip.wdir}° ({formatDirection(tooltip.wdir)})</div>
+              {tooltip.wspd && <div>💨 Wind: {tooltip.wspd} kt</div>}
+              {tooltip.wgst && <div className="text-[#f91880]">🌊 Gust: {tooltip.wgst} kt</div>}
+            </div>
+          </div>
+        )}
       </div>
       <div className="legend">
         <div className="legend-item">

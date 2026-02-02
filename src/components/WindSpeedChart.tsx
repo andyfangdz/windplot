@@ -65,19 +65,38 @@ export default function WindSpeedChart({ observations }: WindSpeedChartProps) {
     responsive: true,
     maintainAspectRatio: false,
     animation: false,
+    interaction: {
+      mode: 'index',
+      intersect: false,
+    },
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: '#192734',
+        enabled: true,
+        backgroundColor: 'rgba(25, 39, 52, 0.95)',
         titleColor: '#fff',
-        bodyColor: '#8899a6',
+        titleFont: { size: 13, weight: 'bold' },
+        bodyColor: '#e7e9ea',
+        bodyFont: { size: 12 },
         borderColor: '#38444d',
         borderWidth: 1,
+        padding: 12,
+        cornerRadius: 8,
+        displayColors: true,
+        boxWidth: 10,
+        boxHeight: 10,
+        boxPadding: 4,
+        usePointStyle: true,
         callbacks: {
+          title: (items) => {
+            if (!items.length) return '';
+            return `🕐 ${items[0].label}`;
+          },
           label: (context) => {
             const value = context.parsed.y;
             if (value === null) return '';
-            return `${context.dataset.label}: ${value}kt`;
+            const label = context.dataset.label === 'Wind' ? '💨 Wind' : '🌊 Gust';
+            return ` ${label}: ${value} kt`;
           },
         },
       },

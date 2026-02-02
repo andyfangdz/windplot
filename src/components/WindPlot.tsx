@@ -77,6 +77,18 @@ export default function WindPlot({
 
   const runways = airport?.runways || [];
 
+  // Check if synoptic data is stale (>70 minutes old)
+  const staleThresholdMs = 70 * 60 * 1000; // 70 minutes
+  const latestObsTimestamp = data?.observations?.length
+    ? Math.max(...data.observations.map((o) => o.timestamp))
+    : null;
+  const isSynopticStale = latestObsTimestamp
+    ? Date.now() - latestObsTimestamp * 1000 > staleThresholdMs
+    : false;
+  const staleMinutes = latestObsTimestamp
+    ? Math.round((Date.now() - latestObsTimestamp * 1000) / 60000)
+    : 0;
+
   return (
     <div className="min-h-screen bg-[#0f1419] text-white p-4">
       <div className="max-w-md lg:max-w-4xl mx-auto">
@@ -124,6 +136,15 @@ export default function WindPlot({
 
         {data && data.observations.length > 0 && (
           <>
+            {/* Stale data warning */}
+            {isSynopticStale && (
+              <div className="bg-yellow-900/30 border border-yellow-500/50 rounded-lg p-3 mb-4 text-center">
+                <p className="text-yellow-400 text-sm">
+                  ⚠️ Weather data is {staleMinutes} minutes old — observations may be unavailable
+                </p>
+              </div>
+            )}
+
             {/* Charts: stacked on mobile, side-by-side on desktop */}
             <div className="lg:grid lg:grid-cols-2 lg:gap-6">
               <div className="lg:min-w-0">

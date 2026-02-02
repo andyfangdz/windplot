@@ -54,11 +54,18 @@ interface WindSpeedChartProps {
   observations: WindDataPoint[];
 }
 
-export default function WindSpeedChart({ observations }: WindSpeedChartProps) {
+// Format direction as cardinal
+const formatDirection = (deg: number | null): string => {
+  if (deg === null) return '—';
+  const dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+  return dirs[Math.round(deg / 22.5) % 16];
+};
 
+export default function WindSpeedChart({ observations }: WindSpeedChartProps) {
   const labels = observations.map((d) => d.time);
   const windSpeeds = observations.map((d) => d.wspd);
   const gustSpeeds = observations.map((d) => d.wgst);
+  const windDirs = observations.map((d) => d.wdir);
 
   const data = {
     labels,
@@ -124,13 +131,15 @@ export default function WindSpeedChart({ observations }: WindSpeedChartProps) {
         callbacks: {
           title: (items) => {
             if (!items.length) return '';
-            return `🕐 ${items[0].label}`;
+            const idx = items[0].dataIndex;
+            const dir = windDirs[idx];
+            const dirStr = dir !== null ? `${dir}° (${formatDirection(dir)})` : '—';
+            return [`${items[0].label}`, `Direction: ${dirStr}`];
           },
           label: (context) => {
             const value = context.parsed.y;
             if (value === null) return '';
-            const label = context.dataset.label === 'Wind' ? '💨 Wind' : '🌊 Gust';
-            return ` ${label}: ${value} kt`;
+            return ` ${context.dataset.label}: ${value} kt`;
           },
         },
       },

@@ -273,11 +273,11 @@ export default function WindDirectionChart({
               boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
             }}
           >
-            <div className="font-semibold text-white mb-1">🕐 {tooltip.time}</div>
+            <div className="font-semibold text-white mb-1">{tooltip.time}</div>
             <div className="text-[#8899a6] text-xs space-y-0.5">
-              <div>🧭 Direction: {tooltip.wdir}° ({formatDirection(tooltip.wdir)})</div>
-              {tooltip.wspd && <div>💨 Wind: {tooltip.wspd} kt</div>}
-              {tooltip.wgst && <div className="text-[#f91880]">🌊 Gust: {tooltip.wgst} kt</div>}
+              <div>Direction: {tooltip.wdir}° ({formatDirection(tooltip.wdir)})</div>
+              {tooltip.wspd && <div>Wind: {tooltip.wspd} kt</div>}
+              {tooltip.wgst && <div className="text-[#f91880]">Gust: {tooltip.wgst} kt</div>}
             </div>
           </div>
         )}

@@ -157,6 +157,15 @@ export default function RunwayWindTable({
     };
   }, [observations]);
 
+  // Check if METAR is stale (>70 minutes old)
+  const staleThresholdMs = 70 * 60 * 1000;
+  const isMetarStale = metarData?.obsTime
+    ? Date.now() - metarData.obsTime * 1000 > staleThresholdMs
+    : false;
+  const metarStaleMinutes = metarData?.obsTime
+    ? Math.round((Date.now() - metarData.obsTime * 1000) / 60000)
+    : 0;
+
   // Compute wind components based on selected source
   const { windComponents, hasGusts, sourceInfo, sourceTime } = useMemo(() => {
     if (source === 'metar') {
@@ -226,6 +235,15 @@ export default function RunwayWindTable({
           </button>
         </div>
       </div>
+
+      {/* Stale METAR warning */}
+      {source === 'metar' && isMetarStale && metarData && (
+        <div className="bg-yellow-900/30 border border-yellow-500/50 rounded-lg p-2 mb-3 text-center">
+          <p className="text-yellow-400 text-xs">
+            ⚠️ METAR is {metarStaleMinutes} minutes old
+          </p>
+        </div>
+      )}
 
       {metarLoading && source === 'metar' ? (
         <div className="text-center py-4">

@@ -11,6 +11,7 @@ import {
   Tooltip,
   Filler,
   ChartOptions,
+  Plugin,
 } from 'chart.js';
 import { WindDataPoint } from '@/lib/types';
 
@@ -23,6 +24,31 @@ ChartJS.register(
   Tooltip,
   Filler
 );
+
+// Custom plugin for vertical crosshair line
+const crosshairPlugin: Plugin<'line'> = {
+  id: 'crosshair',
+  afterDraw: (chart) => {
+    const tooltip = chart.tooltip;
+    if (tooltip && tooltip.getActiveElements().length > 0) {
+      const ctx = chart.ctx;
+      const activePoint = tooltip.getActiveElements()[0];
+      const x = activePoint.element.x;
+      const topY = chart.scales.y.top;
+      const bottomY = chart.scales.y.bottom;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x, topY);
+      ctx.lineTo(x, bottomY);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.setLineDash([4, 4]);
+      ctx.stroke();
+      ctx.restore();
+    }
+  },
+};
 
 interface WindSpeedChartProps {
   observations: WindDataPoint[];
@@ -45,6 +71,10 @@ export default function WindSpeedChart({ observations }: WindSpeedChartProps) {
         fill: true,
         tension: 0.3,
         pointRadius: 0,
+        pointHoverRadius: 6,
+        pointHoverBackgroundColor: '#1d9bf0',
+        pointHoverBorderColor: '#fff',
+        pointHoverBorderWidth: 2,
         borderWidth: 2.5,
       },
       {
@@ -66,6 +96,10 @@ export default function WindSpeedChart({ observations }: WindSpeedChartProps) {
     maintainAspectRatio: false,
     animation: false,
     interaction: {
+      mode: 'index',
+      intersect: false,
+    },
+    hover: {
       mode: 'index',
       intersect: false,
     },
@@ -127,7 +161,7 @@ export default function WindSpeedChart({ observations }: WindSpeedChartProps) {
     <div className="chart-section w-full overflow-hidden">
       <div className="chart-title">📈 Wind & Gusts</div>
       <div className="relative h-[180px] w-full">
-        <Line data={data} options={options} />
+        <Line data={data} options={options} plugins={[crosshairPlugin]} />
       </div>
       <div className="legend">
         <div className="legend-item">

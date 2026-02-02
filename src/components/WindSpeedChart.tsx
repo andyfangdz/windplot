@@ -169,7 +169,7 @@ export default function WindSpeedChart({ observations }: WindSpeedChartProps) {
   return (
     <div className="chart-section w-full overflow-hidden">
       <div className="chart-title">📈 Wind & Gusts</div>
-      <div className="relative h-[180px] w-full">
+      <div className="relative h-[180px] lg:h-[280px] w-full">
         <Line data={data} options={options} plugins={[crosshairPlugin]} />
       </div>
       <div className="legend">

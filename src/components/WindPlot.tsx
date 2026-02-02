@@ -125,7 +125,7 @@ export default function WindPlot({
         {data && data.observations.length > 0 && (
           <>
             {/* Charts: stacked on mobile, side-by-side on desktop */}
-            <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
+            <div className="lg:grid lg:grid-cols-2 lg:gap-6">
               <div className="lg:min-w-0">
                 <WindSpeedChart observations={data.observations} />
               </div>
@@ -134,9 +134,7 @@ export default function WindPlot({
               </div>
             </div>
             {runways.length > 0 && (
-              <div className="max-w-md mx-auto lg:max-w-lg">
-                <RunwayWindTable observations={data.observations} runways={runways} icao={icao} />
-              </div>
+              <RunwayWindTable observations={data.observations} runways={runways} icao={icao} />
             )}
           </>
         )}

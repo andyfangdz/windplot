@@ -29,6 +29,7 @@ interface WindSpeedChartProps {
 }
 
 export default function WindSpeedChart({ observations }: WindSpeedChartProps) {
+
   const labels = observations.map((d) => d.time);
   const windSpeeds = observations.map((d) => d.wspd);
   const gustSpeeds = observations.map((d) => d.wgst);
@@ -63,6 +64,7 @@ export default function WindSpeedChart({ observations }: WindSpeedChartProps) {
   const options: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
+    animation: false,
     plugins: {
       legend: { display: false },
       tooltip: {
@@ -103,9 +105,9 @@ export default function WindSpeedChart({ observations }: WindSpeedChartProps) {
   };
 
   return (
-    <div className="chart-section">
+    <div className="chart-section w-full overflow-hidden">
       <div className="chart-title">📈 Wind & Gusts</div>
-      <div className="h-[180px]">
+      <div className="relative h-[180px] w-full">
         <Line data={data} options={options} />
       </div>
       <div className="legend">

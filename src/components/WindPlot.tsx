@@ -174,8 +174,8 @@ export default function WindPlot({
 
         {data && data.observations.length > 0 && (
           <>
-            {/* Stale data warning */}
-            {isSynopticStale && (
+            {/* Stale data warning - only show when not loading fresh data */}
+            {isSynopticStale && !loading && (
               <div className="bg-yellow-900/30 border border-yellow-500/50 rounded-lg p-3 mb-4 text-center">
                 <p className="text-yellow-400 text-sm">
                   ⚠️ Weather data is {staleMinutes} minutes old — observations may be unavailable

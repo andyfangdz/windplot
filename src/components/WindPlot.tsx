@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AirportSelector from './AirportSelector';
 import WindSpeedChart from './WindSpeedChart';
@@ -167,6 +167,22 @@ export default function WindPlot({
     });
   };
 
+  // Prefetch airports (called when search results appear)
+  const handlePrefetch = useCallback((icaos: string[]) => {
+    icaos.forEach((icaoToFetch) => {
+      const upperIcao = icaoToFetch.toUpperCase();
+      // Skip if already cached
+      if (cache[upperIcao]) return;
+      
+      // Fetch in background (don't await, fire-and-forget)
+      getAirportFullData(upperIcao, hours).then((fullData) => {
+        if (fullData.windData) {
+          setCache((prev) => ({ ...prev, [upperIcao]: fullData }));
+        }
+      });
+    });
+  }, [cache, hours]);
+
   const runways = airport?.runways || [];
 
   // Check if synoptic data is stale (>70 minutes old)
@@ -214,6 +230,7 @@ export default function WindPlot({
             onSelect={handleAirportChange}
             hours={hours}
             onHoursChange={handleHoursChange}
+            onPrefetch={handlePrefetch}
           />
         </div>
 

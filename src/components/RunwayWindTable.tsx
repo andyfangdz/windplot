@@ -245,7 +245,10 @@ export default function RunwayWindTable({
         </div>
       ) : windComponents.length === 0 ? (
         <div className="text-center py-4 text-[#8899a6] text-sm">
-          No wind data available
+          <p>No wind data available</p>
+          {source === 'metar' && metarData?.rawOb && (
+            <p className="font-mono text-xs mt-2 break-all">{metarData.rawOb}</p>
+          )}
         </div>
       ) : (
         <>

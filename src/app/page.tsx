@@ -1,6 +1,10 @@
 import { Suspense } from 'react';
 import WindPlot from '@/components/WindPlot';
-import { getFavoriteAirports, getAirport, getWindData } from './actions';
+import {
+  getFavoriteAirports,
+  getAirportFullData,
+  prefetchFavorites,
+} from './actions';
 
 export const metadata = {
   title: 'WindPlot - Aviation Wind Data',
@@ -27,21 +31,29 @@ export default async function Home({ searchParams }: PageProps) {
   const icao = params.icao?.toUpperCase() || 'KCDW';
   const hours = parseInt(params.hours || '4', 10);
 
-  // Fetch data server-side
-  const [favorites, initialAirport, initialData] = await Promise.all([
+  // Fetch data server-side: current airport + prefetch top 3 favorites
+  const [favorites, initialFullData, prefetchedData] = await Promise.all([
     getFavoriteAirports(),
-    getAirport(icao),
-    getWindData(icao, hours),
+    getAirportFullData(icao, hours),
+    prefetchFavorites(hours, 3),
   ]);
+
+  // Merge initial data into prefetched (in case it's a favorite)
+  const allPrefetched = {
+    ...prefetchedData,
+    [icao]: initialFullData,
+  };
 
   return (
     <Suspense fallback={<LoadingFallback />}>
       <WindPlot
         initialIcao={icao}
         initialHours={hours}
-        initialAirport={initialAirport}
-        initialData={initialData}
+        initialAirport={initialFullData.airport}
+        initialData={initialFullData.windData}
+        initialMetar={initialFullData.metar}
         favorites={favorites}
+        prefetchedData={allPrefetched}
       />
     </Suspense>
   );

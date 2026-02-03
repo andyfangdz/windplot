@@ -8,14 +8,22 @@ import WindDirectionChart from './WindDirectionChart';
 import RunwayWindTable from './RunwayWindTable';
 import SettingsModal, { Settings, loadSettings, saveSettings } from './SettingsModal';
 import { WindData } from '@/lib/types';
-import { getAirport, getWindData, Airport, AirportSearchResult } from '@/app/actions';
+import {
+  getAirportFullData,
+  Airport,
+  AirportSearchResult,
+  AirportFullData,
+  MetarData,
+} from '@/app/actions';
 
 interface WindPlotProps {
   initialIcao: string;
   initialHours: number;
   initialAirport: Airport | null;
   initialData: WindData | null;
+  initialMetar: MetarData | null;
   favorites: AirportSearchResult[];
+  prefetchedData: Record<string, AirportFullData>;
 }
 
 export default function WindPlot({
@@ -23,7 +31,9 @@ export default function WindPlot({
   initialHours,
   initialAirport,
   initialData,
+  initialMetar,
   favorites,
+  prefetchedData,
 }: WindPlotProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -32,24 +42,34 @@ export default function WindPlot({
   const [hours, setHours] = useState(initialHours);
   const [airport, setAirport] = useState<Airport | null>(initialAirport);
   const [data, setData] = useState<WindData | null>(initialData);
+  const [metar, setMetar] = useState<MetarData | null>(initialMetar);
+  const [metarIcao, setMetarIcao] = useState<string>(initialIcao);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(initialData ? new Date() : null);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<Settings>({ allowedSurfaces: [] });
+  
+  // Cache of prefetched data (mutable ref to avoid re-renders)
+  const [cache, setCache] = useState<Record<string, AirportFullData>>(prefetchedData);
 
   // Load settings from localStorage on mount
   useEffect(() => {
     setSettings(loadSettings());
   }, []);
 
-  // Auto-refresh every 5 minutes using server action
+  // Auto-refresh every 5 minutes
   useEffect(() => {
     const refresh = async () => {
-      const newData = await getWindData(icao, hours);
-      if (newData) {
-        setData(newData);
+      const fullData = await getAirportFullData(icao, hours);
+      if (fullData.windData) {
+        setData(fullData.windData);
+        setAirport(fullData.airport);
+        setMetar(fullData.metar);
+        setMetarIcao(icao);
         setLastUpdate(new Date());
+        // Update cache
+        setCache((prev) => ({ ...prev, [icao]: fullData }));
       }
     };
 
@@ -58,39 +78,64 @@ export default function WindPlot({
   }, [icao, hours]);
 
   const handleAirportChange = (newIcao: string) => {
+    const upperIcao = newIcao.toUpperCase();
+    
+    // Check if we have prefetched data for this airport
+    const prefetched = cache[upperIcao];
+    if (prefetched && prefetched.windData) {
+      // Use cached data immediately - no loading state needed
+      setIcao(upperIcao);
+      setAirport(prefetched.airport);
+      setData(prefetched.windData);
+      setMetar(prefetched.metar);
+      setMetarIcao(upperIcao);
+      setLastUpdate(new Date());
+      setError(null);
+      router.push(`?icao=${upperIcao}&hours=${hours}`, { scroll: false });
+      return;
+    }
+
+    // No prefetched data - fetch it
     setData(null);
-    setIcao(newIcao);
+    setMetar(null);
+    setIcao(upperIcao);
     setLoading(true);
     setError(null);
     
     startTransition(async () => {
-      const [newAirport, newData] = await Promise.all([
-        getAirport(newIcao),
-        getWindData(newIcao, hours),
-      ]);
-      setAirport(newAirport);
-      if (newData) {
-        setData(newData);
+      const fullData = await getAirportFullData(upperIcao, hours);
+      setAirport(fullData.airport);
+      setMetar(fullData.metar);
+      setMetarIcao(upperIcao);
+      if (fullData.windData) {
+        setData(fullData.windData);
         setLastUpdate(new Date());
+        // Cache the result
+        setCache((prev) => ({ ...prev, [upperIcao]: fullData }));
       } else {
         setError('Failed to fetch data for this airport');
       }
       setLoading(false);
     });
     
-    router.push(`?icao=${newIcao}&hours=${hours}`, { scroll: false });
+    router.push(`?icao=${upperIcao}&hours=${hours}`, { scroll: false });
   };
 
   const handleHoursChange = (newHours: number) => {
+    // Hours change invalidates cache for current airport
     setData(null);
+    setMetar(null);
     setHours(newHours);
     setLoading(true);
     setError(null);
     
     startTransition(async () => {
-      const newData = await getWindData(icao, newHours);
-      if (newData) {
-        setData(newData);
+      const fullData = await getAirportFullData(icao, newHours);
+      setAirport(fullData.airport);
+      setMetar(fullData.metar);
+      setMetarIcao(icao);
+      if (fullData.windData) {
+        setData(fullData.windData);
         setLastUpdate(new Date());
       } else {
         setError('Failed to fetch data');
@@ -106,10 +151,15 @@ export default function WindPlot({
     setError(null);
     
     startTransition(async () => {
-      const newData = await getWindData(icao, hours);
-      if (newData) {
-        setData(newData);
+      const fullData = await getAirportFullData(icao, hours);
+      setAirport(fullData.airport);
+      setMetar(fullData.metar);
+      setMetarIcao(icao);
+      if (fullData.windData) {
+        setData(fullData.windData);
         setLastUpdate(new Date());
+        // Update cache
+        setCache((prev) => ({ ...prev, [icao]: fullData }));
       } else {
         setError('Failed to refresh data');
       }
@@ -211,6 +261,7 @@ export default function WindPlot({
                 observations={data.observations}
                 runways={runways}
                 icao={icao}
+                metar={metarIcao === icao ? metar : null}
                 allowedSurfaces={settings.allowedSurfaces}
               />
             )}

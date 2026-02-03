@@ -46,7 +46,6 @@ export default function WindPlot({
   const [metarIcao, setMetarIcao] = useState<string>(initialIcao);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(initialData ? new Date() : null);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<Settings>({ allowedSurfaces: [] });
   
@@ -67,7 +66,6 @@ export default function WindPlot({
         setAirport(fullData.airport);
         setMetar(fullData.metar);
         setMetarIcao(icao);
-        setLastUpdate(new Date());
         // Update cache
         setCache((prev) => ({ ...prev, [icao]: fullData }));
       }
@@ -89,7 +87,6 @@ export default function WindPlot({
       setData(prefetched.windData);
       setMetar(prefetched.metar);
       setMetarIcao(upperIcao);
-      setLastUpdate(new Date());
       setError(null);
       router.push(`?icao=${upperIcao}&hours=${hours}`, { scroll: false });
       return;
@@ -109,7 +106,6 @@ export default function WindPlot({
       setMetarIcao(upperIcao);
       if (fullData.windData) {
         setData(fullData.windData);
-        setLastUpdate(new Date());
         // Cache the result
         setCache((prev) => ({ ...prev, [upperIcao]: fullData }));
       } else {
@@ -136,7 +132,6 @@ export default function WindPlot({
       setMetarIcao(icao);
       if (fullData.windData) {
         setData(fullData.windData);
-        setLastUpdate(new Date());
       } else {
         setError('Failed to fetch data');
       }
@@ -157,7 +152,6 @@ export default function WindPlot({
       setMetarIcao(icao);
       if (fullData.windData) {
         setData(fullData.windData);
-        setLastUpdate(new Date());
         // Update cache
         setCache((prev) => ({ ...prev, [icao]: fullData }));
       } else {
@@ -197,9 +191,29 @@ export default function WindPlot({
     ? Math.round((Date.now() - latestObsTimestamp * 1000) / 60000)
     : 0;
 
+  const validObsTimestamps = data?.observations
+    ? data.observations
+        .filter((o) => o.wdir !== null && o.wspd !== null)
+        .map((o) => o.timestamp)
+    : [];
+  const latestValidObsTimestamp = validObsTimestamps.length
+    ? Math.max(...validObsTimestamps)
+    : null;
+  const lastDataTimestamp = (() => {
+    const candidates = [
+      latestValidObsTimestamp ?? null,
+      metar?.obsTime ?? null,
+    ].filter((v): v is number => typeof v === 'number');
+    return candidates.length ? Math.max(...candidates) : null;
+  })();
+  const lastDataTime = lastDataTimestamp ? new Date(lastDataTimestamp * 1000) : null;
+
   return (
-    <div className="min-h-screen bg-[#0f1419] text-white p-4">
-      <div className="max-w-md lg:max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#0f1419] text-white p-4 lg:flex lg:justify-center">
+      <div
+        className="w-full"
+        style={{ maxWidth: '56rem', marginLeft: 'auto', marginRight: 'auto' }}
+      >
         <header className="text-center mb-4 relative">
           <button
             onClick={() => setShowSettings(true)}
@@ -215,9 +229,9 @@ export default function WindPlot({
           <p className="text-[#8899a6] text-sm">
             {data?.name || airport?.name || icao} • Last {hours}h (5-min obs)
           </p>
-          {lastUpdate && (
+          {lastDataTime && (
             <p className="text-[#8899a6] text-xs mt-1">
-              Updated: {lastUpdate.toLocaleTimeString()}
+              Latest observation: {lastDataTime.toLocaleTimeString()}
             </p>
           )}
         </header>

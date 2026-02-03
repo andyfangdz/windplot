@@ -236,3 +236,44 @@ export async function searchAirports(
 
   return results;
 }
+
+// Combined airport data type (wind + METAR in one call)
+export interface AirportFullData {
+  icao: string;
+  airport: Airport | null;
+  windData: WindData | null;
+  metar: MetarData | null;
+}
+
+// Fetch all data for an airport in parallel (wind + METAR)
+export async function getAirportFullData(
+  icao: string,
+  hours: number
+): Promise<AirportFullData> {
+  const upperIcao = icao.toUpperCase();
+  const [airport, windData, metar] = await Promise.all([
+    getAirport(upperIcao),
+    getWindData(upperIcao, hours),
+    getMetar(upperIcao),
+  ]);
+
+  return {
+    icao: upperIcao,
+    airport,
+    windData,
+    metar,
+  };
+}
+
+// Prefetch data for favorite airports (returns map of icao -> data)
+export async function prefetchFavorites(
+  hours: number,
+  limit: number = 3
+): Promise<Record<string, AirportFullData>> {
+  const icaos = FAVORITE_ICAOS.slice(0, limit);
+  const results = await Promise.all(
+    icaos.map((icao) => getAirportFullData(icao, hours))
+  );
+
+  return Object.fromEntries(results.map((data) => [data.icao, data]));
+}

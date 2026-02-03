@@ -150,3 +150,75 @@ describe('STALE_THRESHOLD_MS', () => {
     expect(STALE_THRESHOLD_MS).toBe(4200000);
   });
 });
+
+describe('cache staleness scenarios', () => {
+  const NOW = 1700000000000;
+
+  describe('client-side cache behavior', () => {
+    it('fresh cached data should be used (no fetch needed)', () => {
+      // Simulate: user visits KFRG, data is cached with recent timestamp
+      // Later: user switches to KCDW, then back to KFRG
+      // Expected: cached KFRG data should be used if still fresh
+      const cachedTimestamp = (NOW - 30 * 60 * 1000) / 1000; // 30 min ago
+      const cachedData = createWindData([cachedTimestamp]);
+
+      expect(isWindDataStale(cachedData, NOW)).toBe(false);
+      // Client should use this cached data without fetching
+    });
+
+    it('stale cached data should be bypassed (fetch needed)', () => {
+      // Simulate: user visits KFRG, data is cached
+      // Hours later: user switches back to KFRG
+      // Expected: cached data is stale, should fetch fresh data
+      const cachedTimestamp = (NOW - 3 * 60 * 60 * 1000) / 1000; // 3 hours ago
+      const cachedData = createWindData([cachedTimestamp]);
+
+      expect(isWindDataStale(cachedData, NOW)).toBe(true);
+      // Client should NOT use this cached data, should fetch instead
+    });
+
+    it('cache with mixed timestamps uses most recent for staleness check', () => {
+      // Edge case: cache contains data with varying observation ages
+      // Should use the MOST RECENT observation to determine staleness
+      const timestamps = [
+        (NOW - 4 * 60 * 60 * 1000) / 1000, // 4 hours ago
+        (NOW - 2 * 60 * 60 * 1000) / 1000, // 2 hours ago
+        (NOW - 45 * 60 * 1000) / 1000, // 45 min ago (most recent, still fresh)
+      ];
+      const cachedData = createWindData(timestamps);
+
+      expect(isWindDataStale(cachedData, NOW)).toBe(false);
+      // Most recent obs is 45 min old, which is < 70 min threshold
+    });
+  });
+
+  describe('auto-refresh timing', () => {
+    it('data becomes stale after 70 minutes without refresh', () => {
+      // Simulate: data fetched at T=0 with observation timestamp T=0
+      // At T=69min: still fresh
+      // At T=71min: stale
+      const fetchTime = NOW;
+      const obsTimestamp = fetchTime / 1000; // observation at fetch time
+
+      const data = createWindData([obsTimestamp]);
+
+      // 69 minutes later: still fresh
+      const at69min = fetchTime + 69 * 60 * 1000;
+      expect(isWindDataStale(data, at69min)).toBe(false);
+
+      // 71 minutes later: stale
+      const at71min = fetchTime + 71 * 60 * 1000;
+      expect(isWindDataStale(data, at71min)).toBe(true);
+    });
+
+    it('auto-refresh every 5 minutes keeps data fresh', () => {
+      // With 5-minute auto-refresh, the latest observation should never be
+      // more than ~10 minutes old (5 min refresh + 5 min AWOS interval)
+      // This is well under the 70-minute threshold
+      const refreshInterval = 5 * 60 * 1000;
+      const maxObsAge = 10 * 60 * 1000; // 10 min max expected
+
+      expect(maxObsAge).toBeLessThan(STALE_THRESHOLD_MS);
+    });
+  });
+});

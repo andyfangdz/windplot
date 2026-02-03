@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useTransition } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import AirportSelector from './AirportSelector';
 import WindSpeedChart from './WindSpeedChart';
@@ -33,10 +33,70 @@ export default function WindPlot({
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
-  const fetchData = useCallback(async () => {
+  useEffect(() => {
+    const abortController = new AbortController();
+    
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const response = await fetch(`/api/synoptic?icao=${icao}&hours=${hours}`, {
+          signal: abortController.signal,
+        });
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'Failed to fetch data');
+        }
+        const windData: WindData = await response.json();
+        // Only update if this request wasn't aborted
+        if (!abortController.signal.aborted) {
+          setData(windData);
+          setLastUpdate(new Date());
+        }
+      } catch (err) {
+        // Don't set error if request was aborted (user switched airports)
+        if (err instanceof Error && err.name === 'AbortError') {
+          return;
+        }
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        if (!abortController.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+    // Auto-refresh every 5 minutes
+    const interval = setInterval(fetchData, 5 * 60 * 1000);
+    
+    return () => {
+      abortController.abort();
+      clearInterval(interval);
+    };
+  }, [icao, hours]);
+
+  const handleAirportChange = (newIcao: string) => {
+    // Clear old data immediately to prevent showing stale data
+    setData(null);
+    setIcao(newIcao);
+    // Fetch new airport data via server action
+    startTransition(async () => {
+      const newAirport = await getAirport(newIcao);
+      setAirport(newAirport);
+    });
+    router.push(`?icao=${newIcao}&hours=${hours}`, { scroll: false });
+  };
+
+  const handleHoursChange = (newHours: number) => {
+    setHours(newHours);
+    router.push(`?icao=${icao}&hours=${newHours}`, { scroll: false });
+  };
+
+  const handleRefresh = async () => {
     setLoading(true);
     setError(null);
-    
     try {
       const response = await fetch(`/api/synoptic?icao=${icao}&hours=${hours}`);
       if (!response.ok) {
@@ -51,28 +111,6 @@ export default function WindPlot({
     } finally {
       setLoading(false);
     }
-  }, [icao, hours]);
-
-  useEffect(() => {
-    fetchData();
-    // Auto-refresh every 5 minutes
-    const interval = setInterval(fetchData, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [fetchData]);
-
-  const handleAirportChange = (newIcao: string) => {
-    setIcao(newIcao);
-    // Fetch new airport data via server action
-    startTransition(async () => {
-      const newAirport = await getAirport(newIcao);
-      setAirport(newAirport);
-    });
-    router.push(`?icao=${newIcao}&hours=${hours}`, { scroll: false });
-  };
-
-  const handleHoursChange = (newHours: number) => {
-    setHours(newHours);
-    router.push(`?icao=${icao}&hours=${newHours}`, { scroll: false });
   };
 
   const runways = airport?.runways || [];
@@ -126,7 +164,7 @@ export default function WindPlot({
           <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 text-center">
             <p className="text-red-400">{error}</p>
             <button
-              onClick={fetchData}
+              onClick={handleRefresh}
               className="mt-2 px-4 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
             >
               Retry
@@ -169,7 +207,7 @@ export default function WindPlot({
         <footer className="text-center mt-6 text-xs text-[#8899a6]">
           <p>Data from Synoptic Data API (5-min resolution)</p>
           <button
-            onClick={fetchData}
+            onClick={handleRefresh}
             disabled={loading}
             className="mt-2 px-3 py-1 bg-[#192734] hover:bg-[#22303c] rounded text-sm disabled:opacity-50"
           >

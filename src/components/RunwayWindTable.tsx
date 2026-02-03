@@ -112,6 +112,7 @@ export default function RunwayWindTable({
 }: RunwayWindTableProps) {
   const [source, setSource] = useState<'5min' | 'metar'>('5min');
   const [metarData, setMetarData] = useState<MetarData | null>(null);
+  const [metarIcao, setMetarIcao] = useState<string | null>(null); // Track which airport METAR belongs to
   const [metarLoading, setMetarLoading] = useState(false);
 
   // Filter runways by allowed surface types
@@ -126,18 +127,23 @@ export default function RunwayWindTable({
     });
   }, [runways, allowedSurfaces]);
 
-  // Clear METAR data when airport changes
-  useEffect(() => {
-    setMetarData(null);
-  }, [icao]);
+  // Only use METAR data if it matches current airport
+  const currentMetarData = metarIcao === icao ? metarData : null;
+  const isMetarMismatch = metarIcao !== null && metarIcao !== icao;
 
   // Fetch METAR when source changes to metar or airport changes
   useEffect(() => {
     if (source === 'metar' && icao) {
       setMetarLoading(true);
       getMetar(icao)
-        .then((data) => setMetarData(data))
-        .catch(() => setMetarData(null))
+        .then((data) => {
+          setMetarData(data);
+          setMetarIcao(icao);
+        })
+        .catch(() => {
+          setMetarData(null);
+          setMetarIcao(icao);
+        })
         .finally(() => setMetarLoading(false));
     }
   }, [source, icao]);
@@ -158,33 +164,33 @@ export default function RunwayWindTable({
 
   // Check if METAR is stale (>70 minutes old)
   const staleThresholdMs = 70 * 60 * 1000;
-  const isMetarStale = metarData?.obsTime
-    ? Date.now() - metarData.obsTime * 1000 > staleThresholdMs
+  const isMetarStale = currentMetarData?.obsTime
+    ? Date.now() - currentMetarData.obsTime * 1000 > staleThresholdMs
     : false;
-  const metarStaleMinutes = metarData?.obsTime
-    ? Math.round((Date.now() - metarData.obsTime * 1000) / 60000)
+  const metarStaleMinutes = currentMetarData?.obsTime
+    ? Math.round((Date.now() - currentMetarData.obsTime * 1000) / 60000)
     : 0;
 
   // Compute wind components based on selected source
   const { windComponents, hasGusts, sourceInfo, sourceTime } = useMemo(() => {
     if (source === 'metar') {
-      // Only use METAR data when METAR is selected
-      if (!metarData) {
+      // Only use METAR data when METAR is selected and matches current airport
+      if (!currentMetarData) {
         return { windComponents: [], hasGusts: false, sourceInfo: '', sourceTime: null };
       }
       const { components, hasGusts } = computeWindComponents(
-        metarData.wdir,
-        metarData.wspd,
-        metarData.wgst,
+        currentMetarData.wdir,
+        currentMetarData.wspd,
+        currentMetarData.wgst,
         filteredRunways
       );
-      const metarTime = metarData.obsTime
-        ? new Date(metarData.obsTime * 1000).toISOString().slice(11, 16) + 'Z'
+      const metarTime = currentMetarData.obsTime
+        ? new Date(currentMetarData.obsTime * 1000).toISOString().slice(11, 16) + 'Z'
         : '';
       return {
         windComponents: components,
         hasGusts,
-        sourceInfo: metarData.rawOb || 'METAR',
+        sourceInfo: currentMetarData.rawOb || 'METAR',
         sourceTime: metarTime,
       };
     } else if (source === '5min' && synopticWind) {
@@ -202,7 +208,7 @@ export default function RunwayWindTable({
       };
     }
     return { windComponents: [], hasGusts: false, sourceInfo: '', sourceTime: null };
-  }, [source, metarData, synopticWind, filteredRunways]);
+  }, [source, currentMetarData, synopticWind, filteredRunways]);
 
   if (!filteredRunways.length) return null;
   if (source === '5min' && !synopticWind) return null;
@@ -236,7 +242,7 @@ export default function RunwayWindTable({
       </div>
 
       {/* Stale METAR warning */}
-      {source === 'metar' && isMetarStale && metarData && (
+      {source === 'metar' && isMetarStale && currentMetarData && (
         <div className="bg-yellow-900/30 border border-yellow-500/50 rounded-lg p-2 mb-3 text-center">
           <p className="text-yellow-400 text-xs">
             ⚠️ METAR is {metarStaleMinutes} minutes old
@@ -244,15 +250,15 @@ export default function RunwayWindTable({
         </div>
       )}
 
-      {metarLoading && source === 'metar' ? (
+      {(metarLoading || isMetarMismatch) && source === 'metar' ? (
         <div className="text-center py-4">
           <div className="inline-block animate-spin rounded-full h-5 w-5 border-2 border-[#1d9bf0] border-t-transparent"></div>
         </div>
       ) : windComponents.length === 0 ? (
         <div className="text-center py-4 text-[#8899a6] text-sm">
           <p>No wind data available</p>
-          {source === 'metar' && metarData?.rawOb && (
-            <p className="font-mono text-xs mt-2 break-all">{metarData.rawOb}</p>
+          {source === 'metar' && currentMetarData?.rawOb && (
+            <p className="font-mono text-xs mt-2 break-all">{currentMetarData.rawOb}</p>
           )}
         </div>
       ) : (

@@ -7,12 +7,13 @@ import WindSpeedChart from './WindSpeedChart';
 import WindDirectionChart from './WindDirectionChart';
 import RunwayWindTable from './RunwayWindTable';
 import { WindData } from '@/lib/types';
-import { getAirport, Airport, AirportSearchResult } from '@/app/actions';
+import { getAirport, getWindData, Airport, AirportSearchResult } from '@/app/actions';
 
 interface WindPlotProps {
   initialIcao: string;
   initialHours: number;
   initialAirport: Airport | null;
+  initialData: WindData | null;
   favorites: AirportSearchResult[];
 }
 
@@ -20,6 +21,7 @@ export default function WindPlot({
   initialIcao,
   initialHours,
   initialAirport,
+  initialData,
   favorites,
 }: WindPlotProps) {
   const router = useRouter();
@@ -28,100 +30,89 @@ export default function WindPlot({
   const [icao, setIcao] = useState(initialIcao);
   const [hours, setHours] = useState(initialHours);
   const [airport, setAirport] = useState<Airport | null>(initialAirport);
-  const [data, setData] = useState<WindData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<WindData | null>(initialData);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(initialData ? new Date() : null);
 
+  // Auto-refresh every 5 minutes using server action
   useEffect(() => {
-    const abortController = new AbortController();
-    
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const response = await fetch(`/api/synoptic?icao=${icao}&hours=${hours}`, {
-          signal: abortController.signal,
-          cache: 'no-store',
-        });
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.error || 'Failed to fetch data');
-        }
-        const windData: WindData = await response.json();
-        // Only update if this request wasn't aborted
-        if (!abortController.signal.aborted) {
-          setData(windData);
-          setLastUpdate(new Date());
-        }
-      } catch (err) {
-        // Don't set error if request was aborted (user switched airports)
-        if (err instanceof Error && err.name === 'AbortError') {
-          return;
-        }
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        if (!abortController.signal.aborted) {
-          setLoading(false);
-        }
+    const refresh = async () => {
+      const newData = await getWindData(icao, hours);
+      if (newData) {
+        setData(newData);
+        setLastUpdate(new Date());
       }
     };
 
-    fetchData();
-    // Auto-refresh every 5 minutes
-    const interval = setInterval(fetchData, 5 * 60 * 1000);
-    
-    return () => {
-      abortController.abort();
-      clearInterval(interval);
-    };
+    const interval = setInterval(refresh, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, [icao, hours]);
 
   const handleAirportChange = (newIcao: string) => {
-    // Clear old data immediately to prevent showing stale data
     setData(null);
     setIcao(newIcao);
-    // Fetch new airport data via server action
+    setLoading(true);
+    setError(null);
+    
     startTransition(async () => {
-      const newAirport = await getAirport(newIcao);
+      const [newAirport, newData] = await Promise.all([
+        getAirport(newIcao),
+        getWindData(newIcao, hours),
+      ]);
       setAirport(newAirport);
+      if (newData) {
+        setData(newData);
+        setLastUpdate(new Date());
+      } else {
+        setError('Failed to fetch data for this airport');
+      }
+      setLoading(false);
     });
+    
     router.push(`?icao=${newIcao}&hours=${hours}`, { scroll: false });
   };
 
   const handleHoursChange = (newHours: number) => {
-    // Clear old data to prevent stale data flash during transition
     setData(null);
     setHours(newHours);
+    setLoading(true);
+    setError(null);
+    
+    startTransition(async () => {
+      const newData = await getWindData(icao, newHours);
+      if (newData) {
+        setData(newData);
+        setLastUpdate(new Date());
+      } else {
+        setError('Failed to fetch data');
+      }
+      setLoading(false);
+    });
+    
     router.push(`?icao=${icao}&hours=${newHours}`, { scroll: false });
   };
 
-  const handleRefresh = async () => {
+  const handleRefresh = () => {
     setLoading(true);
     setError(null);
-    try {
-      const response = await fetch(`/api/synoptic?icao=${icao}&hours=${hours}`, {
-        cache: 'no-store',
-      });
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Failed to fetch data');
+    
+    startTransition(async () => {
+      const newData = await getWindData(icao, hours);
+      if (newData) {
+        setData(newData);
+        setLastUpdate(new Date());
+      } else {
+        setError('Failed to refresh data');
       }
-      const windData: WindData = await response.json();
-      setData(windData);
-      setLastUpdate(new Date());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
       setLoading(false);
-    }
+    });
   };
 
   const runways = airport?.runways || [];
 
   // Check if synoptic data is stale (>70 minutes old)
-  const staleThresholdMs = 70 * 60 * 1000; // 70 minutes
+  const staleThresholdMs = 70 * 60 * 1000;
   const latestObsTimestamp = data?.observations?.length
     ? Math.max(...data.observations.map((o) => o.timestamp))
     : null;
@@ -158,14 +149,14 @@ export default function WindPlot({
           />
         </div>
 
-        {loading && !data && (
+        {(loading || isPending) && !data && (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-[#1d9bf0] border-t-transparent"></div>
             <p className="text-[#8899a6] mt-4">Loading weather data...</p>
           </div>
         )}
 
-        {error && (
+        {error && !data && (
           <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 text-center">
             <p className="text-red-400">{error}</p>
             <button
@@ -180,7 +171,7 @@ export default function WindPlot({
         {data && data.observations.length > 0 && (
           <>
             {/* Stale data warning - only show when not loading fresh data */}
-            {isSynopticStale && !loading && (
+            {isSynopticStale && !loading && !isPending && (
               <div className="bg-yellow-900/30 border border-yellow-500/50 rounded-lg p-3 mb-4 text-center">
                 <p className="text-yellow-400 text-sm">
                   ⚠️ Weather data is {staleMinutes} minutes old — observations may be unavailable
@@ -213,10 +204,10 @@ export default function WindPlot({
           <p>Data from Synoptic Data API (5-min resolution)</p>
           <button
             onClick={handleRefresh}
-            disabled={loading}
+            disabled={loading || isPending}
             className="mt-2 px-3 py-1 bg-[#192734] hover:bg-[#22303c] rounded text-sm disabled:opacity-50"
           >
-            {loading ? 'Refreshing...' : 'Refresh'}
+            {loading || isPending ? 'Refreshing...' : 'Refresh'}
           </button>
         </footer>
       </div>

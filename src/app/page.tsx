@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import WindPlot from '@/components/WindPlot';
-import { getFavoriteAirports, getAirport } from './actions';
+import { getFavoriteAirports, getAirport, getWindData } from './actions';
 
 export const metadata = {
   title: 'WindPlot - Aviation Wind Data',
@@ -28,9 +28,10 @@ export default async function Home({ searchParams }: PageProps) {
   const hours = parseInt(params.hours || '4', 10);
 
   // Fetch data server-side
-  const [favorites, initialAirport] = await Promise.all([
+  const [favorites, initialAirport, initialData] = await Promise.all([
     getFavoriteAirports(),
     getAirport(icao),
+    getWindData(icao, hours),
   ]);
 
   return (
@@ -39,6 +40,7 @@ export default async function Home({ searchParams }: PageProps) {
         initialIcao={icao}
         initialHours={hours}
         initialAirport={initialAirport}
+        initialData={initialData}
         favorites={favorites}
       />
     </Suspense>

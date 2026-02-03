@@ -1,6 +1,73 @@
 'use server';
 
 import airportsData from '@/lib/airports-data.json';
+import { WindData, WindDataPoint } from '@/lib/types';
+
+// Synoptic API config
+const SYNOPTIC_TOKEN = '7c76618b66c74aee913bdbae4b448bdd';
+const SYNOPTIC_ORIGIN = 'https://www.weather.gov';
+
+interface SynopticObservations {
+  date_time: string[];
+  wind_speed_set_1?: (number | null)[];
+  wind_direction_set_1?: (number | null)[];
+  wind_gust_set_1?: (number | null)[];
+}
+
+interface SynopticStation {
+  STID: string;
+  NAME: string;
+  OBSERVATIONS: SynopticObservations;
+}
+
+interface SynopticResponse {
+  SUMMARY: { RESPONSE_CODE: number; RESPONSE_MESSAGE: string };
+  STATION?: SynopticStation[];
+}
+
+// Fetch wind data from Synoptic API
+export async function getWindData(icao: string, hours: number): Promise<WindData | null> {
+  const upperIcao = icao.toUpperCase();
+  const minutes = Math.min(Math.max(1, hours), 720) * 60;
+  const url = `https://api.synopticdata.com/v2/stations/timeseries?STID=${upperIcao}&showemptystations=1&units=temp|F,speed|kts,english&recent=${minutes}&complete=1&token=${SYNOPTIC_TOKEN}&obtimezone=local`;
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Origin': SYNOPTIC_ORIGIN,
+        'User-Agent': 'WindPlot/1.0',
+      },
+      next: { revalidate: 60, tags: [`wind-${upperIcao}`] },
+    });
+
+    if (!response.ok) return null;
+
+    const data: SynopticResponse = await response.json();
+    if (data.SUMMARY?.RESPONSE_CODE !== 1 || !data.STATION?.length) return null;
+
+    const station = data.STATION[0];
+    const obs = station.OBSERVATIONS;
+    if (!obs.date_time?.length) return null;
+
+    const observations: WindDataPoint[] = obs.date_time.map((dt, i) => ({
+      time: dt.split('T')[1]?.split(/[-+]/)[0]?.substring(0, 5) || '',
+      timestamp: new Date(dt).getTime() / 1000,
+      wspd: obs.wind_speed_set_1?.[i] ?? null,
+      wgst: obs.wind_gust_set_1?.[i] ?? null,
+      wdir: obs.wind_direction_set_1?.[i] ?? null,
+    }));
+
+    const airport = await getAirport(upperIcao);
+    return {
+      icao: upperIcao,
+      name: airport?.name || station.NAME || upperIcao,
+      observations,
+    };
+  } catch (error) {
+    console.error('Synoptic fetch error:', error);
+    return null;
+  }
+}
 
 export interface Runway {
   id: string;

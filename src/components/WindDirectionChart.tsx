@@ -258,7 +258,7 @@ export default function WindDirectionChart({
   };
 
   return (
-    <div className="chart-section">
+    <div className="chart-section h-full">
       <div className="chart-title">🧭 Wind Direction & Speed</div>
       <div className="h-[280px] relative">
         <canvas ref={canvasRef} className="w-full h-full" />

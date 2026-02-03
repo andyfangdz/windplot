@@ -94,7 +94,11 @@ export async function GET(request: NextRequest) {
       observations,
     };
 
-    return NextResponse.json(windData);
+    return NextResponse.json(windData, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+      },
+    });
   } catch (error) {
     console.error('Synoptic fetch error:', error);
     return NextResponse.json(

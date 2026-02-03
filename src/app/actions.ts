@@ -26,7 +26,11 @@ interface SynopticResponse {
 }
 
 // Fetch wind data from Synoptic API
-export async function getWindData(icao: string, hours: number): Promise<WindData | null> {
+export async function getWindData(
+  icao: string,
+  hours: number,
+  forceRefresh: boolean = false
+): Promise<WindData | null> {
   const upperIcao = icao.toUpperCase();
   const minutes = Math.min(Math.max(1, hours), 720) * 60;
   const url = `https://api.synopticdata.com/v2/stations/timeseries?STID=${upperIcao}&showemptystations=1&units=temp|F,speed|kts,english&recent=${minutes}&complete=1&token=${SYNOPTIC_TOKEN}&obtimezone=local`;
@@ -37,7 +41,10 @@ export async function getWindData(icao: string, hours: number): Promise<WindData
         'Origin': SYNOPTIC_ORIGIN,
         'User-Agent': 'WindPlot/1.0',
       },
-      next: { revalidate: 60, tags: [`wind-${upperIcao}`] },
+      // Bypass cache when forceRefresh is true (for manual/auto refresh)
+      ...(forceRefresh
+        ? { cache: 'no-store' as const }
+        : { next: { revalidate: 60, tags: [`wind-${upperIcao}`] } }),
     });
 
     if (!response.ok) return null;
@@ -248,12 +255,13 @@ export interface AirportFullData {
 // Fetch all data for an airport in parallel (wind + METAR)
 export async function getAirportFullData(
   icao: string,
-  hours: number
+  hours: number,
+  forceRefresh: boolean = false
 ): Promise<AirportFullData> {
   const upperIcao = icao.toUpperCase();
   const [airport, windData, metar] = await Promise.all([
     getAirport(upperIcao),
-    getWindData(upperIcao, hours),
+    getWindData(upperIcao, hours, forceRefresh),
     getMetar(upperIcao),
   ]);
 

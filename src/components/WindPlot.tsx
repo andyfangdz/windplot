@@ -61,7 +61,8 @@ export default function WindPlot({
   // Auto-refresh every 5 minutes
   useEffect(() => {
     const refresh = async () => {
-      const fullData = await getAirportFullData(icao, hours);
+      // Force refresh to bypass server cache and get fresh data
+      const fullData = await getAirportFullData(icao, hours, true);
       if (fullData.windData) {
         setData(fullData.windData);
         setAirport(fullData.airport);
@@ -145,9 +146,10 @@ export default function WindPlot({
   const handleRefresh = () => {
     setLoading(true);
     setError(null);
-    
+
     startTransition(async () => {
-      const fullData = await getAirportFullData(icao, hours);
+      // Force refresh to bypass server cache and get fresh data
+      const fullData = await getAirportFullData(icao, hours, true);
       setAirport(fullData.airport);
       setMetar(fullData.metar);
       setMetarIcao(icao);

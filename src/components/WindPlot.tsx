@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import AirportSelector from './AirportSelector';
 import WindSpeedChart from './WindSpeedChart';
@@ -37,8 +37,10 @@ export default function WindPlot({
   prefetchedData,
 }: WindPlotProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  
+
+  // Request ID to handle race conditions when switching airports rapidly
+  const requestIdRef = useRef(0);
+
   const [icao, setIcao] = useState(initialIcao);
   const [hours, setHours] = useState(initialHours);
   const [airport, setAirport] = useState<Airport | null>(initialAirport);
@@ -94,8 +96,11 @@ export default function WindPlot({
     return () => clearInterval(interval);
   }, [icao, hours]);
 
-  const handleAirportChange = (newIcao: string) => {
+  const handleAirportChange = async (newIcao: string) => {
     const upperIcao = newIcao.toUpperCase();
+
+    // Increment request ID to track this request for race condition handling
+    const requestId = ++requestIdRef.current;
 
     // Check if we have prefetched data for this airport that isn't stale
     const prefetched = cache[upperIcao];
@@ -123,73 +128,73 @@ export default function WindPlot({
     setLoading(true);
     setError(null);
 
-    startTransition(async () => {
-      let fullData = await getAirportFullData(upperIcao, hours, hasStaleCache);
-
-      // If server returned stale data (due to stale-while-revalidate), re-fetch with force
-      if (fullData.windData && isWindDataStale(fullData.windData) && !hasStaleCache) {
-        fullData = await getAirportFullData(upperIcao, hours, true);
-      }
-
-      setAirport(fullData.airport);
-      setMetar(fullData.metar);
-      setMetarIcao(upperIcao);
-      if (fullData.windData) {
-        setData(fullData.windData);
-        // Cache the result
-        setCache((prev) => ({ ...prev, [upperIcao]: fullData }));
-      } else {
-        setError('Failed to fetch data for this airport');
-      }
-      setLoading(false);
-    });
-
     router.push(`?icao=${upperIcao}&hours=${hours}`, { scroll: false });
+
+    let fullData = await getAirportFullData(upperIcao, hours, hasStaleCache);
+
+    // If server returned stale data (due to stale-while-revalidate), re-fetch with force
+    if (fullData.windData && isWindDataStale(fullData.windData) && !hasStaleCache) {
+      fullData = await getAirportFullData(upperIcao, hours, true);
+    }
+
+    // Check if this request is still current (handle race condition)
+    if (requestIdRef.current !== requestId) {
+      // A newer request was made, discard this result
+      return;
+    }
+
+    setAirport(fullData.airport);
+    setMetar(fullData.metar);
+    setMetarIcao(upperIcao);
+    if (fullData.windData) {
+      setData(fullData.windData);
+      // Cache the result
+      setCache((prev) => ({ ...prev, [upperIcao]: fullData }));
+    } else {
+      setError('Failed to fetch data for this airport');
+    }
+    setLoading(false);
   };
 
-  const handleHoursChange = (newHours: number) => {
+  const handleHoursChange = async (newHours: number) => {
     // Hours change invalidates cache for current airport
     setData(null);
     setMetar(null);
     setHours(newHours);
     setLoading(true);
     setError(null);
-    
-    startTransition(async () => {
-      const fullData = await getAirportFullData(icao, newHours);
-      setAirport(fullData.airport);
-      setMetar(fullData.metar);
-      setMetarIcao(icao);
-      if (fullData.windData) {
-        setData(fullData.windData);
-      } else {
-        setError('Failed to fetch data');
-      }
-      setLoading(false);
-    });
-    
+
     router.push(`?icao=${icao}&hours=${newHours}`, { scroll: false });
+
+    const fullData = await getAirportFullData(icao, newHours);
+    setAirport(fullData.airport);
+    setMetar(fullData.metar);
+    setMetarIcao(icao);
+    if (fullData.windData) {
+      setData(fullData.windData);
+    } else {
+      setError('Failed to fetch data');
+    }
+    setLoading(false);
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setLoading(true);
     setError(null);
 
-    startTransition(async () => {
-      // Force refresh to bypass server cache and get fresh data
-      const fullData = await getAirportFullData(icao, hours, true);
-      setAirport(fullData.airport);
-      setMetar(fullData.metar);
-      setMetarIcao(icao);
-      if (fullData.windData) {
-        setData(fullData.windData);
-        // Update cache
-        setCache((prev) => ({ ...prev, [icao]: fullData }));
-      } else {
-        setError('Failed to refresh data');
-      }
-      setLoading(false);
-    });
+    // Force refresh to bypass server cache and get fresh data
+    const fullData = await getAirportFullData(icao, hours, true);
+    setAirport(fullData.airport);
+    setMetar(fullData.metar);
+    setMetarIcao(icao);
+    if (fullData.windData) {
+      setData(fullData.windData);
+      // Update cache
+      setCache((prev) => ({ ...prev, [icao]: fullData }));
+    } else {
+      setError('Failed to refresh data');
+    }
+    setLoading(false);
   };
 
   const runways = airport?.runways || [];
@@ -262,7 +267,7 @@ export default function WindPlot({
           />
         </div>
 
-        {(loading || isPending) && !data && (
+        {loading && !data && (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-[#1d9bf0] border-t-transparent"></div>
             <p className="text-[#8899a6] mt-4">Loading weather data...</p>
@@ -284,7 +289,7 @@ export default function WindPlot({
         {data && data.observations.length > 0 && (
           <>
             {/* Stale data warning - only show when not loading fresh data */}
-            {isSynopticStale && !loading && !isPending && (
+            {isSynopticStale && !loading && (
               <div className="bg-yellow-900/30 border border-yellow-500/50 rounded-lg p-3 mb-4 text-center">
                 <p className="text-yellow-400 text-sm">
                   ⚠️ Weather data is {staleMinutes} minutes old — observations may be unavailable
@@ -323,10 +328,10 @@ export default function WindPlot({
           <p>Data from Synoptic Data API (5-min resolution)</p>
           <button
             onClick={handleRefresh}
-            disabled={loading || isPending}
+            disabled={loading}
             className="mt-2 px-3 py-1 bg-[#192734] hover:bg-[#22303c] rounded text-sm disabled:opacity-50"
           >
-            {loading || isPending ? 'Refreshing...' : 'Refresh'}
+            {loading ? 'Refreshing...' : 'Refresh'}
           </button>
         </footer>
       </div>

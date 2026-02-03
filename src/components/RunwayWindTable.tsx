@@ -8,6 +8,7 @@ interface RunwayWindTableProps {
   observations: WindDataPoint[];
   runways: Runway[];
   icao: string;
+  allowedSurfaces?: string[];
 }
 
 interface RunwayWindComponent {
@@ -115,10 +116,23 @@ export default function RunwayWindTable({
   observations,
   runways,
   icao,
+  allowedSurfaces,
 }: RunwayWindTableProps) {
   const [source, setSource] = useState<'5min' | 'metar'>('5min');
   const [metarData, setMetarData] = useState<MetarData | null>(null);
   const [metarLoading, setMetarLoading] = useState(false);
+
+  // Filter runways by allowed surface types
+  const filteredRunways = useMemo(() => {
+    if (!allowedSurfaces || allowedSurfaces.length === 0) return runways;
+    return runways.filter((rw) => {
+      // Check if runway surface matches any allowed surface (including partial matches)
+      const surface = rw.surface?.toUpperCase() || '';
+      return allowedSurfaces.some((allowed) => 
+        surface.includes(allowed) || allowed.includes(surface)
+      );
+    });
+  }, [runways, allowedSurfaces]);
 
   // Fetch METAR when source changes to metar
   useEffect(() => {
@@ -177,7 +191,7 @@ export default function RunwayWindTable({
         metarData.wdir,
         metarData.wspd,
         metarData.wgst,
-        runways
+        filteredRunways
       );
       const metarTime = metarData.obsTime
         ? new Date(metarData.obsTime * 1000).toISOString().slice(11, 16) + 'Z'
@@ -193,7 +207,7 @@ export default function RunwayWindTable({
         synopticWind.wdir,
         synopticWind.wspd,
         synopticWind.wgst,
-        runways
+        filteredRunways
       );
       return {
         windComponents: components,
@@ -203,9 +217,9 @@ export default function RunwayWindTable({
       };
     }
     return { windComponents: [], hasGusts: false, sourceInfo: '', sourceTime: null };
-  }, [source, metarData, synopticWind, runways]);
+  }, [source, metarData, synopticWind, filteredRunways]);
 
-  if (!runways.length) return null;
+  if (!filteredRunways.length) return null;
   if (source === '5min' && !synopticWind) return null;
 
   return (

@@ -90,6 +90,8 @@ export default function WindPlot({
   };
 
   const handleHoursChange = (newHours: number) => {
+    // Clear old data to prevent stale data flash during transition
+    setData(null);
     setHours(newHours);
     router.push(`?icao=${icao}&hours=${newHours}`, { scroll: false });
   };

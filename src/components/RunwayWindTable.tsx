@@ -126,7 +126,12 @@ export default function RunwayWindTable({
     });
   }, [runways, allowedSurfaces]);
 
-  // Fetch METAR when source changes to metar
+  // Clear METAR data when airport changes
+  useEffect(() => {
+    setMetarData(null);
+  }, [icao]);
+
+  // Fetch METAR when source changes to metar or airport changes
   useEffect(() => {
     if (source === 'metar' && icao) {
       setMetarLoading(true);

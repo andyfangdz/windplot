@@ -52,8 +52,15 @@ export default function WindPlot({
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<Settings>({ allowedSurfaces: [] });
   
-  // Cache of prefetched data (mutable ref to avoid re-renders)
-  const [cache, setCache] = useState<Record<string, AirportFullData>>(prefetchedData);
+  // Cache of prefetched data - transform from icao keys to icao-hours keys
+  const [cache, setCache] = useState<Record<string, AirportFullData>>(() => {
+    // Convert prefetchedData from {ICAO: data} to {ICAO-hours: data}
+    const transformed: Record<string, AirportFullData> = {};
+    for (const [icaoKey, data] of Object.entries(prefetchedData)) {
+      transformed[`${icaoKey}-${initialHours}`] = data;
+    }
+    return transformed;
+  });
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -69,7 +76,9 @@ export default function WindPlot({
           setData(fullData.windData);
           setAirport(fullData.airport);
           setMetar(fullData.metar);
-          setCache((prev) => ({ ...prev, [initialIcao]: fullData }));
+          // Update cache with airport+hours key
+          const cacheKey = `${initialIcao}-${initialHours}`;
+          setCache((prev) => ({ ...prev, [cacheKey]: fullData }));
         }
       });
     }
@@ -87,8 +96,9 @@ export default function WindPlot({
         setAirport(fullData.airport);
         setMetar(fullData.metar);
         setMetarIcao(icao);
-        // Update cache
-        setCache((prev) => ({ ...prev, [icao]: fullData }));
+        // Update cache with airport+hours key
+        const cacheKey = `${icao}-${hours}`;
+        setCache((prev) => ({ ...prev, [cacheKey]: fullData }));
       }
     };
 
@@ -102,8 +112,9 @@ export default function WindPlot({
     // Increment request ID to track this request for race condition handling
     const requestId = ++requestIdRef.current;
 
-    // Check if we have prefetched data for this airport that isn't stale
-    const prefetched = cache[upperIcao];
+    // Check if we have prefetched data for this airport+hours combo that isn't stale
+    const cacheKey = `${upperIcao}-${hours}`;
+    const prefetched = cache[cacheKey];
     const hasFreshCache = prefetched && prefetched.windData && !isWindDataStale(prefetched.windData);
 
     if (hasFreshCache) {
@@ -119,7 +130,7 @@ export default function WindPlot({
     }
 
     // No fresh cache - need to fetch from server
-    // If we have stale cached data, force server refresh to avoid stale-while-revalidate
+    // If we have stale cached data for this airport+hours, force server refresh to avoid stale-while-revalidate
     const hasStaleCache = Boolean(prefetched?.windData && isWindDataStale(prefetched.windData));
 
     setData(null);
@@ -148,8 +159,8 @@ export default function WindPlot({
     setMetarIcao(upperIcao);
     if (fullData.windData) {
       setData(fullData.windData);
-      // Cache the result
-      setCache((prev) => ({ ...prev, [upperIcao]: fullData }));
+      // Cache the result with airport+hours key
+      setCache((prev) => ({ ...prev, [cacheKey]: fullData }));
     } else {
       setError('Failed to fetch data for this airport');
     }
@@ -189,8 +200,9 @@ export default function WindPlot({
     setMetarIcao(icao);
     if (fullData.windData) {
       setData(fullData.windData);
-      // Update cache
-      setCache((prev) => ({ ...prev, [icao]: fullData }));
+      // Update cache with airport+hours key
+      const cacheKey = `${icao}-${hours}`;
+      setCache((prev) => ({ ...prev, [cacheKey]: fullData }));
     } else {
       setError('Failed to refresh data');
     }

@@ -82,7 +82,9 @@ export default function WindPlot({
 
     // Check if we have prefetched data for this airport that isn't stale
     const prefetched = cache[upperIcao];
-    if (prefetched && prefetched.windData && !isWindDataStale(prefetched.windData)) {
+    const hasFreshCache = prefetched && prefetched.windData && !isWindDataStale(prefetched.windData);
+
+    if (hasFreshCache) {
       // Use cached data immediately - no loading state needed
       setIcao(upperIcao);
       setAirport(prefetched.airport);
@@ -94,15 +96,19 @@ export default function WindPlot({
       return;
     }
 
-    // No prefetched data - fetch it
+    // No fresh cache - need to fetch from server
+    // If we have stale cached data, force server refresh to avoid stale-while-revalidate
+    const hasStaleCache = Boolean(prefetched?.windData && isWindDataStale(prefetched.windData));
+    const forceRefresh = hasStaleCache;
+
     setData(null);
     setMetar(null);
     setIcao(upperIcao);
     setLoading(true);
     setError(null);
-    
+
     startTransition(async () => {
-      const fullData = await getAirportFullData(upperIcao, hours);
+      const fullData = await getAirportFullData(upperIcao, hours, forceRefresh);
       setAirport(fullData.airport);
       setMetar(fullData.metar);
       setMetarIcao(upperIcao);
@@ -115,7 +121,7 @@ export default function WindPlot({
       }
       setLoading(false);
     });
-    
+
     router.push(`?icao=${upperIcao}&hours=${hours}`, { scroll: false });
   };
 

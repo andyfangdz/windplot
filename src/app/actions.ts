@@ -7,6 +7,44 @@ import { WindData, WindDataPoint } from '@/lib/types';
 const SYNOPTIC_TOKEN = '7c76618b66c74aee913bdbae4b448bdd';
 const SYNOPTIC_ORIGIN = 'https://www.weather.gov';
 
+// Fetch configuration
+const FETCH_TIMEOUT_MS = 5000;
+const MAX_RETRIES = 3;
+
+// Fetch with timeout and retry logic
+async function fetchWithTimeoutAndRetry(
+  url: string,
+  options: RequestInit = {},
+  retries: number = MAX_RETRIES
+): Promise<Response> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < retries; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      // Don't retry on abort (timeout) for the last attempt
+      if (attempt < retries - 1) {
+        // Exponential backoff: 500ms, 1000ms, 2000ms
+        await new Promise((resolve) => setTimeout(resolve, 500 * Math.pow(2, attempt)));
+      }
+    }
+  }
+
+  throw lastError || new Error('Fetch failed after retries');
+}
+
 interface SynopticObservations {
   date_time: string[];
   wind_speed_set_1?: (number | null)[];
@@ -36,7 +74,7 @@ export async function getWindData(
   const url = `https://api.synopticdata.com/v2/stations/timeseries?STID=${upperIcao}&showemptystations=1&units=temp|F,speed|kts,english&recent=${minutes}&complete=1&token=${SYNOPTIC_TOKEN}&obtimezone=local`;
 
   try {
-    const response = await fetch(url, {
+    const response = await fetchWithTimeoutAndRetry(url, {
       headers: {
         'Origin': SYNOPTIC_ORIGIN,
         'User-Agent': 'WindPlot/1.0',
@@ -161,7 +199,7 @@ export async function getMetar(icao: string): Promise<MetarData | null> {
   const url = `https://aviationweather.gov/api/data/metar?ids=${upperIcao}&format=json`;
 
   try {
-    const response = await fetch(url, {
+    const response = await fetchWithTimeoutAndRetry(url, {
       headers: {
         'User-Agent': 'WindPlot/1.0',
       },

@@ -156,7 +156,7 @@ export default function WindPlot({
           )}
         </header>
 
-        <div className="max-w-md mx-auto lg:max-w-none">
+        <div className="max-w-md mx-auto lg:max-w-none lg:mx-0">
           <AirportSelector
             selectedIcao={icao}
             selectedAirport={airport}
@@ -198,11 +198,11 @@ export default function WindPlot({
             )}
 
             {/* Charts: stacked on mobile, side-by-side on desktop */}
-            <div className="lg:grid lg:grid-cols-2 lg:gap-6">
-              <div className="lg:min-w-0">
+            <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-stretch">
+              <div className="lg:min-w-0 lg:flex lg:flex-col">
                 <WindSpeedChart observations={data.observations} />
               </div>
-              <div className="lg:min-w-0">
+              <div className="lg:min-w-0 lg:flex lg:flex-col">
                 <WindDirectionChart observations={data.observations} runways={runways} />
               </div>
             </div>

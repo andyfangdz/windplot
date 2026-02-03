@@ -8,6 +8,7 @@ import WindDirectionChart from './WindDirectionChart';
 import RunwayWindTable from './RunwayWindTable';
 import SettingsModal, { Settings, loadSettings, saveSettings } from './SettingsModal';
 import { WindData } from '@/lib/types';
+import { isWindDataStale } from '@/lib/cache';
 import {
   getAirportFullData,
   Airport,
@@ -77,10 +78,10 @@ export default function WindPlot({
 
   const handleAirportChange = (newIcao: string) => {
     const upperIcao = newIcao.toUpperCase();
-    
-    // Check if we have prefetched data for this airport
+
+    // Check if we have prefetched data for this airport that isn't stale
     const prefetched = cache[upperIcao];
-    if (prefetched && prefetched.windData) {
+    if (prefetched && prefetched.windData && !isWindDataStale(prefetched.windData)) {
       // Use cached data immediately - no loading state needed
       setIcao(upperIcao);
       setAirport(prefetched.airport);

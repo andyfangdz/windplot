@@ -139,6 +139,47 @@ export async function getFavoriteAirports(): Promise<AirportSearchResult[]> {
   }).filter((a): a is AirportSearchResult => a !== null);
 }
 
+// METAR data type
+export interface MetarData {
+  wdir: number | null;
+  wspd: number | null;
+  wgst: number | null;
+  rawOb?: string;
+  obsTime?: number;
+}
+
+// Fetch latest METAR for an airport
+export async function getMetar(icao: string): Promise<MetarData | null> {
+  const upperIcao = icao.toUpperCase();
+  const url = `https://aviationweather.gov/api/data/metar?ids=${upperIcao}&format=json`;
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'WindPlot/1.0',
+      },
+      next: { revalidate: 60, tags: [`metar-${upperIcao}`] },
+    });
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    if (!Array.isArray(data) || data.length === 0) return null;
+
+    const latest = data[0];
+    return {
+      wdir: latest.wdir === 0 ? null : latest.wdir,
+      wspd: latest.wspd,
+      wgst: latest.wgst,
+      rawOb: latest.rawOb,
+      obsTime: latest.obsTime,
+    };
+  } catch (error) {
+    console.error('METAR fetch error:', error);
+    return null;
+  }
+}
+
 // Search airports by ICAO or name (returns minimal data)
 export async function searchAirports(
   query: string,

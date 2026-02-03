@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { WindDataPoint } from '@/lib/types';
-import { Runway } from '@/app/actions';
+import { Runway, MetarData, getMetar } from '@/app/actions';
 
 interface RunwayWindTableProps {
   observations: WindDataPoint[];
@@ -20,14 +20,6 @@ interface RunwayWindComponent {
   gustCrosswind: number | null;
   gustCrosswindDir: 'L' | 'R' | '';
   isFavored: boolean;
-}
-
-interface MetarData {
-  wdir: number | null;
-  wspd: number | null;
-  wgst: number | null;
-  rawOb?: string;
-  obsTime?: number;
 }
 
 function calculateWindComponents(
@@ -138,20 +130,8 @@ export default function RunwayWindTable({
   useEffect(() => {
     if (source === 'metar' && icao) {
       setMetarLoading(true);
-      fetch(`/api/metar-latest?icao=${icao}`)
-        .then((res) => {
-          if (!res.ok) throw new Error('Failed to fetch');
-          return res.json();
-        })
-        .then((data) => {
-          setMetarData({
-            wdir: data.wdir === 0 ? null : data.wdir,
-            wspd: data.wspd,
-            wgst: data.wgst,
-            rawOb: data.rawOb,
-            obsTime: data.obsTime,
-          });
-        })
+      getMetar(icao)
+        .then((data) => setMetarData(data))
         .catch(() => setMetarData(null))
         .finally(() => setMetarLoading(false));
     }

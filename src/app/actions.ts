@@ -158,7 +158,7 @@ export async function getMetar(icao: string): Promise<MetarData | null> {
       headers: {
         'User-Agent': 'WindPlot/1.0',
       },
-      next: { revalidate: 60, tags: [`metar-${upperIcao}`] },
+      cache: 'no-store',
     });
 
     if (!response.ok) return null;

@@ -8,6 +8,7 @@ import WindDirectionChart from './WindDirectionChart';
 import RunwayWindTable from './RunwayWindTable';
 import SettingsModal, { Settings, loadSettings, saveSettings } from './SettingsModal';
 import { WindData } from '@/lib/types';
+import { isWindDataStale } from '@/lib/cache';
 import {
   getAirportFullData,
   Airport,
@@ -75,20 +76,12 @@ export default function WindPlot({
     return () => clearInterval(interval);
   }, [icao, hours]);
 
-  // Check if wind data is stale (>70 minutes old)
-  const isDataStale = (windData: WindData | null): boolean => {
-    if (!windData?.observations?.length) return true;
-    const latestTimestamp = Math.max(...windData.observations.map((o) => o.timestamp));
-    const staleThresholdMs = 70 * 60 * 1000;
-    return Date.now() - latestTimestamp * 1000 > staleThresholdMs;
-  };
-
   const handleAirportChange = (newIcao: string) => {
     const upperIcao = newIcao.toUpperCase();
 
     // Check if we have prefetched data for this airport that isn't stale
     const prefetched = cache[upperIcao];
-    if (prefetched && prefetched.windData && !isDataStale(prefetched.windData)) {
+    if (prefetched && prefetched.windData && !isWindDataStale(prefetched.windData)) {
       // Use cached data immediately - no loading state needed
       setIcao(upperIcao);
       setAirport(prefetched.airport);

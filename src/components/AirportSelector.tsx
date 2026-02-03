@@ -15,7 +15,6 @@ interface AirportSelectorProps {
   onSelect: (icao: string) => void;
   hours: number;
   onHoursChange: (hours: number) => void;
-  onPrefetch?: (icaos: string[]) => void;
 }
 
 export default function AirportSelector({
@@ -25,7 +24,6 @@ export default function AirportSelector({
   onSelect,
   hours,
   onHoursChange,
-  onPrefetch,
 }: AirportSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<AirportSearchResult[]>([]);
@@ -43,18 +41,12 @@ export default function AirportSelector({
         setSearchResults(results);
         setShowDropdown(results.length > 0);
         setHighlightedIndex(0);
-        
-        // Prefetch top 3 search results
-        if (results.length > 0 && onPrefetch) {
-          const icaosToPrefetch = results.slice(0, 3).map((r) => r.icao);
-          onPrefetch(icaosToPrefetch);
-        }
       });
     } else {
       setSearchResults([]);
       setShowDropdown(false);
     }
-  }, [searchQuery, onPrefetch]);
+  }, [searchQuery]);
 
   // Handle click outside to close dropdown
   useEffect(() => {

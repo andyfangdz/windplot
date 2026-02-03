@@ -43,6 +43,7 @@ export default function WindPlot({
       try {
         const response = await fetch(`/api/synoptic?icao=${icao}&hours=${hours}`, {
           signal: abortController.signal,
+          cache: 'no-store',
         });
         if (!response.ok) {
           const err = await response.json();
@@ -100,7 +101,9 @@ export default function WindPlot({
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/synoptic?icao=${icao}&hours=${hours}`);
+      const response = await fetch(`/api/synoptic?icao=${icao}&hours=${hours}`, {
+        cache: 'no-store',
+      });
       if (!response.ok) {
         const err = await response.json();
         throw new Error(err.error || 'Failed to fetch data');

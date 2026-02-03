@@ -6,6 +6,7 @@ import AirportSelector from './AirportSelector';
 import WindSpeedChart from './WindSpeedChart';
 import WindDirectionChart from './WindDirectionChart';
 import RunwayWindTable from './RunwayWindTable';
+import SettingsModal, { Settings, loadSettings, saveSettings } from './SettingsModal';
 import { WindData } from '@/lib/types';
 import { getAirport, getWindData, Airport, AirportSearchResult } from '@/app/actions';
 
@@ -34,6 +35,13 @@ export default function WindPlot({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(initialData ? new Date() : null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [settings, setSettings] = useState<Settings>({ allowedSurfaces: [] });
+
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    setSettings(loadSettings());
+  }, []);
 
   // Auto-refresh every 5 minutes using server action
   useEffect(() => {
@@ -126,7 +134,17 @@ export default function WindPlot({
   return (
     <div className="min-h-screen bg-[#0f1419] text-white p-4">
       <div className="max-w-md lg:max-w-4xl mx-auto">
-        <header className="text-center mb-4">
+        <header className="text-center mb-4 relative">
+          <button
+            onClick={() => setShowSettings(true)}
+            className="absolute right-0 top-0 p-2 text-[#8899a6] hover:text-white transition-colors"
+            title="Settings"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
           <h1 className="text-2xl font-bold mb-1">✈️ {icao} Wind</h1>
           <p className="text-[#8899a6] text-sm">
             {data?.name || airport?.name || icao} • Last {hours}h (5-min obs)
@@ -189,7 +207,12 @@ export default function WindPlot({
               </div>
             </div>
             {runways.length > 0 && (
-              <RunwayWindTable observations={data.observations} runways={runways} icao={icao} />
+              <RunwayWindTable
+                observations={data.observations}
+                runways={runways}
+                icao={icao}
+                allowedSurfaces={settings.allowedSurfaces}
+              />
             )}
           </>
         )}
@@ -211,6 +234,13 @@ export default function WindPlot({
           </button>
         </footer>
       </div>
+
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        settings={settings}
+        onSave={setSettings}
+      />
     </div>
   );
 }

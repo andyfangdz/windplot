@@ -1,22 +1,23 @@
 #!/usr/bin/env node
 /**
  * Fetches and parses FAA NASR data to generate airport/runway JSON
- * Run with: node scripts/update-nasr.mjs
+ *
+ * Usage:
+ *   npm run update-nasr:download  - Download fresh NASR data from FAA
+ *   npm run update-nasr:parse     - Parse existing data (must download first)
+ *   npm run update-nasr           - Download and parse (full update)
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const OUTPUT_FILE = path.join(__dirname, '..', 'src', 'lib', 'airports-data.json');
-
-// NASR subscription URL pattern
-const NASR_BASE = 'https://nfdc.faa.gov/webContent/28DaySub/extra/';
 
 function parseCSVLine(line) {
   const result = [];
@@ -66,30 +67,49 @@ async function downloadNASRData() {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
 
-  console.log('Fetching NASR subscription info...');
-  const subscriptionPage = execSync(
+  console.log('Fetching NASR subscription index...');
+  const indexPage = execSync(
     'curl -sL "https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/NASR_Subscription/"',
     { encoding: 'utf-8' }
   );
 
-  const dateMatch = subscriptionPage.match(/(\d{2})_([A-Z][a-z]{2})_(\d{4})_APT_CSV\.zip/i);
+  // Find the current subscription date (first date link after "Current")
+  const dateMatch = indexPage.match(/NASR_Subscription\/(\d{4}-\d{2}-\d{2})/);
   if (!dateMatch) {
     throw new Error('Could not find current NASR subscription date');
   }
 
-  const [, day, month, year] = dateMatch;
-  const zipName = `${day}_${month}_${year}_APT_CSV.zip`;
-  const zipUrl = `${NASR_BASE}${zipName}`;
+  const subscriptionDate = dateMatch[1];
+  console.log(`Current subscription: ${subscriptionDate}`);
+
+  // Fetch the specific subscription page to get the APT_CSV download link
+  const subscriptionUrl = `https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/NASR_Subscription/${subscriptionDate}/`;
+  console.log('Fetching subscription page...');
+  const subscriptionPage = execSync(`curl -sL "${subscriptionUrl}"`, { encoding: 'utf-8' });
+
+  // Look for the APT_CSV.zip URL
+  const urlMatch = subscriptionPage.match(/href="(https:\/\/nfdc\.faa\.gov\/webContent\/28DaySub\/extra\/[^"]*APT_CSV\.zip)"/i);
+  if (!urlMatch) {
+    throw new Error('Could not find APT_CSV.zip download URL');
+  }
+
+  const zipUrl = urlMatch[1];
+  const zipName = zipUrl.split('/').pop();
   const zipPath = path.join(DATA_DIR, 'APT_CSV.zip');
 
   console.log(`Downloading ${zipName}...`);
-  execSync(`curl -sL "${zipUrl}" -o "${zipPath}"`, { encoding: 'utf-8' });
+  execSync(`curl -sL "${zipUrl}" -o "${zipPath}"`);
 
   console.log('Extracting...');
-  execSync(
-    `python3 -c "import zipfile; zipfile.ZipFile('${zipPath}').extractall('${DATA_DIR}')"`,
-    { encoding: 'utf-8' }
-  );
+  // Use unzip with python3 as fallback
+  try {
+    execSync(`unzip -o "${zipPath}" -d "${DATA_DIR}"`, { stdio: 'pipe' });
+  } catch {
+    execSync(
+      `python3 -c "import zipfile; zipfile.ZipFile('${zipPath}').extractall('${DATA_DIR}')"`,
+      { encoding: 'utf-8' }
+    );
+  }
 
   console.log('Download complete.');
 }
@@ -146,6 +166,8 @@ function parseRunwayEnds() {
     const rwyId = row['RWY_ID']?.trim();
     const endId = row['RWY_END_ID']?.trim();
     const trueAlignment = row['TRUE_ALIGNMENT'] ? parseInt(row['TRUE_ALIGNMENT'], 10) : null;
+    // Use actual LDA from FAA data (0 means not published, will fall back to runway length)
+    const lda = row['LNDG_DIST_AVBL'] ? parseInt(row['LNDG_DIST_AVBL'], 10) : 0;
 
     if (!siteNo || !rwyId || !endId) continue;
 
@@ -158,6 +180,7 @@ function parseRunwayEnds() {
       rwyId,
       endId,
       trueAlignment,
+      lda,
     });
   }
 
@@ -190,12 +213,11 @@ function parseRunways() {
   return runways;
 }
 
-async function main() {
-  const forceDownload = process.argv.includes('--download');
-  
+function parseAndGenerate() {
   const basePath = path.join(DATA_DIR, 'APT_BASE.csv');
-  if (forceDownload || !fs.existsSync(basePath)) {
-    await downloadNASRData();
+  if (!fs.existsSync(basePath)) {
+    console.error('Error: NASR data not found. Run "npm run update-nasr:download" first.');
+    process.exit(1);
   }
 
   console.log('Parsing airport data...');
@@ -213,7 +235,7 @@ async function main() {
 
     for (const rwy of siteRunways) {
       const ends = siteRunwayEnds.filter(e => e.rwyId === rwy.id);
-      
+
       const sortedEnds = ends.sort((a, b) => {
         const numA = parseInt(a.endId.replace(/[LRC]/g, ''), 10);
         const numB = parseInt(b.endId.replace(/[LRC]/g, ''), 10);
@@ -232,6 +254,9 @@ async function main() {
           length: rwy.length,
           width: rwy.width,
           surface: rwy.surface,
+          // Use actual LDA from FAA, fall back to runway length if not published
+          lowLda: lowEnd.lda || rwy.length,
+          highLda: highEnd.lda || rwy.length,
         });
       }
     }
@@ -252,4 +277,23 @@ async function main() {
   console.log(`Wrote ${OUTPUT_FILE}`);
 }
 
-main().catch(console.error);
+async function main() {
+  const mode = process.argv[2];
+
+  if (mode === '--download') {
+    // Download only
+    await downloadNASRData();
+  } else if (mode === '--parse') {
+    // Parse only (data must exist)
+    parseAndGenerate();
+  } else {
+    // Default: download and parse
+    await downloadNASRData();
+    parseAndGenerate();
+  }
+}
+
+main().catch(err => {
+  console.error(err.message);
+  process.exit(1);
+});

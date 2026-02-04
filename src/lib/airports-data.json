@@ -1,6 +1,6 @@
 {
-  "generated": "2026-02-04T00:46:59.001Z",
-  "count": 4449,
+  "generated": "2026-02-04T00:51:59.064Z",
+  "count": 4450,
   "airports": [
     {
       "icao": "CYCD",
@@ -3008,7 +3008,7 @@
     {
       "icao": "K0I2",
       "faaId": "0I2",
-      "name": "BRAZIL CLAY COUNTY",
+      "name": "BRAZIL CLAY COUNTY/CHARLES B HALL FLD",
       "city": "BRAZIL",
       "state": "IN",
       "lat": 39.47673555,
@@ -16976,6 +16976,28 @@
       ]
     },
     {
+      "icao": "K49OH",
+      "faaId": "49OH",
+      "name": "SKY RANCH",
+      "city": "WEST JEFFERSON",
+      "state": "OH",
+      "lat": 39.93545138,
+      "lon": -83.23639861,
+      "runways": [
+        {
+          "id": "06/24",
+          "low": "06",
+          "high": "24",
+          "trueHdg": 56,
+          "length": 3000,
+          "width": 100,
+          "surface": "TURF",
+          "lowDisplacedThreshold": 0,
+          "highDisplacedThreshold": 0
+        }
+      ]
+    },
+    {
       "icao": "K49U",
       "faaId": "49U",
       "name": "SHOSHONI MUNI",
@@ -21722,28 +21744,6 @@
           "length": 5100,
           "width": 75,
           "surface": "ASPH",
-          "lowDisplacedThreshold": 0,
-          "highDisplacedThreshold": 0
-        }
-      ]
-    },
-    {
-      "icao": "K5SD3",
-      "faaId": "5SD3",
-      "name": "BOWDLE MUNI",
-      "city": "BOWDLE",
-      "state": "SD",
-      "lat": 45.43956111,
-      "lon": -99.67520972,
-      "runways": [
-        {
-          "id": "13/31",
-          "low": "13",
-          "high": "31",
-          "trueHdg": 143,
-          "length": 3600,
-          "width": 150,
-          "surface": "TURF",
           "lowDisplacedThreshold": 0,
           "highDisplacedThreshold": 0
         }
@@ -29197,6 +29197,28 @@
       ]
     },
     {
+      "icao": "K8SD",
+      "faaId": "8SD",
+      "name": "BOWDLE MUNI",
+      "city": "BOWDLE",
+      "state": "SD",
+      "lat": 45.43956111,
+      "lon": -99.67520972,
+      "runways": [
+        {
+          "id": "13/31",
+          "low": "13",
+          "high": "31",
+          "trueHdg": 143,
+          "length": 3600,
+          "width": 150,
+          "surface": "TURF",
+          "lowDisplacedThreshold": 0,
+          "highDisplacedThreshold": 0
+        }
+      ]
+    },
+    {
       "icao": "K8T6",
       "faaId": "8T6",
       "name": "LIVE OAK COUNTY",
@@ -32337,8 +32359,8 @@
       "name": "ADDISON",
       "city": "DALLAS",
       "state": "TX",
-      "lat": 32.96855555,
-      "lon": -96.83644444,
+      "lat": 32.96855416,
+      "lon": -96.83645305,
       "runways": [
         {
           "id": "16/34",
@@ -32863,7 +32885,7 @@
           "high": "26",
           "trueHdg": 78,
           "length": 6001,
-          "width": 75,
+          "width": 100,
           "surface": "ASPH",
           "lowDisplacedThreshold": 0,
           "highDisplacedThreshold": 0
@@ -35142,15 +35164,15 @@
       "name": "HARRISON COUNTY",
       "city": "MARSHALL",
       "state": "TX",
-      "lat": 32.5205,
-      "lon": -94.30777777,
+      "lat": 32.52049472,
+      "lon": -94.3077725,
       "runways": [
         {
           "id": "02/20",
           "low": "02",
           "high": "20",
           "trueHdg": 22,
-          "length": 3299,
+          "length": 3304,
           "width": 60,
           "surface": "ASPH",
           "lowDisplacedThreshold": 0,
@@ -53930,8 +53952,8 @@
       "name": "EAGLE CREEK AIRPARK",
       "city": "INDIANAPOLIS",
       "state": "IN",
-      "lat": 39.83071741,
-      "lon": -86.29438575,
+      "lat": 39.83071722,
+      "lon": -86.29438555,
       "runways": [
         {
           "id": "03/21",
@@ -56042,15 +56064,15 @@
       "name": "SIERRA VISTA MUNI-LIBBY AAF",
       "city": "FORT HUACHUCA SIERRA VISTA",
       "state": "AZ",
-      "lat": 31.58847222,
-      "lon": -110.34438888,
+      "lat": 31.58846111,
+      "lon": -110.344375,
       "runways": [
         {
           "id": "03/21",
           "low": "03",
           "high": "21",
           "trueHdg": 37,
-          "length": 4285,
+          "length": 4286,
           "width": 75,
           "surface": "ASPH-CONC",
           "lowDisplacedThreshold": 1253,
@@ -56072,7 +56094,7 @@
           "low": "12",
           "high": "30",
           "trueHdg": 127,
-          "length": 5366,
+          "length": 5367,
           "width": 100,
           "surface": "ASPH-CONC",
           "lowDisplacedThreshold": 0,
@@ -58715,19 +58737,19 @@
       "name": "GREENEVILLE MUNI",
       "city": "GREENEVILLE",
       "state": "TN",
-      "lat": 36.19572222,
-      "lon": -82.81136111,
+      "lat": 36.19573444,
+      "lon": -82.81136638,
       "runways": [
         {
           "id": "05/23",
           "low": "05",
           "high": "23",
           "trueHdg": 47,
-          "length": 6300,
+          "length": 6301,
           "width": 100,
           "surface": "ASPH",
           "lowDisplacedThreshold": 0,
-          "highDisplacedThreshold": 0
+          "highDisplacedThreshold": 552
         }
       ]
     },
@@ -66910,8 +66932,8 @@
       "name": "WILMINGTON INTL",
       "city": "WILMINGTON",
       "state": "NC",
-      "lat": 34.27113888,
-      "lon": -77.90288888,
+      "lat": 34.27115138,
+      "lon": -77.90289055,
       "runways": [
         {
           "id": "06/24",
@@ -80957,18 +80979,18 @@
       "name": "SELFRIDGE ANGB",
       "city": "MOUNT CLEMENS",
       "state": "MI",
-      "lat": 42.61389361,
-      "lon": -82.83690972,
+      "lat": 42.61251111,
+      "lon": -82.83695833,
       "runways": [
         {
           "id": "01/19",
           "low": "01",
           "high": "19",
-          "trueHdg": 2,
-          "length": 9000,
+          "trueHdg": 1,
+          "length": 10010,
           "width": 150,
           "surface": "PEM",
-          "lowDisplacedThreshold": 0,
+          "lowDisplacedThreshold": 1009,
           "highDisplacedThreshold": 0
         }
       ]
@@ -85753,15 +85775,15 @@
       "name": "OCALA INTL-JIM TAYLOR FLD",
       "city": "OCALA",
       "state": "FL",
-      "lat": 29.17187677,
-      "lon": -82.22411463,
+      "lat": 29.17187638,
+      "lon": -82.22411444,
       "runways": [
         {
           "id": "08/26",
           "low": "08",
           "high": "26",
           "trueHdg": 80,
-          "length": 3009,
+          "length": 3010,
           "width": 50,
           "surface": "ASPH",
           "lowDisplacedThreshold": 0,
@@ -85772,11 +85794,11 @@
           "low": "18",
           "high": "36",
           "trueHdg": 180,
-          "length": 7467,
+          "length": 7468,
           "width": 150,
           "surface": "ASPH",
           "lowDisplacedThreshold": 160,
-          "highDisplacedThreshold": 561
+          "highDisplacedThreshold": 560
         }
       ]
     },
@@ -91935,15 +91957,15 @@
       "name": "POWELL MUNI",
       "city": "POWELL",
       "state": "WY",
-      "lat": 44.86716666,
-      "lon": -108.79341666,
+      "lat": 44.86722222,
+      "lon": -108.79336805,
       "runways": [
         {
           "id": "03/21",
           "low": "03",
           "high": "21",
           "trueHdg": 44,
-          "length": 2623,
+          "length": 2529,
           "width": 100,
           "surface": "TURF-DIRT",
           "lowDisplacedThreshold": 0,
@@ -91965,7 +91987,7 @@
           "low": "17",
           "high": "35",
           "trueHdg": 180,
-          "length": 2709,
+          "length": 2698,
           "width": 100,
           "surface": "TURF-DIRT",
           "lowDisplacedThreshold": 0,
@@ -95752,15 +95774,15 @@
       "name": "GRAHAM MUNI",
       "city": "GRAHAM",
       "state": "TX",
-      "lat": 33.11072222,
-      "lon": -98.55477777,
+      "lat": 33.11072583,
+      "lon": -98.55477694,
       "runways": [
         {
           "id": "03/21",
           "low": "03",
           "high": "21",
           "trueHdg": 40,
-          "length": 5000,
+          "length": 5001,
           "width": 75,
           "surface": "ASPH",
           "lowDisplacedThreshold": 0,
@@ -95772,7 +95794,7 @@
           "high": "36",
           "trueHdg": 183,
           "length": 3317,
-          "width": 50,
+          "width": 60,
           "surface": "ASPH",
           "lowDisplacedThreshold": 639,
           "highDisplacedThreshold": 0
@@ -97600,8 +97622,8 @@
       "name": "SACRAMENTO EXEC",
       "city": "SACRAMENTO",
       "state": "CA",
-      "lat": 38.51286111,
-      "lon": -121.49330027,
+      "lat": 38.51286138,
+      "lon": -121.49330111,
       "runways": [
         {
           "id": "02/20",
@@ -106939,13 +106961,13 @@
       "name": "COUNCIL MUNI",
       "city": "COUNCIL",
       "state": "ID",
-      "lat": 44.75033333,
-      "lon": -116.44505555,
+      "lat": 44.75034444,
+      "lon": -116.44505694,
       "runways": [
         {
-          "id": "17/35",
-          "low": "17",
-          "high": "35",
+          "id": "18/36",
+          "low": "18",
+          "high": "36",
           "trueHdg": 190,
           "length": 3600,
           "width": 60,
@@ -110030,15 +110052,15 @@
       "name": "STEBBINS",
       "city": "STEBBINS",
       "state": "AK",
-      "lat": 63.51597222,
-      "lon": -162.278,
+      "lat": 63.51596916,
+      "lon": -162.27800666,
       "runways": [
         {
           "id": "05/23",
           "low": "05",
           "high": "23",
           "trueHdg": 64,
-          "length": 2999,
+          "length": 3000,
           "width": 60,
           "surface": "GRAVEL",
           "lowDisplacedThreshold": 0,
@@ -118676,18 +118698,18 @@
       "name": "ANTONIO RIVERA RODRIGUEZ",
       "city": "ISLA DE VIEQUES",
       "state": "PR",
-      "lat": 18.13481111,
-      "lon": -65.49361666,
+      "lat": 18.13480555,
+      "lon": -65.49361111,
       "runways": [
         {
           "id": "09/27",
           "low": "09",
           "high": "27",
           "trueHdg": 76,
-          "length": 4301,
+          "length": 4294,
           "width": 75,
           "surface": "ASPH",
-          "lowDisplacedThreshold": 207,
+          "lowDisplacedThreshold": 200,
           "highDisplacedThreshold": 0
         }
       ]

@@ -234,9 +234,9 @@ export async function getMetar(icao: string): Promise<MetarData | null> {
 
     const latest = data[0];
     return {
-      wdir: latest.wdir === 0 ? null : latest.wdir,
-      wspd: latest.wspd,
-      wgst: latest.wgst,
+      wdir: latest.wdir === 0 ? null : (latest.wdir ?? null),
+      wspd: latest.wspd ?? null,
+      wgst: latest.wgst ?? null,
       rawOb: latest.rawOb,
       obsTime: latest.obsTime,
     };

@@ -146,6 +146,7 @@ function parseRunwayEnds() {
     const rwyId = row['RWY_ID']?.trim();
     const endId = row['RWY_END_ID']?.trim();
     const trueAlignment = row['TRUE_ALIGNMENT'] ? parseInt(row['TRUE_ALIGNMENT'], 10) : null;
+    const displacedThreshold = row['DISPLACED_THR_LEN'] ? parseInt(row['DISPLACED_THR_LEN'], 10) : 0;
 
     if (!siteNo || !rwyId || !endId) continue;
 
@@ -158,6 +159,7 @@ function parseRunwayEnds() {
       rwyId,
       endId,
       trueAlignment,
+      displacedThreshold,
     });
   }
 
@@ -232,6 +234,8 @@ async function main() {
           length: rwy.length,
           width: rwy.width,
           surface: rwy.surface,
+          lowDisplacedThreshold: lowEnd.displacedThreshold || 0,
+          highDisplacedThreshold: highEnd.displacedThreshold || 0,
         });
       }
     }

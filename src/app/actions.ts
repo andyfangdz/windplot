@@ -1,5 +1,7 @@
 'use server';
 
+import * as fs from 'fs';
+import * as path from 'path';
 import airportsData from '@/lib/airports-data.json';
 import { WindData, WindDataPoint } from '@/lib/types';
 import distance from '@turf/distance';
@@ -161,21 +163,17 @@ const airportsByFaaId: Map<string, Airport> = new Map(
   airports.filter((a) => a.faaId).map((a) => [a.faaId, a])
 );
 
-// Build spatial index for efficient nearby airport queries
-// Filter airports with valid coordinates for the spatial index
+// Filter airports with valid coordinates (must match order used when building index)
 const airportsWithCoords = airports.filter(
   (a) => a.lat !== undefined && a.lon !== undefined
 );
-// Create k-d tree index (built once at module initialization)
-const spatialIndex = new KDBush(
-  airportsWithCoords.length,
-  64, // node size (default)
-  Float64Array
-);
-for (const airport of airportsWithCoords) {
-  spatialIndex.add(airport.lon, airport.lat);
-}
-spatialIndex.finish();
+
+// Load pre-built spatial index from binary file (built by update-nasr script)
+const spatialIndexPath = path.join(process.cwd(), 'src', 'lib', 'spatial-index.bin');
+const indexBuffer = fs.readFileSync(spatialIndexPath);
+// Convert Node Buffer to ArrayBuffer for KDBush.from()
+const arrayBuffer = indexBuffer.buffer.slice(indexBuffer.byteOffset, indexBuffer.byteOffset + indexBuffer.length);
+const spatialIndex = KDBush.from(arrayBuffer);
 
 // Get airport by ICAO code or FAA ID (returns full data including runways)
 export async function getAirport(id: string): Promise<Airport | null> {

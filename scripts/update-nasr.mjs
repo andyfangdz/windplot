@@ -10,14 +10,31 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
+import { pipeline } from 'stream/promises';
+import { createWriteStream } from 'fs';
+import { execSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const OUTPUT_FILE = path.join(__dirname, '..', 'src', 'lib', 'airports-data.json');
+
+// Fetch with retry for transient network issues
+async function fetchWithRetry(url, options = {}, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url, options);
+      return response;
+    } catch (err) {
+      if (i === retries - 1) throw err;
+      const delay = Math.pow(2, i) * 500;
+      console.log(`  Retry ${i + 1}/${retries} after ${delay}ms...`);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+}
 
 function parseCSVLine(line) {
   const result = [];
@@ -68,10 +85,13 @@ async function downloadNASRData() {
   }
 
   console.log('Fetching NASR subscription index...');
-  const indexPage = execSync(
-    'curl -sL "https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/NASR_Subscription/"',
-    { encoding: 'utf-8' }
+  const indexResponse = await fetchWithRetry(
+    'https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/NASR_Subscription/'
   );
+  if (!indexResponse.ok) {
+    throw new Error(`Failed to fetch subscription index: ${indexResponse.status}`);
+  }
+  const indexPage = await indexResponse.text();
 
   // Find the current subscription date (first date link after "Current")
   const dateMatch = indexPage.match(/NASR_Subscription\/(\d{4}-\d{2}-\d{2})/);
@@ -85,10 +105,11 @@ async function downloadNASRData() {
   // Fetch the specific subscription page to get the APT_CSV download link
   const subscriptionUrl = `https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/NASR_Subscription/${subscriptionDate}/`;
   console.log('Fetching subscription page...');
-  const subscriptionPage = execSync(
-    `curl -sL "${subscriptionUrl}"`,
-    { encoding: 'utf-8' }
-  );
+  const subscriptionResponse = await fetchWithRetry(subscriptionUrl);
+  if (!subscriptionResponse.ok) {
+    throw new Error(`Failed to fetch subscription page: ${subscriptionResponse.status}`);
+  }
+  const subscriptionPage = await subscriptionResponse.text();
 
   // Look for the APT_CSV.zip URL
   const urlMatch = subscriptionPage.match(/href="(https:\/\/nfdc\.faa\.gov\/webContent\/28DaySub\/extra\/[^"]*APT_CSV\.zip)"/i);
@@ -101,13 +122,23 @@ async function downloadNASRData() {
   const zipPath = path.join(DATA_DIR, 'APT_CSV.zip');
 
   console.log(`Downloading ${zipName}...`);
-  execSync(`curl -sL "${zipUrl}" -o "${zipPath}"`, { encoding: 'utf-8' });
+  const zipResponse = await fetchWithRetry(zipUrl);
+  if (!zipResponse.ok) {
+    throw new Error(`Failed to download zip: ${zipResponse.status}`);
+  }
+  await pipeline(zipResponse.body, createWriteStream(zipPath));
 
   console.log('Extracting...');
-  execSync(
-    `python3 -c "import zipfile; zipfile.ZipFile('${zipPath}').extractall('${DATA_DIR}')"`,
-    { encoding: 'utf-8' }
-  );
+  // Use Node.js unzip via child process (python3 as fallback)
+  try {
+    execSync(`unzip -o "${zipPath}" -d "${DATA_DIR}"`, { stdio: 'pipe' });
+  } catch {
+    // Fallback to python if unzip not available
+    execSync(
+      `python3 -c "import zipfile; zipfile.ZipFile('${zipPath}').extractall('${DATA_DIR}')"`,
+      { encoding: 'utf-8' }
+    );
+  }
 
   console.log('Download complete.');
 }

@@ -1,12 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useTransition } from 'react';
-import {
-  searchAirports,
-  getAirport,
-  AirportSearchResult,
-  Airport,
-} from '@/app/actions';
+import { searchAirports, AirportSearchResult, Airport } from '@/app/actions';
 
 interface AirportSelectorProps {
   selectedIcao: string;
@@ -42,9 +37,16 @@ export default function AirportSelector({
         setShowDropdown(results.length > 0);
         setHighlightedIndex(0);
       });
-    } else {
-      setSearchResults([]);
-      setShowDropdown(false);
+    }
+  }, [searchQuery]);
+
+  // Reset search results when query becomes too short
+  useEffect(() => {
+    if (searchQuery.length < 2) {
+      startTransition(() => {
+        setSearchResults([]);
+        setShowDropdown(false);
+      });
     }
   }, [searchQuery]);
 

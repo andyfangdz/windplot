@@ -15,6 +15,7 @@ This document provides comprehensive guidance for AI agents working on this code
 | Add chart component | `src/components/` | Visual inspection |
 | Modify weather fetch | `src/app/actions.ts` | Check network tab, console |
 | Change favorites | `src/app/actions.ts` (FAVORITE_ICAOS) | Reload page |
+| Modify forecast fetch | `src/app/actions.ts` (getNbmForecast) | Toggle to Forecast view |
 
 ---
 
@@ -27,6 +28,7 @@ This document provides comprehensive guidance for AI agents working on this code
 - **Charts**: Chart.js + react-chartjs-2 (speed chart), Canvas API (direction radar)
 - **Weather API**: Synoptic Data API (5-minute AWOS observations)
 - **METAR**: Aviation Weather Center API
+- **Forecast API**: NOAA National Blend of Models (NBM) via weather.gov API
 - **Styling**: Tailwind CSS 4
 - **Airport Data**: FAA NASR subscription (bundled JSON)
 
@@ -47,6 +49,9 @@ src/
 │   ├── WindSpeedChart.tsx    # Time series (Chart.js Line)
 │   ├── WindDirectionChart.tsx # Polar radar (Canvas API)
 │   ├── RunwayWindTable.tsx   # Crosswind/headwind breakdown
+│   ├── ForecastChart.tsx     # NBM forecast time series (Chart.js Line)
+│   ├── ForecastDirectionChart.tsx # NBM forecast polar radar (Canvas API)
+│   ├── ForecastWindTable.tsx # Forecast crosswind/headwind breakdown
 │   ├── AirportSelector.tsx   # Search + quick-select
 │   ├── NearbyAirports.tsx    # Nearby airports directory
 │   └── SettingsModal.tsx     # Runway surface filter settings
@@ -64,30 +69,40 @@ data/
 ### Data Flow
 
 ```
-[Synoptic API]              [Aviation Weather API]
-      ↓                              ↓
-getWindData()                  getMetar()
-      ↓                              ↓
-      └──────────┬───────────────────┘
-                 ↓
-      getAirportFullData() (parallel fetch)
-                 ↓
-      page.tsx (server component)
-                 ↓
-      WindPlot (client state holder, 5-min auto-refresh)
-                 ↓
-   ┌─────────────┼─────────────┐
-   ↓             ↓             ↓
-WindSpeedChart  WindDirectionChart  RunwayWindTable
+[Synoptic API]      [Aviation Weather API]      [weather.gov API]
+      ↓                      ↓                         ↓
+getWindData()          getMetar()              getNbmForecast()
+      ↓                      ↓                         ↓
+      └──────────┬───────────┘                         │
+                 ↓                                     │
+      getAirportFullData() (parallel fetch)            │
+                 ↓                                     │
+      page.tsx (server component)                      │
+                 ↓                                     │
+      WindPlot (client state holder)  ←────────────────┘
+                 ↓                    (on-demand fetch when viewing forecast)
+        viewMode toggle
+         /          \
+   observations    forecast
+        ↓              ↓
+   ┌────┼────┐    ┌────┼────┐
+   ↓    ↓    ↓    ↓    ↓    ↓
+Wind  Wind  Runway  Fcst  Fcst  Fcst
+Speed Dir   Wind    Chart Dir   Wind
+Chart Chart Table         Chart Table
 ```
 
 ### Key Abstractions
 
 1. **WindDataPoint** (`src/lib/types.ts`): Normalized observation with timestamp, wspd, wgst, wdir.
 
-2. **AirportFullData** (`src/app/actions.ts`): Combined payload with airport info, wind timeseries, and METAR.
+2. **ForecastDataPoint** (`src/lib/types.ts`): NBM forecast point with timestamp, wspd, wgst, wdir, temp, sky, pop.
 
-3. **Prefetch Cache**: Server-side prefetch of top 3 favorites; client caches results for instant switching.
+3. **AirportFullData** (`src/app/actions.ts`): Combined payload with airport info, wind timeseries, and METAR.
+
+4. **ForecastData** (`src/lib/types.ts`): NBM forecast container with icao, name, and forecasts array.
+
+5. **Prefetch Cache**: Server-side prefetch of top 3 favorites; client caches results for instant switching.
 
 ---
 
@@ -198,6 +213,31 @@ GET https://aviationweather.gov/api/data/metar?ids={icao}&format=json
 ```
 
 Returns latest METAR with current conditions. Used for "live" wind display when Synoptic is stale.
+
+### Weather.gov API (NBM Forecasts)
+
+NBM-derived gridpoint forecasts require two API calls:
+
+**Step 1: Get grid coordinates from lat/lon**
+```
+GET https://api.weather.gov/points/{lat},{lon}
+```
+Returns `gridId`, `gridX`, `gridY` for the location.
+
+**Step 2: Fetch gridpoint forecast data**
+```
+GET https://api.weather.gov/gridpoints/{gridId}/{gridX},{gridY}
+```
+
+Returns hourly forecast data in ISO 8601 interval format. Fields used:
+- `windSpeed` (m/s, converted to knots)
+- `windGust` (m/s, converted to knots)
+- `windDirection` (degrees)
+- `temperature` (Celsius, converted to Fahrenheit)
+- `skyCover` (percentage)
+- `probabilityOfPrecipitation` (percentage)
+
+**Important**: Weather.gov API requires a `User-Agent` header and returns data in variable-duration time buckets that must be expanded to hourly intervals.
 
 ---
 
@@ -335,6 +375,9 @@ Synoptic returns local time strings. The `time` field is display-only; use `time
 | Speed chart | `src/components/WindSpeedChart.tsx` |
 | Direction radar | `src/components/WindDirectionChart.tsx` |
 | Crosswind table | `src/components/RunwayWindTable.tsx` |
+| Forecast chart | `src/components/ForecastChart.tsx` |
+| Forecast direction | `src/components/ForecastDirectionChart.tsx` |
+| Forecast table | `src/components/ForecastWindTable.tsx` |
 | Airport search | `src/components/AirportSelector.tsx` |
 | Nearby airports | `src/components/NearbyAirports.tsx` |
 | Type definitions | `src/lib/types.ts` |

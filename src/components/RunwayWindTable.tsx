@@ -21,6 +21,8 @@ interface RunwayWindComponent {
   gustCrosswind: number | null;
   gustCrosswindDir: 'L' | 'R' | '';
   isFavored: boolean;
+  lda: number;
+  width: number;
 }
 
 function calculateWindComponents(
@@ -59,6 +61,8 @@ function computeWindComponents(
     const lowGustComponents = hasGusts
       ? calculateWindComponents(windDir, gustSpd!, lowHdg)
       : null;
+    const lowDisplaced = runway.lowDisplacedThreshold ?? 0;
+    const lowLda = runway.length - lowDisplaced;
 
     results.push({
       runway: runway.low,
@@ -69,6 +73,8 @@ function computeWindComponents(
       gustCrosswind: lowGustComponents?.crosswind ?? null,
       gustCrosswindDir: lowGustComponents?.crosswindDir ?? '',
       isFavored: false,
+      lda: lowLda,
+      width: runway.width,
     });
 
     // High end
@@ -77,6 +83,8 @@ function computeWindComponents(
     const highGustComponents = hasGusts
       ? calculateWindComponents(windDir, gustSpd!, highHdg)
       : null;
+    const highDisplaced = runway.highDisplacedThreshold ?? 0;
+    const highLda = runway.length - highDisplaced;
 
     results.push({
       runway: runway.high,
@@ -87,6 +95,8 @@ function computeWindComponents(
       gustCrosswind: highGustComponents?.crosswind ?? null,
       gustCrosswindDir: highGustComponents?.crosswindDir ?? '',
       isFavored: false,
+      lda: highLda,
+      width: runway.width,
     });
   }
 
@@ -235,6 +245,8 @@ export default function RunwayWindTable({
               <thead>
                 <tr className="text-[#8899a6] border-b border-[#38444d]">
                   <th className="py-2 px-3 text-left font-medium">Runway</th>
+                  <th className="py-2 px-3 text-right font-medium">LDA</th>
+                  <th className="py-2 px-3 text-right font-medium">Width</th>
                   <th className="py-2 px-3 text-right font-medium">Headwind</th>
                   <th className="py-2 px-3 text-right font-medium">Crosswind</th>
                 </tr>
@@ -258,6 +270,12 @@ export default function RunwayWindTable({
                       {wc.isFavored && (
                         <span className="ml-2 text-xs text-[#1d9bf0]">★</span>
                       )}
+                    </td>
+                    <td className="py-2 px-3 text-right font-mono text-[#8899a6]">
+                      {wc.lda.toLocaleString()}&apos;
+                    </td>
+                    <td className="py-2 px-3 text-right font-mono text-[#8899a6]">
+                      {wc.width}&apos;
                     </td>
                     <td className="py-2 px-3 text-right font-mono">
                       <span className={wc.headwind >= 0 ? 'text-green-400' : 'text-red-400'}>

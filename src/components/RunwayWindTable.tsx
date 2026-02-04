@@ -61,9 +61,6 @@ function computeWindComponents(
     const lowGustComponents = hasGusts
       ? calculateWindComponents(windDir, gustSpd!, lowHdg)
       : null;
-    const lowDisplaced = runway.lowDisplacedThreshold ?? 0;
-    const lowLda = runway.length - lowDisplaced;
-
     results.push({
       runway: runway.low,
       headwind: lowComponents.headwind,
@@ -73,7 +70,7 @@ function computeWindComponents(
       gustCrosswind: lowGustComponents?.crosswind ?? null,
       gustCrosswindDir: lowGustComponents?.crosswindDir ?? '',
       isFavored: false,
-      lda: lowLda,
+      lda: runway.lowLda ?? runway.length,
       width: runway.width,
     });
 
@@ -83,8 +80,6 @@ function computeWindComponents(
     const highGustComponents = hasGusts
       ? calculateWindComponents(windDir, gustSpd!, highHdg)
       : null;
-    const highDisplaced = runway.highDisplacedThreshold ?? 0;
-    const highLda = runway.length - highDisplaced;
 
     results.push({
       runway: runway.high,
@@ -95,7 +90,7 @@ function computeWindComponents(
       gustCrosswind: highGustComponents?.crosswind ?? null,
       gustCrosswindDir: highGustComponents?.crosswindDir ?? '',
       isFavored: false,
-      lda: highLda,
+      lda: runway.highLda ?? runway.length,
       width: runway.width,
     });
   }

@@ -166,7 +166,8 @@ function parseRunwayEnds() {
     const rwyId = row['RWY_ID']?.trim();
     const endId = row['RWY_END_ID']?.trim();
     const trueAlignment = row['TRUE_ALIGNMENT'] ? parseInt(row['TRUE_ALIGNMENT'], 10) : null;
-    const displacedThreshold = row['DISPLACED_THR_LEN'] ? parseInt(row['DISPLACED_THR_LEN'], 10) : 0;
+    // Use actual LDA from FAA data (0 means not published, will fall back to runway length)
+    const lda = row['LNDG_DIST_AVBL'] ? parseInt(row['LNDG_DIST_AVBL'], 10) : 0;
 
     if (!siteNo || !rwyId || !endId) continue;
 
@@ -179,7 +180,7 @@ function parseRunwayEnds() {
       rwyId,
       endId,
       trueAlignment,
-      displacedThreshold,
+      lda,
     });
   }
 
@@ -253,8 +254,9 @@ function parseAndGenerate() {
           length: rwy.length,
           width: rwy.width,
           surface: rwy.surface,
-          lowDisplacedThreshold: lowEnd.displacedThreshold || 0,
-          highDisplacedThreshold: highEnd.displacedThreshold || 0,
+          // Use actual LDA from FAA, fall back to runway length if not published
+          lowLda: lowEnd.lda || rwy.length,
+          highLda: highEnd.lda || rwy.length,
         });
       }
     }

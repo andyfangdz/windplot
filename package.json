@@ -10,7 +10,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "update-nasr": "node scripts/update-nasr.mjs",
-    "update-nasr:download": "node scripts/update-nasr.mjs --download"
+    "update-nasr:download": "node scripts/update-nasr.mjs --download",
+    "update-nasr:parse": "node scripts/update-nasr.mjs --parse"
   },
   "dependencies": {
     "chart.js": "^4.5.1",

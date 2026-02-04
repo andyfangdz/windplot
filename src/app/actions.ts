@@ -172,8 +172,9 @@ const airportsWithCoords = airports.filter(
 const spatialIndexPath = path.join(process.cwd(), 'src', 'lib', 'spatial-index.bin');
 const indexBuffer = fs.readFileSync(spatialIndexPath);
 // Convert Node Buffer to ArrayBuffer for KDBush.from()
-const arrayBuffer = indexBuffer.buffer.slice(indexBuffer.byteOffset, indexBuffer.byteOffset + indexBuffer.length);
-const spatialIndex = KDBush.from(arrayBuffer);
+// Using Uint8Array.from() creates a proper ArrayBuffer that KDBush accepts
+const uint8Array = new Uint8Array(indexBuffer);
+const spatialIndex = KDBush.from(uint8Array.buffer);
 
 // Get airport by ICAO code or FAA ID (returns full data including runways)
 export async function getAirport(id: string): Promise<Airport | null> {

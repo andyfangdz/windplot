@@ -21,6 +21,8 @@ interface RunwayWindComponent {
   gustCrosswind: number | null;
   gustCrosswindDir: 'L' | 'R' | '';
   isFavored: boolean;
+  length: number;
+  width: number;
 }
 
 function calculateWindComponents(
@@ -69,6 +71,8 @@ function computeWindComponents(
       gustCrosswind: lowGustComponents?.crosswind ?? null,
       gustCrosswindDir: lowGustComponents?.crosswindDir ?? '',
       isFavored: false,
+      length: runway.length,
+      width: runway.width,
     });
 
     // High end
@@ -87,6 +91,8 @@ function computeWindComponents(
       gustCrosswind: highGustComponents?.crosswind ?? null,
       gustCrosswindDir: highGustComponents?.crosswindDir ?? '',
       isFavored: false,
+      length: runway.length,
+      width: runway.width,
     });
   }
 
@@ -235,6 +241,7 @@ export default function RunwayWindTable({
               <thead>
                 <tr className="text-[#8899a6] border-b border-[#38444d]">
                   <th className="py-2 px-3 text-left font-medium">Runway</th>
+                  <th className="py-2 px-3 text-right font-medium">Size</th>
                   <th className="py-2 px-3 text-right font-medium">Headwind</th>
                   <th className="py-2 px-3 text-right font-medium">Crosswind</th>
                 </tr>
@@ -258,6 +265,9 @@ export default function RunwayWindTable({
                       {wc.isFavored && (
                         <span className="ml-2 text-xs text-[#1d9bf0]">★</span>
                       )}
+                    </td>
+                    <td className="py-2 px-3 text-right font-mono text-[#8899a6] text-xs">
+                      {wc.length} x {wc.width}
                     </td>
                     <td className="py-2 px-3 text-right font-mono">
                       <span className={wc.headwind >= 0 ? 'text-green-400' : 'text-red-400'}>

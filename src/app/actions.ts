@@ -325,3 +325,73 @@ export async function prefetchFavorites(
 
   return Object.fromEntries(results.map((data) => [data.icao, data]));
 }
+
+// Nearby airport result with distance
+export interface NearbyAirport {
+  icao: string;
+  name: string;
+  city: string;
+  state: string;
+  distance: number; // in nautical miles
+}
+
+// Haversine formula to calculate distance between two points
+function calculateDistanceNm(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 3440.065; // Earth's radius in nautical miles
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// Get nearby airports within a radius (default 30nm)
+export async function getNearbyAirports(
+  icao: string,
+  radiusNm: number = 30,
+  limit: number = 10
+): Promise<NearbyAirport[]> {
+  const upperIcao = icao.toUpperCase();
+  const sourceAirport = airportsByIcao.get(upperIcao);
+
+  if (!sourceAirport || sourceAirport.lat === undefined || sourceAirport.lon === undefined) {
+    return [];
+  }
+
+  const { lat: sourceLat, lon: sourceLon } = sourceAirport;
+  const nearby: NearbyAirport[] = [];
+
+  for (const airport of airports) {
+    // Skip the source airport
+    if (airport.icao === upperIcao) continue;
+
+    // Skip airports without coordinates
+    if (airport.lat === undefined || airport.lon === undefined) continue;
+
+    const distance = calculateDistanceNm(sourceLat, sourceLon, airport.lat, airport.lon);
+
+    if (distance <= radiusNm) {
+      nearby.push({
+        icao: airport.icao,
+        name: airport.name,
+        city: airport.city,
+        state: airport.state,
+        distance: Math.round(distance * 10) / 10, // Round to 1 decimal
+      });
+    }
+  }
+
+  // Sort by distance and limit results
+  nearby.sort((a, b) => a.distance - b.distance);
+  return nearby.slice(0, limit);
+}

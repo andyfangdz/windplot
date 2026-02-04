@@ -288,15 +288,18 @@ export default function WindPlot({
         )}
 
         {error && !data && (
-          <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 text-center">
-            <p className="text-red-400">{error}</p>
-            <button
-              onClick={handleRefresh}
-              className="mt-2 px-4 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
-            >
-              Retry
-            </button>
-          </div>
+          <>
+            <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 text-center">
+              <p className="text-red-400">{error}</p>
+              <button
+                onClick={handleRefresh}
+                className="mt-2 px-4 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
+              >
+                Retry
+              </button>
+            </div>
+            <NearbyAirports icao={icao} onSelect={handleAirportChange} />
+          </>
         )}
 
         {data && data.observations.length > 0 && (
@@ -333,9 +336,12 @@ export default function WindPlot({
         )}
 
         {data && data.observations.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-[#8899a6]">No observations available for this period.</p>
-          </div>
+          <>
+            <div className="text-center py-12">
+              <p className="text-[#8899a6]">No observations available for this period.</p>
+            </div>
+            <NearbyAirports icao={icao} onSelect={handleAirportChange} />
+          </>
         )}
 
         <footer className="text-center mt-6 text-xs text-[#8899a6]">

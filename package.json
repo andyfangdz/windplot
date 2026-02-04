@@ -14,6 +14,7 @@
     "update-nasr:parse": "node scripts/update-nasr.mjs --parse"
   },
   "dependencies": {
+    "@vercel/analytics": "^1.6.1",
     "chart.js": "^4.5.1",
     "next": "16.1.6",
     "react": "19.2.3",

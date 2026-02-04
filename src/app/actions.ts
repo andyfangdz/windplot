@@ -2,6 +2,10 @@
 
 import airportsData from '@/lib/airports-data.json';
 import { WindData, WindDataPoint } from '@/lib/types';
+import distance from '@turf/distance';
+import { point } from '@turf/helpers';
+import KDBush from 'kdbush';
+import * as geokdbush from 'geokdbush';
 
 // Synoptic API config
 const SYNOPTIC_TOKEN = '7c76618b66c74aee913bdbae4b448bdd';
@@ -156,6 +160,22 @@ const airportsByIcao: Map<string, Airport> = new Map(
 const airportsByFaaId: Map<string, Airport> = new Map(
   airports.filter((a) => a.faaId).map((a) => [a.faaId, a])
 );
+
+// Build spatial index for efficient nearby airport queries
+// Filter airports with valid coordinates for the spatial index
+const airportsWithCoords = airports.filter(
+  (a) => a.lat !== undefined && a.lon !== undefined
+);
+// Create k-d tree index (built once at module initialization)
+const spatialIndex = new KDBush(
+  airportsWithCoords.length,
+  64, // node size (default)
+  Float64Array
+);
+for (const airport of airportsWithCoords) {
+  spatialIndex.add(airport.lon, airport.lat);
+}
+spatialIndex.finish();
 
 // Get airport by ICAO code or FAA ID (returns full data including runways)
 export async function getAirport(id: string): Promise<Airport | null> {
@@ -335,27 +355,11 @@ export interface NearbyAirport {
   distance: number; // in nautical miles
 }
 
-// Haversine formula to calculate distance between two points
-function calculateDistanceNm(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-): number {
-  const R = 3440.065; // Earth's radius in nautical miles
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
+// Convert kilometers to nautical miles
+const KM_TO_NM = 0.539957;
 
-// Get nearby airports within a radius (default 30nm)
+// Get nearby airports within a radius using spatial index (default 30nm)
+// Uses k-d tree for O(log n) spatial queries and WGS84 ellipsoid for accurate distances
 export async function getNearbyAirports(
   icao: string,
   radiusNm: number = 30,
@@ -369,29 +373,48 @@ export async function getNearbyAirports(
   }
 
   const { lat: sourceLat, lon: sourceLon } = sourceAirport;
+  const sourcePoint = point([sourceLon, sourceLat]);
+
+  // Convert radius to km for geokdbush (it uses km internally)
+  const radiusKm = radiusNm / KM_TO_NM;
+
+  // Use spatial index to efficiently find nearby airports
+  // geokdbush.around returns indices sorted by distance
+  // We request more than limit to account for filtering out the source airport
+  const candidateIndices = geokdbush.around(
+    spatialIndex,
+    sourceLon,
+    sourceLat,
+    limit + 1,
+    radiusKm
+  );
+
   const nearby: NearbyAirport[] = [];
 
-  for (const airport of airports) {
+  for (const idx of candidateIndices) {
+    const airport = airportsWithCoords[idx];
+
     // Skip the source airport
     if (airport.icao === upperIcao) continue;
 
-    // Skip airports without coordinates
-    if (airport.lat === undefined || airport.lon === undefined) continue;
+    // Calculate accurate WGS84 distance using turf
+    const destPoint = point([airport.lon, airport.lat]);
+    const distanceKm = distance(sourcePoint, destPoint, { units: 'kilometers' });
+    const distanceNm = distanceKm * KM_TO_NM;
 
-    const distance = calculateDistanceNm(sourceLat, sourceLon, airport.lat, airport.lon);
-
-    if (distance <= radiusNm) {
+    // Double-check distance (geokdbush uses approximate great-circle, turf uses WGS84)
+    if (distanceNm <= radiusNm) {
       nearby.push({
         icao: airport.icao,
         name: airport.name,
         city: airport.city,
         state: airport.state,
-        distance: Math.round(distance * 10) / 10, // Round to 1 decimal
+        distance: Math.round(distanceNm * 10) / 10,
       });
     }
+
+    if (nearby.length >= limit) break;
   }
 
-  // Sort by distance and limit results
-  nearby.sort((a, b) => a.distance - b.distance);
-  return nearby.slice(0, limit);
+  return nearby;
 }

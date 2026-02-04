@@ -6,10 +6,9 @@ import { Runway, MetarData } from '@/app/actions';
 
 interface RunwayWindTableProps {
   observations: WindDataPoint[];
-  runways: Runway[];
-  icao: string;
+  runways: Runway[]; // Pre-filtered by surface type in parent
   metar: MetarData | null;
-  allowedSurfaces?: string[];
+  now: number; // Current timestamp for staleness checks
 }
 
 interface RunwayWindComponent {
@@ -113,22 +112,10 @@ function computeWindComponents(
 export default function RunwayWindTable({
   observations,
   runways,
-  icao,
   metar,
-  allowedSurfaces,
+  now,
 }: RunwayWindTableProps) {
   const [source, setSource] = useState<'5min' | 'metar'>('5min');
-
-  // Filter runways by allowed surface types
-  const filteredRunways = useMemo(() => {
-    if (!allowedSurfaces || allowedSurfaces.length === 0) return runways;
-    return runways.filter((rw) => {
-      const surface = rw.surface?.toUpperCase() || '';
-      return allowedSurfaces.some((allowed) => 
-        surface.includes(allowed) || allowed.includes(surface)
-      );
-    });
-  }, [runways, allowedSurfaces]);
 
   // Get wind data from 5-min observations
   const synopticWind = useMemo(() => {
@@ -145,13 +132,16 @@ export default function RunwayWindTable({
   }, [observations]);
 
   // Check if METAR is stale (>70 minutes old)
-  const staleThresholdMs = 70 * 60 * 1000;
-  const isMetarStale = metar?.obsTime
-    ? Date.now() - metar.obsTime * 1000 > staleThresholdMs
-    : false;
-  const metarStaleMinutes = metar?.obsTime
-    ? Math.round((Date.now() - metar.obsTime * 1000) / 60000)
-    : 0;
+  const { isMetarStale, metarStaleMinutes } = useMemo(() => {
+    const staleThresholdMs = 70 * 60 * 1000;
+    const isStale = metar?.obsTime
+      ? now - metar.obsTime * 1000 > staleThresholdMs
+      : false;
+    const staleMinutes = metar?.obsTime
+      ? Math.round((now - metar.obsTime * 1000) / 60000)
+      : 0;
+    return { isMetarStale: isStale, metarStaleMinutes: staleMinutes };
+  }, [metar, now]);
 
   // Compute wind components based on selected source
   const { windComponents, hasGusts, sourceInfo } = useMemo(() => {
@@ -163,7 +153,7 @@ export default function RunwayWindTable({
         metar.wdir,
         metar.wspd,
         metar.wgst,
-        filteredRunways
+        runways
       );
       return {
         windComponents: components,
@@ -175,7 +165,7 @@ export default function RunwayWindTable({
         synopticWind.wdir,
         synopticWind.wspd,
         synopticWind.wgst,
-        filteredRunways
+        runways
       );
       return {
         windComponents: components,
@@ -184,9 +174,9 @@ export default function RunwayWindTable({
       };
     }
     return { windComponents: [], hasGusts: false, sourceInfo: '' };
-  }, [source, metar, synopticWind, filteredRunways]);
+  }, [source, metar, synopticWind, runways]);
 
-  if (!filteredRunways.length) return null;
+  if (!runways.length) return null;
   if (source === '5min' && !synopticWind) return null;
 
   return (

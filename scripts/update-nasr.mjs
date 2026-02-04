@@ -12,12 +12,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import KDBush from 'kdbush';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const OUTPUT_FILE = path.join(__dirname, '..', 'src', 'lib', 'airports-data.json');
+const SPATIAL_INDEX_FILE = path.join(__dirname, '..', 'src', 'lib', 'spatial-index.bin');
 
 function parseCSVLine(line) {
   const result = [];
@@ -275,6 +277,49 @@ function parseAndGenerate() {
 
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(output, null, 2));
   console.log(`Wrote ${OUTPUT_FILE}`);
+
+  // Build and save spatial index for efficient nearby airport queries
+  console.log('Building spatial index...');
+  const airportsWithCoords = airportsWithRunways.filter(
+    a => a.lat !== undefined && a.lon !== undefined
+  );
+
+  const spatialIndex = new KDBush(airportsWithCoords.length, 64, Float64Array);
+  for (const airport of airportsWithCoords) {
+    spatialIndex.add(airport.lon, airport.lat);
+  }
+  spatialIndex.finish();
+
+  // Serialize the index to binary format
+  // KDBush stores data in an ArrayBuffer - we save it directly
+  const indexBuffer = Buffer.from(spatialIndex.data);
+  fs.writeFileSync(SPATIAL_INDEX_FILE, indexBuffer);
+  console.log(`Wrote ${SPATIAL_INDEX_FILE} (${airportsWithCoords.length} points, ${indexBuffer.length} bytes)`);
+}
+
+function rebuildSpatialIndex() {
+  // Rebuild spatial index from existing airports-data.json
+  if (!fs.existsSync(OUTPUT_FILE)) {
+    console.error('Error: airports-data.json not found. Run full update first.');
+    process.exit(1);
+  }
+
+  console.log('Loading existing airport data...');
+  const data = JSON.parse(fs.readFileSync(OUTPUT_FILE, 'utf-8'));
+  const airportsWithCoords = data.airports.filter(
+    a => a.lat !== undefined && a.lon !== undefined
+  );
+
+  console.log('Building spatial index...');
+  const spatialIndex = new KDBush(airportsWithCoords.length, 64, Float64Array);
+  for (const airport of airportsWithCoords) {
+    spatialIndex.add(airport.lon, airport.lat);
+  }
+  spatialIndex.finish();
+
+  const indexBuffer = Buffer.from(spatialIndex.data);
+  fs.writeFileSync(SPATIAL_INDEX_FILE, indexBuffer);
+  console.log(`Wrote ${SPATIAL_INDEX_FILE} (${airportsWithCoords.length} points, ${indexBuffer.length} bytes)`);
 }
 
 async function main() {
@@ -286,6 +331,9 @@ async function main() {
   } else if (mode === '--parse') {
     // Parse only (data must exist)
     parseAndGenerate();
+  } else if (mode === '--index') {
+    // Rebuild spatial index only (from existing airports-data.json)
+    rebuildSpatialIndex();
   } else {
     // Default: download and parse
     await downloadNASRData();

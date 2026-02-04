@@ -11,11 +11,16 @@
     "test:run": "vitest run",
     "update-nasr": "node scripts/update-nasr.mjs",
     "update-nasr:download": "node scripts/update-nasr.mjs --download",
-    "update-nasr:parse": "node scripts/update-nasr.mjs --parse"
+    "update-nasr:parse": "node scripts/update-nasr.mjs --parse",
+    "update-nasr:index": "node scripts/update-nasr.mjs --index"
   },
   "dependencies": {
+    "@turf/distance": "^7.3.3",
+    "@turf/helpers": "^7.3.3",
     "@vercel/analytics": "^1.6.1",
     "chart.js": "^4.5.1",
+    "geokdbush": "^2.0.1",
+    "kdbush": "^4.0.2",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-chartjs-2": "^5.3.1",

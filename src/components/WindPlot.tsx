@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import AirportSelector from './AirportSelector';
 import WindSpeedChart from './WindSpeedChart';
 import WindDirectionChart from './WindDirectionChart';
 import RunwayWindTable from './RunwayWindTable';
-import SettingsModal, { Settings, loadSettings, saveSettings } from './SettingsModal';
+import NearbyAirports from './NearbyAirports';
+import SettingsModal, { Settings, loadSettings } from './SettingsModal';
 import { WindData } from '@/lib/types';
 import { isWindDataStale } from '@/lib/cache';
 import {
@@ -209,7 +210,27 @@ export default function WindPlot({
     setLoading(false);
   };
 
-  const runways = airport?.runways || [];
+  // Filter runways by allowed surface types (for charts and table)
+  const runways = useMemo(() => {
+    const allRunways = airport?.runways || [];
+    if (!settings.allowedSurfaces || settings.allowedSurfaces.length === 0) {
+      return allRunways;
+    }
+    return allRunways.filter((rw) => {
+      const surface = rw.surface?.toUpperCase() || '';
+      return settings.allowedSurfaces.some(
+        (allowed) => surface.includes(allowed) || allowed.includes(surface)
+      );
+    });
+  }, [airport?.runways, settings.allowedSurfaces]);
+
+  // Get current timestamp once per render cycle for staleness checks
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    // Update timestamp periodically for staleness calculations
+    const interval = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Check if synoptic data is stale (>70 minutes old)
   const staleThresholdMs = 70 * 60 * 1000;
@@ -217,10 +238,10 @@ export default function WindPlot({
     ? Math.max(...data.observations.map((o) => o.timestamp))
     : null;
   const isSynopticStale = latestObsTimestamp
-    ? Date.now() - latestObsTimestamp * 1000 > staleThresholdMs
+    ? now - latestObsTimestamp * 1000 > staleThresholdMs
     : false;
   const staleMinutes = latestObsTimestamp
-    ? Math.round((Date.now() - latestObsTimestamp * 1000) / 60000)
+    ? Math.round((now - latestObsTimestamp * 1000) / 60000)
     : 0;
 
   const validObsTimestamps = data?.observations
@@ -287,15 +308,18 @@ export default function WindPlot({
         )}
 
         {error && !data && (
-          <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 text-center">
-            <p className="text-red-400">{error}</p>
-            <button
-              onClick={handleRefresh}
-              className="mt-2 px-4 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
-            >
-              Retry
-            </button>
-          </div>
+          <>
+            <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 text-center">
+              <p className="text-red-400">{error}</p>
+              <button
+                onClick={handleRefresh}
+                className="mt-2 px-4 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
+              >
+                Retry
+              </button>
+            </div>
+            <NearbyAirports icao={icao} onSelect={handleAirportChange} />
+          </>
         )}
 
         {data && data.observations.length > 0 && (
@@ -322,18 +346,21 @@ export default function WindPlot({
               <RunwayWindTable
                 observations={data.observations}
                 runways={runways}
-                icao={icao}
                 metar={metarIcao === icao ? metar : null}
-                allowedSurfaces={settings.allowedSurfaces}
+                now={now}
               />
             )}
+            <NearbyAirports icao={icao} onSelect={handleAirportChange} />
           </>
         )}
 
         {data && data.observations.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-[#8899a6]">No observations available for this period.</p>
-          </div>
+          <>
+            <div className="text-center py-12">
+              <p className="text-[#8899a6]">No observations available for this period.</p>
+            </div>
+            <NearbyAirports icao={icao} onSelect={handleAirportChange} />
+          </>
         )}
 
         <footer className="text-center mt-6 text-xs text-[#8899a6]">

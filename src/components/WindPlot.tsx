@@ -6,6 +6,7 @@ import AirportSelector from './AirportSelector';
 import WindSpeedChart from './WindSpeedChart';
 import WindDirectionChart from './WindDirectionChart';
 import RunwayWindTable from './RunwayWindTable';
+import NearbyAirports from './NearbyAirports';
 import SettingsModal, { Settings, loadSettings, saveSettings } from './SettingsModal';
 import { WindData } from '@/lib/types';
 import { isWindDataStale } from '@/lib/cache';
@@ -327,6 +328,7 @@ export default function WindPlot({
                 allowedSurfaces={settings.allowedSurfaces}
               />
             )}
+            <NearbyAirports icao={icao} onSelect={handleAirportChange} />
           </>
         )}
 

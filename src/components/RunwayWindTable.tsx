@@ -94,14 +94,16 @@ function computeWindComponents(
     });
   }
 
-  // Find favored runway
+  // Find favored runway (guard against NaN headwind values causing empty filter result)
   if (results.length > 0) {
     const maxHeadwind = Math.max(...results.map((r) => r.headwind));
     const favoredCandidates = results.filter((r) => r.headwind === maxHeadwind);
-    const favored = favoredCandidates.reduce((best, curr) =>
-      curr.crosswind < best.crosswind ? curr : best
-    );
-    favored.isFavored = true;
+    if (favoredCandidates.length > 0) {
+      const favored = favoredCandidates.reduce((best, curr) =>
+        curr.crosswind < best.crosswind ? curr : best
+      );
+      favored.isFavored = true;
+    }
   }
 
   results.sort((a, b) => b.headwind - a.headwind);

@@ -1,7 +1,13 @@
 'use server';
 
+import * as fs from 'fs';
+import * as path from 'path';
 import airportsData from '@/lib/airports-data.json';
 import { WindData, WindDataPoint } from '@/lib/types';
+import distance from '@turf/distance';
+import { point } from '@turf/helpers';
+import KDBush from 'kdbush';
+import * as geokdbush from 'geokdbush';
 
 // Synoptic API config
 const SYNOPTIC_TOKEN = '7c76618b66c74aee913bdbae4b448bdd';
@@ -156,6 +162,19 @@ const airportsByIcao: Map<string, Airport> = new Map(
 const airportsByFaaId: Map<string, Airport> = new Map(
   airports.filter((a) => a.faaId).map((a) => [a.faaId, a])
 );
+
+// Filter airports with valid coordinates (must match order used when building index)
+const airportsWithCoords = airports.filter(
+  (a) => a.lat !== undefined && a.lon !== undefined
+);
+
+// Load pre-built spatial index from binary file (built by update-nasr script)
+const spatialIndexPath = path.join(process.cwd(), 'src', 'lib', 'spatial-index.bin');
+const indexBuffer = fs.readFileSync(spatialIndexPath);
+// Convert Node Buffer to ArrayBuffer for KDBush.from()
+// Using Uint8Array.from() creates a proper ArrayBuffer that KDBush accepts
+const uint8Array = new Uint8Array(indexBuffer);
+const spatialIndex = KDBush.from(uint8Array.buffer);
 
 // Get airport by ICAO code or FAA ID (returns full data including runways)
 export async function getAirport(id: string): Promise<Airport | null> {
@@ -324,4 +343,77 @@ export async function prefetchFavorites(
   );
 
   return Object.fromEntries(results.map((data) => [data.icao, data]));
+}
+
+// Nearby airport result with distance
+export interface NearbyAirport {
+  icao: string;
+  name: string;
+  city: string;
+  state: string;
+  distance: number; // in nautical miles
+}
+
+// Convert kilometers to nautical miles
+const KM_TO_NM = 0.539957;
+
+// Get nearby airports within a radius using spatial index (default 30nm)
+// Uses k-d tree for O(log n) spatial queries and WGS84 ellipsoid for accurate distances
+export async function getNearbyAirports(
+  icao: string,
+  radiusNm: number = 30,
+  limit: number = 10
+): Promise<NearbyAirport[]> {
+  const upperIcao = icao.toUpperCase();
+  const sourceAirport = airportsByIcao.get(upperIcao);
+
+  if (!sourceAirport || sourceAirport.lat === undefined || sourceAirport.lon === undefined) {
+    return [];
+  }
+
+  const { lat: sourceLat, lon: sourceLon } = sourceAirport;
+  const sourcePoint = point([sourceLon, sourceLat]);
+
+  // Convert radius to km for geokdbush (it uses km internally)
+  const radiusKm = radiusNm / KM_TO_NM;
+
+  // Use spatial index to efficiently find nearby airports
+  // geokdbush.around returns indices sorted by distance
+  // We request more than limit to account for filtering out the source airport
+  const candidateIndices = geokdbush.around(
+    spatialIndex,
+    sourceLon,
+    sourceLat,
+    limit + 1,
+    radiusKm
+  );
+
+  const nearby: NearbyAirport[] = [];
+
+  for (const idx of candidateIndices) {
+    const airport = airportsWithCoords[idx];
+
+    // Skip the source airport
+    if (airport.icao === upperIcao) continue;
+
+    // Calculate accurate WGS84 distance using turf
+    const destPoint = point([airport.lon, airport.lat]);
+    const distanceKm = distance(sourcePoint, destPoint, { units: 'kilometers' });
+    const distanceNm = distanceKm * KM_TO_NM;
+
+    // Double-check distance (geokdbush uses approximate great-circle, turf uses WGS84)
+    if (distanceNm <= radiusNm) {
+      nearby.push({
+        icao: airport.icao,
+        name: airport.name,
+        city: airport.city,
+        state: airport.state,
+        distance: Math.round(distanceNm * 10) / 10,
+      });
+    }
+
+    if (nearby.length >= limit) break;
+  }
+
+  return nearby;
 }

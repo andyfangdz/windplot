@@ -48,11 +48,13 @@ src/
 │   ├── WindDirectionChart.tsx # Polar radar (Canvas API)
 │   ├── RunwayWindTable.tsx   # Crosswind/headwind breakdown
 │   ├── AirportSelector.tsx   # Search + quick-select
+│   ├── NearbyAirports.tsx    # Nearby airports directory
 │   └── SettingsModal.tsx     # Runway surface filter settings
 ├── lib/
 │   ├── types.ts              # TypeScript interfaces
 │   ├── airports.ts           # Airport utilities (unused, data in JSON)
-│   └── airports-data.json    # 2,200+ US airports from NASR
+│   ├── airports-data.json    # 4,450 US airports from NASR
+│   └── spatial-index.bin     # Pre-built k-d tree for nearby queries
 scripts/
 └── update-nasr.mjs           # Fetch/regenerate airport data
 data/
@@ -104,13 +106,14 @@ const SYNOPTIC_TOKEN = process.env.SYNOPTIC_API_TOKEN || '...';
 
 ### 3. Airport Data is Static
 
-Airport/runway data is bundled in `src/lib/airports-data.json`. To update:
+Airport/runway data is bundled in `src/lib/airports-data.json`. A pre-built k-d tree spatial index (`src/lib/spatial-index.bin`) enables efficient nearby airport queries using geokdbush. To update:
 ```bash
 npm run update-nasr:download  # Downloads fresh NASR data
-npm run update-nasr           # Regenerates JSON from existing downloads
+npm run update-nasr           # Regenerates JSON + spatial index from downloads
+npm run update-nasr:index     # Rebuilds only spatial index from existing JSON
 ```
 
-Do not modify `airports-data.json` manually unless adding a single airport.
+Do not modify `airports-data.json` manually unless adding a single airport. If you do, run `npm run update-nasr:index` to rebuild the spatial index.
 
 ### 4. Canvas Rendering (WindDirectionChart)
 
@@ -203,10 +206,11 @@ Returns latest METAR with current conditions. Used for "live" wind display when 
 ### Commands
 
 ```bash
-npm run dev           # Local dev server
-npm run build         # Production build
-npm run lint          # ESLint
-npm run update-nasr   # Regenerate airport data
+npm run dev             # Local dev server
+npm run build           # Production build
+npm run lint            # ESLint
+npm run update-nasr     # Full NASR update (download + parse + index)
+npm run update-nasr:index  # Rebuild spatial index only
 ```
 
 ### What to Verify
@@ -218,6 +222,80 @@ npm run update-nasr   # Regenerate airport data
 | Airport search | Type partial ICAO/name, verify results |
 | URL params | Refresh page, verify state persists |
 | Mobile layout | Test on narrow viewport |
+
+---
+
+## Linting & Code Quality
+
+**Always run `npm run lint` before committing changes.** The project uses ESLint with React Compiler rules that enforce strict patterns.
+
+### Common Lint Errors
+
+#### 1. Impure Functions During Render
+
+**Error**: `Date.now()` or other impure functions called during render.
+
+**Fix**: Move to state with useEffect for periodic updates:
+```typescript
+// Bad
+const isStale = Date.now() - timestamp > threshold;
+
+// Good
+const [now, setNow] = useState(() => Date.now());
+useEffect(() => {
+  const interval = setInterval(() => setNow(Date.now()), 60000);
+  return () => clearInterval(interval);
+}, []);
+const isStale = now - timestamp > threshold;
+```
+
+#### 2. useMemo Dependency Mismatches
+
+**Error**: React Compiler cannot preserve memoization due to dependency inference mismatch.
+
+**Fix**: Use the full object instead of optional chaining in dependencies:
+```typescript
+// Bad - compiler infers different dependency
+useMemo(() => {
+  return metar?.obsTime ? calculate(metar.obsTime) : null;
+}, [metar?.obsTime]);
+
+// Good - matches compiler inference
+useMemo(() => {
+  return metar?.obsTime ? calculate(metar.obsTime) : null;
+}, [metar]);
+```
+
+#### 3. Logical Expressions in useMemo Dependencies
+
+**Error**: Logical expression could make dependencies change on every render.
+
+**Fix**: Move the expression inside the useMemo callback:
+```typescript
+// Bad
+const items = someArray || [];
+const filtered = useMemo(() => items.filter(...), [items]);
+
+// Good
+const filtered = useMemo(() => {
+  const items = someArray || [];
+  return items.filter(...);
+}, [someArray]);
+```
+
+#### 4. setState in useEffect Without Transition
+
+When calling setState synchronously in useEffect based on prop changes, wrap in startTransition:
+```typescript
+useEffect(() => {
+  if (condition) {
+    startTransition(() => {
+      setResults([]);
+      setShowDropdown(false);
+    });
+  }
+}, [condition]);
+```
 
 ---
 
@@ -258,6 +336,8 @@ Synoptic returns local time strings. The `time` field is display-only; use `time
 | Direction radar | `src/components/WindDirectionChart.tsx` |
 | Crosswind table | `src/components/RunwayWindTable.tsx` |
 | Airport search | `src/components/AirportSelector.tsx` |
+| Nearby airports | `src/components/NearbyAirports.tsx` |
 | Type definitions | `src/lib/types.ts` |
 | Airport data | `src/lib/airports-data.json` |
+| Spatial index | `src/lib/spatial-index.bin` |
 | NASR updater | `scripts/update-nasr.mjs` |

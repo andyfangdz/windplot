@@ -7,7 +7,7 @@ function createWindData(timestamps: number[]): WindData {
   return {
     icao: 'KFRG',
     name: 'Test Airport',
-    observations: timestamps.map((ts, i) => ({
+    observations: timestamps.map((ts) => ({
       time: '12:00',
       timestamp: ts,
       wspd: 10,
@@ -215,7 +215,6 @@ describe('cache staleness scenarios', () => {
       // With 5-minute auto-refresh, the latest observation should never be
       // more than ~10 minutes old (5 min refresh + 5 min AWOS interval)
       // This is well under the 70-minute threshold
-      const refreshInterval = 5 * 60 * 1000;
       const maxObsAge = 10 * 60 * 1000; // 10 min max expected
 
       expect(maxObsAge).toBeLessThan(STALE_THRESHOLD_MS);

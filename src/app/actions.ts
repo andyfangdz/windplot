@@ -122,6 +122,8 @@ export interface Runway {
   length: number;
   width: number;
   surface: string;
+  lowLda?: number;
+  highLda?: number;
 }
 
 export interface Airport {

@@ -147,6 +147,17 @@ function parseRunwayEnds() {
     const endId = row['RWY_END_ID']?.trim();
     const trueAlignment = row['TRUE_ALIGNMENT'] ? parseInt(row['TRUE_ALIGNMENT'], 10) : null;
 
+    // Parse displaced threshold length (field A51 in legacy format)
+    // Try multiple possible column names
+    const displacedThreshold = parseInt(
+      row['DSPLCD_THR_LGTH'] || row['DISPLACED_THR_LGTH'] || row['DSPLCD_THLD_LGTH'] || '0',
+      10
+    ) || 0;
+
+    // Parse LDA directly if available (field A63 in legacy format)
+    const ldaRaw = row['LDA'] || row['LANDING_DIST_AVBL'] || row['LAND_DIST_AVBL'] || '';
+    const lda = ldaRaw ? parseInt(ldaRaw, 10) || null : null;
+
     if (!siteNo || !rwyId || !endId) continue;
 
     if (!runwayEnds.has(siteNo)) {
@@ -158,6 +169,8 @@ function parseRunwayEnds() {
       rwyId,
       endId,
       trueAlignment,
+      displacedThreshold,
+      lda,
     });
   }
 
@@ -213,7 +226,7 @@ async function main() {
 
     for (const rwy of siteRunways) {
       const ends = siteRunwayEnds.filter(e => e.rwyId === rwy.id);
-      
+
       const sortedEnds = ends.sort((a, b) => {
         const numA = parseInt(a.endId.replace(/[LRC]/g, ''), 10);
         const numB = parseInt(b.endId.replace(/[LRC]/g, ''), 10);
@@ -224,6 +237,12 @@ async function main() {
       const highEnd = sortedEnds[1];
 
       if (lowEnd && highEnd && lowEnd.trueAlignment !== null) {
+        // Calculate LDA for each end:
+        // If LDA is directly available, use it
+        // Otherwise, calculate from runway length minus displaced threshold
+        const lowLda = lowEnd.lda ?? (rwy.length - lowEnd.displacedThreshold);
+        const highLda = highEnd.lda ?? (rwy.length - highEnd.displacedThreshold);
+
         airport.runways.push({
           id: rwy.id,
           low: lowEnd.endId,
@@ -232,6 +251,8 @@ async function main() {
           length: rwy.length,
           width: rwy.width,
           surface: rwy.surface,
+          lowLda,
+          highLda,
         });
       }
     }

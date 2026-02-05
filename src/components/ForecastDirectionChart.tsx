@@ -315,27 +315,28 @@ export default function ForecastDirectionChart({
 
   return (
     <div className="chart-section h-full">
-      <div className="chart-title">🧭 Forecast Wind Direction</div>
+      <div className="chart-title">Forecast Wind Direction</div>
       <div className="h-[280px] relative">
         <canvas ref={canvasRef} className="w-full h-full cursor-pointer" />
         {tooltip && (
           <div
-            className="absolute pointer-events-none z-10 px-3 py-2 rounded-lg text-sm"
+            className="absolute pointer-events-none z-10 px-3 py-2.5 rounded-xl text-sm"
             style={{
               left: Math.min(tooltip.x + 12, 280),
               top: tooltip.y - 60,
-              backgroundColor: 'rgba(25, 39, 52, 0.95)',
-              border: '1px solid #38444d',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              backgroundColor: 'rgba(17, 26, 36, 0.95)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+              backdropFilter: 'blur(8px)',
             }}
           >
             <div className="font-semibold text-white mb-1">{tooltip.time}</div>
-            <div className="text-[#8899a6] text-xs space-y-0.5">
-              <div>Direction: {tooltip.wdir}° ({formatDirection(tooltip.wdir)})</div>
+            <div className="text-[var(--text-secondary)] text-xs space-y-0.5">
+              <div>Direction: {tooltip.wdir}&deg; ({formatDirection(tooltip.wdir)})</div>
               {tooltip.wspd && <div>Wind: {tooltip.wspd} kt</div>}
               {tooltip.wgst && <div className="text-[#f59e0b]">Gust: {tooltip.wgst} kt</div>}
               {tooltip.temp !== null && tooltip.temp !== undefined && (
-                <div>Temp: {tooltip.temp}°F</div>
+                <div>Temp: {tooltip.temp}&deg;F</div>
               )}
               {tooltip.pop !== null && tooltip.pop !== undefined && tooltip.pop > 0 && (
                 <div>Precip: {tooltip.pop}%</div>
@@ -346,11 +347,11 @@ export default function ForecastDirectionChart({
       </div>
       <div className="legend">
         <div className="legend-item">
-          <div className="legend-dot bg-[#10b981]"></div>
+          <div className="legend-dot" style={{ backgroundColor: '#10b981' }}></div>
           Forecast Wind
         </div>
         <div className="legend-item">
-          <div className="legend-dot bg-[#f59e0b]"></div>
+          <div className="legend-dot" style={{ backgroundColor: '#f59e0b' }}></div>
           Forecast Gusts
         </div>
       </div>

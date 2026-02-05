@@ -131,18 +131,18 @@ export default function AirportSelector({
   const isSelectedFavorite = favorites.some((f) => f.icao === selectedIcao);
 
   return (
-    <div className="mb-4">
+    <div className="mb-5">
       {/* Favorites row */}
       <div className="flex flex-wrap gap-2 justify-center mb-3">
-        <div className="flex gap-1 flex-wrap justify-center">
+        <div className="flex gap-1.5 flex-wrap justify-center">
           {favorites.map((airport) => (
             <button
               key={airport.icao}
               onClick={() => handleSelectAirport(airport.icao)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              className={`px-3.5 py-1.5 rounded-lg text-sm font-mono font-semibold transition-all ${
                 selectedIcao === airport.icao
-                  ? 'bg-[#1d9bf0] text-white'
-                  : 'bg-[#192734] text-[#8899a6] hover:bg-[#22303c] hover:text-white'
+                  ? 'bg-[#1d9bf0] text-white shadow-[0_0_12px_rgba(29,155,240,0.25)]'
+                  : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:border-[var(--border-color-strong)] hover:text-[var(--text-primary)]'
               }`}
               title={airport.name}
             >
@@ -156,7 +156,7 @@ export default function AirportSelector({
           <select
             value={hours}
             onChange={(e) => onHoursChange(parseInt(e.target.value, 10))}
-            className="px-3 py-1.5 rounded-lg text-sm font-medium bg-[#192734] text-[#8899a6] border-none outline-none cursor-pointer hover:bg-[#22303c]"
+            className="px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--bg-secondary)] text-[var(--text-secondary)] border border-[var(--border-color)] outline-none cursor-pointer hover:border-[var(--border-color-strong)] hover:text-[var(--text-primary)]"
           >
             {OBS_HOUR_OPTIONS.map((h) => (
               <option key={h} value={h}>{h}h</option>
@@ -166,7 +166,7 @@ export default function AirportSelector({
           <select
             value={forecastHoursLimit}
             onChange={(e) => onForecastHoursLimitChange(parseInt(e.target.value, 10))}
-            className="px-3 py-1.5 rounded-lg text-sm font-medium bg-[#192734] text-[#10b981] border-none outline-none cursor-pointer hover:bg-[#22303c]"
+            className="px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--bg-secondary)] text-[#10b981] border border-[var(--border-color)] outline-none cursor-pointer hover:border-[#10b981]/40"
           >
             {(forecastRange === 72 ? FORECAST_72_OPTIONS : FORECAST_24_OPTIONS).map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -189,14 +189,14 @@ export default function AirportSelector({
                 setShowDropdown(true);
               }
             }}
-            placeholder="Search airports (ICAO or name)..."
-            className="w-full px-4 py-2 rounded-lg bg-[#192734] text-white placeholder-[#8899a6] border border-[#38444d] focus:border-[#1d9bf0] focus:outline-none text-sm"
+            placeholder="Search airports..."
+            className="w-full px-4 py-2.5 rounded-xl bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] border border-[var(--border-color)] focus:border-[#1d9bf0]/50 focus:outline-none focus:shadow-[0_0_0_3px_rgba(29,155,240,0.1)] text-sm"
           />
           {isPending ? (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[#1d9bf0] border-t-transparent rounded-full animate-spin" />
+            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[#1d9bf0] border-t-transparent rounded-full animate-spin" />
           ) : (
             <svg
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8899a6]"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -204,7 +204,7 @@ export default function AirportSelector({
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeWidth={2}
+                strokeWidth={1.5}
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
             </svg>
@@ -215,26 +215,26 @@ export default function AirportSelector({
         {showDropdown && (
           <div
             ref={dropdownRef}
-            className="absolute z-50 w-full mt-1 bg-[#192734] border border-[#38444d] rounded-lg shadow-lg max-h-64 overflow-y-auto"
+            className="absolute z-50 w-full mt-2 bg-[var(--bg-elevated)] border border-[var(--border-color-strong)] rounded-xl shadow-[var(--shadow-lg)] max-h-64 overflow-y-auto"
           >
             {searchResults.map((airport, index) => (
               <button
                 key={airport.icao}
                 onClick={() => handleSelectAirport(airport.icao)}
-                className={`w-full px-4 py-2 text-left text-sm transition-colors ${
+                className={`w-full px-4 py-2.5 text-left text-sm transition-colors ${
                   index === highlightedIndex
-                    ? 'bg-[#22303c] text-white'
-                    : 'text-[#8899a6] hover:bg-[#22303c] hover:text-white'
-                } ${index === 0 ? 'rounded-t-lg' : ''} ${
-                  index === searchResults.length - 1 ? 'rounded-b-lg' : ''
+                    ? 'bg-[var(--bg-hover)] text-[var(--text-primary)]'
+                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
+                } ${index === 0 ? 'rounded-t-xl' : ''} ${
+                  index === searchResults.length - 1 ? 'rounded-b-xl' : ''
                 }`}
               >
                 <span className="font-mono font-bold text-[#1d9bf0]">
                   {airport.icao}
                 </span>
-                <span className="ml-2">{airport.name}</span>
-                <span className="ml-1 text-xs text-[#657786]">
-                  ({airport.city}, {airport.state})
+                <span className="ml-2 text-[var(--text-primary)]">{airport.name}</span>
+                <span className="ml-1.5 text-xs text-[var(--text-tertiary)]">
+                  {airport.city}, {airport.state}
                 </span>
               </button>
             ))}
@@ -244,10 +244,10 @@ export default function AirportSelector({
 
       {/* Currently selected (if not a favorite) */}
       {!isSelectedFavorite && selectedAirport && (
-        <div className="text-center mt-2 text-xs text-[#8899a6]">
-          Selected:{' '}
-          <span className="font-mono text-[#1d9bf0]">{selectedAirport.icao}</span>{' '}
-          - {selectedAirport.name}
+        <div className="text-center mt-2.5 text-xs text-[var(--text-secondary)]">
+          <span className="font-mono font-semibold text-[#1d9bf0]">{selectedAirport.icao}</span>
+          <span className="text-[var(--text-tertiary)]"> &middot; </span>
+          {selectedAirport.name}
         </div>
       )}
     </div>

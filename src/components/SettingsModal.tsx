@@ -87,57 +87,57 @@ export default function SettingsModal({ isOpen, onClose, settings, onSave }: Set
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#192734] rounded-xl max-w-md w-full max-h-[80vh] overflow-hidden shadow-xl">
-        <div className="flex items-center justify-between p-4 border-b border-[#38444d]">
-          <h2 className="text-lg font-semibold text-white">Settings</h2>
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+      <div className="bg-[var(--bg-secondary)] border border-[var(--border-color-strong)] rounded-2xl max-w-md w-full max-h-[80vh] overflow-hidden shadow-[var(--shadow-lg)]">
+        <div className="flex items-center justify-between p-5 border-b border-[var(--border-color)]">
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Settings</h2>
           <button
             onClick={onClose}
-            className="text-[#8899a6] hover:text-white transition-colors"
+            className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] p-1 rounded-lg hover:bg-[var(--bg-hover)] transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <div className="p-4 overflow-y-auto max-h-[60vh]">
+        <div className="p-5 overflow-y-auto max-h-[60vh]">
           <div className="mb-4">
-            <h3 className="text-sm font-medium text-white mb-2">Runway Surface Types</h3>
-            <p className="text-xs text-[#8899a6] mb-3">
+            <h3 className="text-sm font-medium text-[var(--text-primary)] mb-1.5">Runway Surface Types</h3>
+            <p className="text-xs text-[var(--text-tertiary)] mb-4">
               Select which runway surface types to include in the wind component table.
             </p>
-            
-            <div className="flex gap-2 mb-3">
+
+            <div className="flex gap-2 mb-4">
               <button
                 onClick={selectAllPaved}
-                className="text-xs px-2 py-1 bg-[#38444d] hover:bg-[#4a5568] text-[#8899a6] rounded transition-colors"
+                className="text-xs px-3 py-1.5 bg-[var(--bg-primary)] border border-[var(--border-color)] hover:border-[var(--border-color-strong)] text-[var(--text-secondary)] rounded-lg transition-all font-medium"
               >
                 Paved Only
               </button>
               <button
                 onClick={selectAll}
-                className="text-xs px-2 py-1 bg-[#38444d] hover:bg-[#4a5568] text-[#8899a6] rounded transition-colors"
+                className="text-xs px-3 py-1.5 bg-[var(--bg-primary)] border border-[var(--border-color)] hover:border-[var(--border-color-strong)] text-[var(--text-secondary)] rounded-lg transition-all font-medium"
               >
                 All Types
               </button>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               {SURFACE_TYPES.map((surface) => (
                 <label
                   key={surface.id}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#22303c] cursor-pointer transition-colors"
+                  className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-[var(--bg-hover)] cursor-pointer transition-colors"
                 >
                   <input
                     type="checkbox"
                     checked={allowedSurfaces.includes(surface.id)}
                     onChange={() => toggleSurface(surface.id)}
-                    className="w-4 h-4 rounded border-[#38444d] bg-[#0f1419] text-[#1d9bf0] focus:ring-[#1d9bf0] focus:ring-offset-0"
+                    className="w-4 h-4 rounded border-[var(--border-color-strong)] bg-[var(--bg-primary)] text-[#1d9bf0] focus:ring-[#1d9bf0] focus:ring-offset-0"
                   />
                   <div>
-                    <div className="text-sm text-white">{surface.label}</div>
-                    <div className="text-xs text-[#8899a6]">{surface.description}</div>
+                    <div className="text-sm text-[var(--text-primary)]">{surface.label}</div>
+                    <div className="text-xs text-[var(--text-tertiary)]">{surface.description}</div>
                   </div>
                 </label>
               ))}
@@ -145,16 +145,16 @@ export default function SettingsModal({ isOpen, onClose, settings, onSave }: Set
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 p-4 border-t border-[#38444d]">
+        <div className="flex justify-end gap-3 p-5 border-t border-[var(--border-color)]">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-[#8899a6] hover:text-white transition-colors"
+            className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 text-sm bg-[#1d9bf0] hover:bg-[#1a8cd8] text-white rounded-lg transition-colors"
+            className="px-5 py-2 text-sm bg-[#1d9bf0] hover:bg-[#1a8cd8] text-white rounded-lg transition-all font-medium shadow-[0_0_12px_rgba(29,155,240,0.25)]"
           >
             Save
           </button>

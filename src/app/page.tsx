@@ -13,10 +13,10 @@ export const metadata = {
 
 function LoadingFallback() {
   return (
-    <div className="min-h-screen bg-[#0f1419] text-white p-4 flex items-center justify-center">
+    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 flex items-center justify-center">
       <div className="text-center">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-[#1d9bf0] border-t-transparent"></div>
-        <p className="text-[#8899a6] mt-4">Loading...</p>
+        <p className="text-[var(--text-secondary)] mt-4 text-sm">Loading...</p>
       </div>
     </div>
   );

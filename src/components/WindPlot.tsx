@@ -330,20 +330,22 @@ export default function WindPlot({
         style={{ maxWidth: '56rem', marginLeft: 'auto', marginRight: 'auto' }}
       >
         {/* Header */}
-        <header className="text-center mb-6 relative">
-          <button
-            onClick={() => setShowSettings(true)}
-            className="absolute right-0 top-0 p-2.5 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-[var(--bg-secondary)] transition-colors"
-            title="Settings"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </button>
-          <div className="inline-flex items-center gap-2 mb-1">
-            <h1 className="text-2xl font-bold tracking-tight">{icao}</h1>
-            <span className="text-[var(--text-tertiary)] text-lg font-light">Wind</span>
+        <header className="text-center mb-4">
+          <div className="flex items-start justify-between mb-1">
+            <div className="w-10" />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl font-bold tracking-tight">{icao} <span className="text-[var(--text-tertiary)] font-light">Wind</span></h1>
+            </div>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="w-10 h-10 flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-[var(--bg-secondary)] transition-colors flex-shrink-0"
+              title="Settings"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
           </div>
           <p className="text-[var(--text-secondary)] text-sm">
             {data?.name || airport?.name || icao}
@@ -361,24 +363,24 @@ export default function WindPlot({
             </p>
           )}
 
-          {/* View toggle — segmented control */}
-          <div className="inline-flex mt-4 bg-[var(--bg-secondary)] rounded-full p-1 border border-[var(--border-color)]">
+          {/* View toggle */}
+          <div className="flex justify-center gap-2 mt-3">
             <button
               onClick={() => setViewMode('observations')}
-              className={`px-5 py-1.5 rounded-full text-sm font-medium transition-all ${
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 viewMode === 'observations'
-                  ? 'bg-[#1d9bf0] text-white shadow-[0_0_12px_rgba(29,155,240,0.3)]'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  ? 'bg-[#1d9bf0] text-white'
+                  : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               Observations
             </button>
             <button
               onClick={() => setViewMode('forecast')}
-              className={`px-5 py-1.5 rounded-full text-sm font-medium transition-all ${
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 viewMode === 'forecast'
-                  ? 'bg-[#10b981] text-white shadow-[0_0_12px_rgba(16,185,129,0.3)]'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  ? 'bg-[#10b981] text-white'
+                  : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               Forecast
@@ -387,26 +389,26 @@ export default function WindPlot({
 
           {/* Forecast range toggle */}
           {viewMode === 'forecast' && (
-            <div className="flex justify-center gap-1.5 mt-3">
+            <div className="flex justify-center gap-2 mt-2">
               <button
                 onClick={() => { setForecastRange(24); setForecastHoursLimit(24); }}
-                className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
                   forecastRange === 24
-                    ? 'bg-[#10b981]/15 text-[#10b981] border border-[#10b981]/40'
-                    : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:border-[var(--border-color-strong)] hover:text-[var(--text-primary)]'
+                    ? 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]'
+                    : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
-                24h hourly
+                24h (hourly)
               </button>
               <button
                 onClick={() => { setForecastRange(72); setForecastHoursLimit(72); }}
-                className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
                   forecastRange === 72
-                    ? 'bg-[#10b981]/15 text-[#10b981] border border-[#10b981]/40'
-                    : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:border-[var(--border-color-strong)] hover:text-[var(--text-primary)]'
+                    ? 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]'
+                    : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
-                72h 3-hourly
+                72h (3-hourly)
               </button>
             </div>
           )}

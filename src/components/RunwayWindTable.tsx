@@ -185,23 +185,23 @@ export default function RunwayWindTable({
     <div className="chart-section mt-4">
       <div className="flex items-center justify-between mb-3">
         <div className="chart-title mb-0">Runway Wind Components</div>
-        <div className="inline-flex bg-[var(--bg-primary)] rounded-lg p-0.5 border border-[var(--border-color)]">
+        <div className="flex gap-1 text-xs">
           <button
             onClick={() => setSource('5min')}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+            className={`px-2 py-1 rounded transition-colors ${
               source === '5min'
-                ? 'bg-[#1d9bf0] text-white shadow-[0_0_8px_rgba(29,155,240,0.25)]'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                ? 'bg-[#1d9bf0] text-white'
+                : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
             }`}
           >
             5-min
           </button>
           <button
             onClick={() => setSource('metar')}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+            className={`px-2 py-1 rounded transition-colors ${
               source === 'metar'
-                ? 'bg-[#1d9bf0] text-white shadow-[0_0_8px_rgba(29,155,240,0.25)]'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                ? 'bg-[#1d9bf0] text-white'
+                : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
             }`}
           >
             METAR

@@ -184,10 +184,10 @@ export default function ForecastWindTable({
               <button
                 key={opt.idx}
                 onClick={() => onSelectIdx(opt.idx)}
-                className={`px-1.5 py-1 rounded-md transition-all whitespace-nowrap flex-shrink-0 min-w-[36px] ${
+                className={`px-1.5 py-1 rounded transition-colors whitespace-nowrap flex-shrink-0 min-w-[36px] ${
                   selectedIdx === opt.idx
-                    ? 'bg-[#10b981] text-white font-medium shadow-[0_0_8px_rgba(16,185,129,0.3)]'
-                    : 'bg-[var(--bg-primary)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:border-[var(--border-color-strong)] hover:text-[var(--text-primary)]'
+                    ? 'bg-[#10b981] text-white font-medium'
+                    : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
                 }`}
                 title={`Forecast for ${opt.time}`}
               >

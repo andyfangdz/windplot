@@ -248,6 +248,45 @@ export async function getMetar(icao: string): Promise<MetarData | null> {
   }
 }
 
+// Batch fetch latest METARs for multiple airports
+// Returns a map of ICAO -> MetarData
+export async function getMetarBatch(icaos: string[]): Promise<Record<string, MetarData>> {
+  if (icaos.length === 0) return {};
+  const ids = icaos.map((s) => s.toUpperCase()).join(',');
+  const url = `https://aviationweather.gov/api/data/metar?ids=${ids}&format=json`;
+
+  try {
+    const response = await fetchWithTimeoutAndRetry(url, {
+      headers: {
+        'User-Agent': 'WindPlot/1.0',
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) return {};
+
+    const data = await response.json();
+    if (!Array.isArray(data)) return {};
+
+    const result: Record<string, MetarData> = {};
+    for (const entry of data) {
+      const stationId = (entry.icaoId ?? entry.stationId ?? '').toUpperCase();
+      if (!stationId) continue;
+      result[stationId] = {
+        wdir: entry.wdir === 0 ? null : (entry.wdir ?? null),
+        wspd: entry.wspd ?? null,
+        wgst: entry.wgst ?? null,
+        rawOb: entry.rawOb,
+        obsTime: entry.obsTime,
+      };
+    }
+    return result;
+  } catch (error) {
+    console.error('Batch METAR fetch error:', error);
+    return {};
+  }
+}
+
 // Fetch NBM text bulletin from NOMADS
 // productType: 'nbh' for hourly (24h) or 'nbs' for 3-hourly (72h)
 async function fetchNbmBulletin(productType: NbmProductType = 'nbh'): Promise<string | null> {

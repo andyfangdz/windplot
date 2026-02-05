@@ -1,15 +1,26 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { getNearbyAirports, NearbyAirport } from '@/app/actions';
+import { getNearbyAirports, getMetarBatch, NearbyAirport, MetarData } from '@/app/actions';
 
 interface NearbyAirportsProps {
   icao: string;
   onSelect: (icao: string) => void;
 }
 
+function formatWind(metar: MetarData | undefined): string {
+  if (!metar || metar.wdir === null || metar.wspd === null) return '—';
+  const dir = String(metar.wdir).padStart(3, '0');
+  const spd = metar.wspd;
+  if (metar.wgst !== null && metar.wgst > spd) {
+    return `${dir}@${spd}G${metar.wgst}`;
+  }
+  return `${dir}@${spd}`;
+}
+
 export default function NearbyAirports({ icao, onSelect }: NearbyAirportsProps) {
   const [nearby, setNearby] = useState<NearbyAirport[]>([]);
+  const [metars, setMetars] = useState<Record<string, MetarData>>({});
   const [loadedIcao, setLoadedIcao] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const fetchIdRef = useRef(0);
@@ -17,10 +28,18 @@ export default function NearbyAirports({ icao, onSelect }: NearbyAirportsProps) 
   useEffect(() => {
     const fetchId = ++fetchIdRef.current;
     getNearbyAirports(icao, 30, 10).then((airports) => {
-      // Check if this fetch is still current (handle race condition)
-      if (fetchIdRef.current === fetchId) {
-        setNearby(airports);
-        setLoadedIcao(icao);
+      if (fetchIdRef.current !== fetchId) return;
+      setNearby(airports);
+      setLoadedIcao(icao);
+
+      // Fetch METARs for all nearby airports
+      const icaos = airports.map((a) => a.icao);
+      if (icaos.length > 0) {
+        getMetarBatch(icaos).then((data) => {
+          if (fetchIdRef.current === fetchId) {
+            setMetars(data);
+          }
+        });
       }
     });
   }, [icao]);
@@ -46,45 +65,52 @@ export default function NearbyAirports({ icao, onSelect }: NearbyAirportsProps) 
 
   return (
     <div className="chart-section mt-4">
-      <div className="chart-title">Nearby Airports (within 30nm)</div>
-      <div className="grid gap-1">
-        {displayedAirports.map((airport) => (
-          <button
-            key={airport.icao}
-            onClick={() => onSelect(airport.icao)}
-            className="flex items-center justify-between w-full text-left p-2.5 rounded-lg hover:bg-[var(--bg-hover)] transition-colors group"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="font-mono text-[#1d9bf0] font-semibold text-sm">
-                {airport.icao}
-              </span>
-              <span className="text-[var(--text-primary)] text-sm truncate">
-                {airport.name}
-              </span>
-              <span className="text-[var(--text-tertiary)] text-xs hidden sm:inline">
-                {airport.city}, {airport.state}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-[var(--text-secondary)] text-sm tabular-nums font-mono">
-                {airport.distance}nm
-              </span>
-              <svg
-                className="w-4 h-4 text-[var(--text-tertiary)] group-hover:text-[#1d9bf0] transition-colors"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </div>
-          </button>
-        ))}
+      <div className="chart-title">Nearby Airports</div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-[var(--text-tertiary)] bg-[var(--bg-primary)]/50 border-b border-[var(--border-color)]">
+              <th className="py-2 px-3 text-left font-medium text-xs uppercase tracking-wider">ICAO</th>
+              <th className="py-2 px-3 text-left font-medium text-xs uppercase tracking-wider hidden sm:table-cell">Name</th>
+              <th className="py-2 px-3 text-right font-medium text-xs uppercase tracking-wider">Dist</th>
+              <th className="py-2 px-3 text-right font-medium text-xs uppercase tracking-wider">Wind</th>
+            </tr>
+          </thead>
+          <tbody>
+            {displayedAirports.map((airport) => {
+              const metar = metars[airport.icao];
+              const wind = formatWind(metar);
+              const hasGust = metar?.wgst !== null && metar?.wgst !== undefined && metar.wspd !== null && metar.wgst > metar.wspd;
+              return (
+                <tr
+                  key={airport.icao}
+                  onClick={() => onSelect(airport.icao)}
+                  className="border-b border-[var(--border-color)] last:border-b-0 hover:bg-[var(--bg-hover)] cursor-pointer transition-colors"
+                >
+                  <td className="py-2 px-3">
+                    <span className="font-mono text-[#1d9bf0] font-bold">{airport.icao}</span>
+                  </td>
+                  <td className="py-2 px-3 text-[var(--text-secondary)] truncate max-w-[200px] hidden sm:table-cell">
+                    {airport.name}
+                  </td>
+                  <td className="py-2 px-3 text-right font-mono text-[var(--text-secondary)] tabular-nums">
+                    {airport.distance}nm
+                  </td>
+                  <td className="py-2 px-3 text-right font-mono tabular-nums">
+                    {wind === '—' ? (
+                      <span className="text-[var(--text-tertiary)]">—</span>
+                    ) : (
+                      <span className={hasGust ? 'text-amber-400' : 'text-[var(--text-primary)]'}>
+                        {wind}
+                      </span>
+                    )}
+                    {wind !== '—' && <span className="text-[var(--text-tertiary)]"> kt</span>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
       {nearby.length > 5 && (
         <button

@@ -320,7 +320,7 @@ export default function ForecastDirectionChart({
         <canvas ref={canvasRef} className="w-full h-full cursor-pointer" />
         {tooltip && (
           <div
-            className="absolute pointer-events-none z-10 px-3 py-2.5 rounded-xl text-sm"
+            className="absolute pointer-events-none z-10 px-3 py-2.5 rounded-lg text-sm"
             style={{
               left: Math.min(tooltip.x + 12, 280),
               top: tooltip.y - 60,

@@ -444,7 +444,7 @@ export default function WindPlot({
 
             {error && !data && (
               <>
-                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-center">
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-center">
                   <p className="text-red-400 text-sm">{error}</p>
                   <button
                     onClick={handleRefresh}
@@ -461,7 +461,7 @@ export default function WindPlot({
               <>
                 {/* Stale data warning */}
                 {isSynopticStale && !loading && (
-                  <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-3 mb-4 text-center">
+                  <div className="bg-amber-500/10 border border-amber-500/25 rounded-lg p-3 mb-4 text-center">
                     <p className="text-amber-400 text-sm">
                       Weather data is {staleMinutes} minutes old — observations may be unavailable
                     </p>
@@ -523,7 +523,7 @@ export default function WindPlot({
 
             {forecastError && !forecast && (
               <>
-                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-center">
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-center">
                   <p className="text-red-400 text-sm">{forecastError}</p>
                   <button
                     onClick={() => {

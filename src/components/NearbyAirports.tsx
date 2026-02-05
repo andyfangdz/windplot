@@ -29,7 +29,7 @@ export default function NearbyAirports({ icao, onSelect }: NearbyAirportsProps) 
 
   if (loading) {
     return (
-      <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl p-4 mt-4">
+      <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg p-4 mt-4">
         <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm">
           <div className="animate-spin rounded-full h-4 w-4 border-2 border-[#1d9bf0] border-t-transparent"></div>
           Finding nearby airports...
@@ -45,7 +45,7 @@ export default function NearbyAirports({ icao, onSelect }: NearbyAirportsProps) 
   const displayedAirports = expanded ? nearby : nearby.slice(0, 5);
 
   return (
-    <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl p-4 mt-4">
+    <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg p-4 mt-4">
       <h3 className="text-xs font-semibold text-[var(--text-tertiary)] mb-3 uppercase tracking-wider">
         Nearby Airports (within 30nm)
       </h3>

@@ -262,13 +262,15 @@ async function fetchNbmBulletin(productType: NbmProductType = 'nbh'): Promise<st
     });
 
     if (!response.ok) {
-      // Try previous hour if current hour not available yet
+      // Try previous hour (2 hours ago) if current hour not available yet,
+      // adjusting both hour and date in UTC.
       const now = new Date();
-      const prevHour = (now.getUTCHours() - 2 + 24) % 24;
+      const fallbackDate = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+      const prevHour = fallbackDate.getUTCHours();
       const prevHourStr = prevHour.toString().padStart(2, '0');
-      const year = now.getUTCFullYear();
-      const month = (now.getUTCMonth() + 1).toString().padStart(2, '0');
-      const day = now.getUTCDate().toString().padStart(2, '0');
+      const year = fallbackDate.getUTCFullYear();
+      const month = (fallbackDate.getUTCMonth() + 1).toString().padStart(2, '0');
+      const day = fallbackDate.getUTCDate().toString().padStart(2, '0');
       const dateStr = `${year}${month}${day}`;
       const fallbackUrl = `https://nomads.ncep.noaa.gov/pub/data/nccf/com/blend/prod/blend.${dateStr}/${prevHourStr}/text/${productFile}.t${prevHourStr}z`;
 

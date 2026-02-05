@@ -10,7 +10,25 @@ interface AirportSelectorProps {
   onSelect: (icao: string) => void;
   hours: number;
   onHoursChange: (hours: number) => void;
+  viewMode: 'observations' | 'forecast';
+  forecastRange: 24 | 72;
+  forecastHoursLimit: number;
+  onForecastHoursLimitChange: (hours: number) => void;
 }
+
+const OBS_HOUR_OPTIONS = [1, 2, 4, 6, 12, 24];
+const FORECAST_24_OPTIONS = [
+  { value: 4, label: '4h' },
+  { value: 8, label: '8h' },
+  { value: 12, label: '12h' },
+  { value: 24, label: '24h' },
+];
+const FORECAST_72_OPTIONS = [
+  { value: 12, label: '12h' },
+  { value: 24, label: '1d' },
+  { value: 48, label: '2d' },
+  { value: 72, label: '3d' },
+];
 
 export default function AirportSelector({
   selectedIcao,
@@ -19,6 +37,10 @@ export default function AirportSelector({
   onSelect,
   hours,
   onHoursChange,
+  viewMode,
+  forecastRange,
+  forecastHoursLimit,
+  onForecastHoursLimitChange,
 }: AirportSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<AirportSearchResult[]>([]);
@@ -129,19 +151,28 @@ export default function AirportSelector({
           ))}
         </div>
 
-        {/* Hours selector */}
-        <select
-          value={hours}
-          onChange={(e) => onHoursChange(parseInt(e.target.value, 10))}
-          className="px-3 py-1.5 rounded-lg text-sm font-medium bg-[#192734] text-[#8899a6] border-none outline-none cursor-pointer hover:bg-[#22303c]"
-        >
-          <option value={1}>1h</option>
-          <option value={2}>2h</option>
-          <option value={4}>4h</option>
-          <option value={6}>6h</option>
-          <option value={12}>12h</option>
-          <option value={24}>24h</option>
-        </select>
+        {/* Hours / forecast limit selector */}
+        {viewMode === 'observations' ? (
+          <select
+            value={hours}
+            onChange={(e) => onHoursChange(parseInt(e.target.value, 10))}
+            className="px-3 py-1.5 rounded-lg text-sm font-medium bg-[#192734] text-[#8899a6] border-none outline-none cursor-pointer hover:bg-[#22303c]"
+          >
+            {OBS_HOUR_OPTIONS.map((h) => (
+              <option key={h} value={h}>{h}h</option>
+            ))}
+          </select>
+        ) : (
+          <select
+            value={forecastHoursLimit}
+            onChange={(e) => onForecastHoursLimitChange(parseInt(e.target.value, 10))}
+            className="px-3 py-1.5 rounded-lg text-sm font-medium bg-[#192734] text-[#10b981] border-none outline-none cursor-pointer hover:bg-[#22303c]"
+          >
+            {(forecastRange === 72 ? FORECAST_72_OPTIONS : FORECAST_24_OPTIONS).map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Search row */}

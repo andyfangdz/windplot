@@ -15,6 +15,8 @@ This document provides comprehensive guidance for AI agents working on this code
 | Add chart component | `src/components/` | Visual inspection |
 | Modify weather fetch | `src/app/actions.ts` | Check network tab, console |
 | Change favorites | `src/app/actions.ts` (FAVORITE_ICAOS) | Reload page |
+| Modify forecast fetch | `src/app/actions.ts`, `src/lib/nbm-parser.ts` | Toggle to Forecast view |
+| Modify NBM parser | `src/lib/nbm-parser.ts` | `npm run test:run` |
 
 ---
 
@@ -27,6 +29,8 @@ This document provides comprehensive guidance for AI agents working on this code
 - **Charts**: Chart.js + react-chartjs-2 (speed chart), Canvas API (direction radar)
 - **Weather API**: Synoptic Data API (5-minute AWOS observations)
 - **METAR**: Aviation Weather Center API
+- **Forecast API**: NOAA National Blend of Models (NBM) via NOMADS text bulletins
+- **Timezone**: @photostructure/tz-lookup (lat/lon to IANA timezone lookup)
 - **Styling**: Tailwind CSS 4
 - **Airport Data**: FAA NASR subscription (bundled JSON)
 
@@ -40,18 +44,24 @@ This document provides comprehensive guidance for AI agents working on this code
 src/
 ├── app/
 │   ├── page.tsx              # Main page (server component, data fetching)
-│   ├── actions.ts            # Server actions: wind data, airport search, METAR
-│   └── layout.tsx            # Root layout
+│   ├── actions.ts            # Server actions: wind data, airport search, METAR, forecast
+│   ├── layout.tsx            # Root layout
+│   └── nbm-parser.test.ts   # NBM parser unit tests (vitest)
 ├── components/
 │   ├── WindPlot.tsx          # Main client component, state management
 │   ├── WindSpeedChart.tsx    # Time series (Chart.js Line)
 │   ├── WindDirectionChart.tsx # Polar radar (Canvas API)
 │   ├── RunwayWindTable.tsx   # Crosswind/headwind breakdown
-│   ├── AirportSelector.tsx   # Search + quick-select
+│   ├── ForecastChart.tsx     # NBM forecast time series with synced selection
+│   ├── ForecastDirectionChart.tsx # NBM forecast polar radar with synced selection
+│   ├── ForecastWindTable.tsx # Forecast crosswind/headwind with time picker
+│   ├── AirportSelector.tsx   # Search + quick-select + forecast duration limits
 │   ├── NearbyAirports.tsx    # Nearby airports directory
 │   └── SettingsModal.tsx     # Runway surface filter settings
 ├── lib/
 │   ├── types.ts              # TypeScript interfaces
+│   ├── nbm-parser.ts         # NBM text bulletin parser (NBH + NBS products)
+│   ├── cache.ts              # Staleness/cache utilities
 │   ├── airports.ts           # Airport utilities (unused, data in JSON)
 │   ├── airports-data.json    # 4,450 US airports from NASR
 │   └── spatial-index.bin     # Pre-built k-d tree for nearby queries
@@ -64,30 +74,50 @@ data/
 ### Data Flow
 
 ```
-[Synoptic API]              [Aviation Weather API]
-      ↓                              ↓
-getWindData()                  getMetar()
-      ↓                              ↓
-      └──────────┬───────────────────┘
-                 ↓
-      getAirportFullData() (parallel fetch)
-                 ↓
-      page.tsx (server component)
-                 ↓
-      WindPlot (client state holder, 5-min auto-refresh)
-                 ↓
-   ┌─────────────┼─────────────┐
-   ↓             ↓             ↓
-WindSpeedChart  WindDirectionChart  RunwayWindTable
+[Synoptic API]      [Aviation Weather API]      [NOAA NOMADS]
+      ↓                      ↓                       ↓
+getWindData()          getMetar()            getNbmForecast()
+      ↓                      ↓               (NBH 24h / NBS 72h)
+      └──────────┬───────────┘                       │
+                 ↓                                   │
+      getAirportFullData() (parallel fetch)          │
+                 ↓                                   │
+      page.tsx (server component)                    │
+                 ↓                                   │
+      WindPlot (client state holder) ←───────────────┘
+                 ↓                   (on-demand fetch when viewing forecast)
+        viewMode toggle
+         /          \
+   observations    forecast
+        ↓          ↓      ↘
+   ┌────┼────┐   range    forecastHoursLimit
+   ↓    ↓    ↓  (24/72)   (client-side filter)
+Wind  Wind  Runway   ↓
+Speed Dir   Wind   ┌────┼────┐
+Chart Chart Table  ↓    ↓    ↓
+                 Fcst  Fcst  Fcst
+                 Chart Dir   Wind
+                       Chart Table
+                         ↑
+              selectedForecastIdx
+            (synced across all three)
 ```
 
 ### Key Abstractions
 
 1. **WindDataPoint** (`src/lib/types.ts`): Normalized observation with timestamp, wspd, wgst, wdir.
 
-2. **AirportFullData** (`src/app/actions.ts`): Combined payload with airport info, wind timeseries, and METAR.
+2. **ForecastDataPoint** (`src/lib/types.ts`): NBM forecast point with timestamp, wspd, wgst, wdir, temp, sky, pop.
 
-3. **Prefetch Cache**: Server-side prefetch of top 3 favorites; client caches results for instant switching.
+3. **AirportFullData** (`src/app/actions.ts`): Combined payload with airport info, wind timeseries, and METAR.
+
+4. **ForecastData** (`src/lib/types.ts`): NBM forecast container with icao, name, and forecasts array.
+
+5. **NbmProductType** (`src/lib/nbm-parser.ts`): `'nbh' | 'nbs'` — selects between hourly (24h) and 3-hourly (72h) NBM products.
+
+6. **NbmParsedData** (`src/lib/nbm-parser.ts`): Parsed bulletin data with station, times, and aviation fields (wdr, wsp, gst, tmp, dpt, sky, cig, vis, pop).
+
+7. **Prefetch Cache**: Server-side prefetch of top 3 favorites; client caches results for instant switching.
 
 ---
 
@@ -115,12 +145,13 @@ npm run update-nasr:index     # Rebuilds only spatial index from existing JSON
 
 Do not modify `airports-data.json` manually unless adding a single airport. If you do, run `npm run update-nasr:index` to rebuild the spatial index.
 
-### 4. Canvas Rendering (WindDirectionChart)
+### 4. Canvas Rendering (WindDirectionChart, ForecastDirectionChart)
 
-The polar radar uses raw Canvas API, not Chart.js. Key points:
+Both polar radars use raw Canvas API, not Chart.js. Key points:
 - Handle device pixel ratio (`window.devicePixelRatio`) for crisp rendering
 - Redraw on resize via `ResizeObserver` or effect deps
-- Points stored in ref for tooltip hit detection
+- Points stored in ref for tooltip hit detection and click-to-select
+- ForecastDirectionChart supports synced selection via `selectedIdx`/`onSelectIdx` props
 
 ### 5. URL State Sync
 
@@ -199,6 +230,39 @@ GET https://aviationweather.gov/api/data/metar?ids={icao}&format=json
 
 Returns latest METAR with current conditions. Used for "live" wind display when Synoptic is stale.
 
+### NOAA NBM Text Bulletins
+
+NBM (National Blend of Models) forecasts are fetched from NOMADS as text bulletins. Two products are supported:
+
+**NBH — Hourly (24h)**
+```
+GET https://nomads.ncep.noaa.gov/pub/data/nccf/com/blend/prod/blend.{YYYYMMDD}/{HH}/text/blend_nbhtx.t{HH}z
+```
+- 1-hour intervals, ~24 forecast hours
+- Time columns are UTC clock hours
+- Uses `P01` for 1-hour precipitation probability
+
+**NBS — Short-range (72h)**
+```
+GET https://nomads.ncep.noaa.gov/pub/data/nccf/com/blend/prod/blend.{YYYYMMDD}/{HH}/text/blend_nbstx.t{HH}z
+```
+- 3-hour intervals, ~72 forecast hours
+- Time columns are `FHR` (forecast hour relative to base time)
+- Uses `P06` for 6-hour precipitation probability (falls back if `P01` absent)
+
+Both bulletins share the same aviation-relevant fields:
+- `WDR` - Wind direction (tens of degrees, multiply by 10)
+- `WSP` - Wind speed (knots)
+- `GST` - Wind gust (knots)
+- `TMP` - Temperature (°F)
+- `SKY` - Sky cover (%)
+- `CIG` - Ceiling (hundreds of feet, 888 = unlimited)
+- `VIS` - Visibility (tenths of miles)
+
+The parser (`src/lib/nbm-parser.ts`) extracts station-specific sections from the bulk bulletin file using delimiter patterns. The fetch logic (`fetchNbmBulletin` in `actions.ts`) includes fallback to the previous cycle hour if the current one is not yet available. Only airports that are NBM forecast stations will have forecast data.
+
+**Timezone Conversion**: NBM bulletins provide times in UTC. The `getNbmForecast` function uses the `@photostructure/tz-lookup` library to determine the airport's IANA timezone from its coordinates, then converts UTC times to local time for display using the Intl API's `timeZone` option.
+
 ---
 
 ## Testing & Verification
@@ -206,10 +270,14 @@ Returns latest METAR with current conditions. Used for "live" wind display when 
 ### Commands
 
 ```bash
-npm run dev             # Local dev server
-npm run build           # Production build
-npm run lint            # ESLint
-npm run update-nasr     # Full NASR update (download + parse + index)
+npm run dev                # Local dev server
+npm run build              # Production build
+npm run lint               # ESLint
+npm run test               # Run tests in watch mode (vitest)
+npm run test:run           # Run tests once (vitest run)
+npm run update-nasr        # Full NASR update (download + parse + index)
+npm run update-nasr:download  # Download fresh NASR data only
+npm run update-nasr:parse  # Parse downloaded NASR data only
 npm run update-nasr:index  # Rebuild spatial index only
 ```
 
@@ -222,6 +290,8 @@ npm run update-nasr:index  # Rebuild spatial index only
 | Airport search | Type partial ICAO/name, verify results |
 | URL params | Refresh page, verify state persists |
 | Mobile layout | Test on narrow viewport |
+| NBM parser | `npm run test:run` (37 test cases) |
+| Forecast view | Toggle Obs/Forecast, switch 24h/72h, verify synced selection |
 
 ---
 
@@ -321,7 +391,14 @@ ctx.scale(dpr, dpr);
 
 ### 4. Timezone Handling
 
-Synoptic returns local time strings. The `time` field is display-only; use `timestamp` (Unix seconds) for calculations.
+**Observations**: Synoptic API returns times in the airport's local timezone via the `obtimezone=local` parameter. The `time` field is display-only; use `timestamp` (Unix seconds) for calculations.
+
+**Forecasts**: NBM bulletins use UTC times. The `getNbmForecast` function:
+1. Gets the airport's timezone using the `@photostructure/tz-lookup` library based on lat/lon coordinates
+2. Converts UTC forecast times to the airport's local timezone when formatting display strings
+3. Uses the Intl API's `timeZone` option to ensure consistency with observations
+
+Both observations and forecasts display times in the **airport's local timezone**, not the user's browser timezone.
 
 ---
 
@@ -331,10 +408,16 @@ Synoptic returns local time strings. The `time` field is display-only; use `time
 |---------|---------|
 | Main page | `src/app/page.tsx` |
 | All API calls | `src/app/actions.ts` |
+| NBM bulletin parser | `src/lib/nbm-parser.ts` |
+| NBM parser tests | `src/app/nbm-parser.test.ts` |
+| Cache utilities | `src/lib/cache.ts` |
 | Client state | `src/components/WindPlot.tsx` |
 | Speed chart | `src/components/WindSpeedChart.tsx` |
 | Direction radar | `src/components/WindDirectionChart.tsx` |
 | Crosswind table | `src/components/RunwayWindTable.tsx` |
+| Forecast chart | `src/components/ForecastChart.tsx` |
+| Forecast direction | `src/components/ForecastDirectionChart.tsx` |
+| Forecast table | `src/components/ForecastWindTable.tsx` |
 | Airport search | `src/components/AirportSelector.tsx` |
 | Nearby airports | `src/components/NearbyAirports.tsx` |
 | Type definitions | `src/lib/types.ts` |

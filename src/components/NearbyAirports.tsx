@@ -8,22 +8,34 @@ interface NearbyAirportsProps {
   onSelect: (icao: string) => void;
 }
 
-function formatWind(metar: MetarData | undefined): string {
-  if (!metar || metar.wdir === null || metar.wspd === null) return '—';
+type WindDisplay = { text: string; style: 'normal' | 'calm' | 'gust' | 'missing' | 'loading' };
+
+function formatWind(metar: MetarData | undefined, metarsLoaded: boolean): WindDisplay {
+  if (!metarsLoaded) return { text: '...', style: 'loading' };
+  if (!metar) return { text: 'MISSING', style: 'missing' };
+  if (metar.wspd === 0 || (metar.wdir === null && metar.wspd === null)) {
+    // wspd=0 is calm; wdir=null + wspd=null means no data
+    if (metar.wspd === 0) return { text: 'CALM', style: 'calm' };
+    return { text: 'MISSING', style: 'missing' };
+  }
+  if (metar.wdir === null || metar.wspd === null) return { text: 'MISSING', style: 'missing' };
   const dir = String(metar.wdir).padStart(3, '0');
   const spd = metar.wspd;
   if (metar.wgst !== null && metar.wgst > spd) {
-    return `${dir}@${spd}G${metar.wgst}`;
+    return { text: `${dir}@${spd}G${metar.wgst}`, style: 'gust' };
   }
-  return `${dir}@${spd}`;
+  return { text: `${dir}@${spd}`, style: 'normal' };
 }
 
 export default function NearbyAirports({ icao, onSelect }: NearbyAirportsProps) {
   const [nearby, setNearby] = useState<NearbyAirport[]>([]);
   const [metars, setMetars] = useState<Record<string, MetarData>>({});
+  const [metarsLoadedIcao, setMetarsLoadedIcao] = useState<string | null>(null);
   const [loadedIcao, setLoadedIcao] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const fetchIdRef = useRef(0);
+
+  const metarsLoaded = metarsLoadedIcao === icao;
 
   useEffect(() => {
     const fetchId = ++fetchIdRef.current;
@@ -38,6 +50,7 @@ export default function NearbyAirports({ icao, onSelect }: NearbyAirportsProps) 
         getMetarBatch(icaos).then((data) => {
           if (fetchIdRef.current === fetchId) {
             setMetars(data);
+            setMetarsLoadedIcao(icao);
           }
         });
       }
@@ -79,8 +92,14 @@ export default function NearbyAirports({ icao, onSelect }: NearbyAirportsProps) 
           <tbody>
             {displayedAirports.map((airport) => {
               const metar = metars[airport.icao];
-              const wind = formatWind(metar);
-              const hasGust = metar?.wgst !== null && metar?.wgst !== undefined && metar.wspd !== null && metar.wgst > metar.wspd;
+              const wind = formatWind(metar, metarsLoaded);
+              const windColorClass =
+                wind.style === 'gust' ? 'text-amber-400' :
+                wind.style === 'missing' ? 'text-amber-400' :
+                wind.style === 'calm' ? 'text-[var(--text-tertiary)]' :
+                wind.style === 'loading' ? 'text-[var(--text-tertiary)]' :
+                'text-[var(--text-primary)]';
+              const showUnit = wind.style === 'normal' || wind.style === 'gust';
               return (
                 <tr
                   key={airport.icao}
@@ -97,14 +116,8 @@ export default function NearbyAirports({ icao, onSelect }: NearbyAirportsProps) 
                     {airport.distance}nm
                   </td>
                   <td className="py-2 px-3 text-right font-mono tabular-nums">
-                    {wind === '—' ? (
-                      <span className="text-[var(--text-tertiary)]">—</span>
-                    ) : (
-                      <span className={hasGust ? 'text-amber-400' : 'text-[var(--text-primary)]'}>
-                        {wind}
-                      </span>
-                    )}
-                    {wind !== '—' && <span className="text-[var(--text-tertiary)]"> kt</span>}
+                    <span className={windColorClass}>{wind.text}</span>
+                    {showUnit && <span className="text-[var(--text-tertiary)]"> kt</span>}
                   </td>
                 </tr>
               );

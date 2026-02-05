@@ -236,7 +236,8 @@ export async function getMetar(icao: string): Promise<MetarData | null> {
 
     const latest = data[0];
     return {
-      wdir: latest.wdir === 0 ? null : (latest.wdir ?? null),
+      // wdir=0 + wspd=0 means calm; wdir=0 + wspd>0 means variable (VRB), null out direction
+      wdir: (latest.wdir === 0 && (latest.wspd ?? 0) > 0) ? null : (latest.wdir ?? null),
       wspd: latest.wspd ?? null,
       wgst: latest.wgst ?? null,
       rawOb: latest.rawOb,
@@ -273,7 +274,7 @@ export async function getMetarBatch(icaos: string[]): Promise<Record<string, Met
       const stationId = (entry.icaoId ?? entry.stationId ?? '').toUpperCase();
       if (!stationId) continue;
       result[stationId] = {
-        wdir: entry.wdir === 0 ? null : (entry.wdir ?? null),
+        wdir: (entry.wdir === 0 && (entry.wspd ?? 0) > 0) ? null : (entry.wdir ?? null),
         wspd: entry.wspd ?? null,
         wgst: entry.wgst ?? null,
         rawOb: entry.rawOb,

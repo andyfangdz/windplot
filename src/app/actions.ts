@@ -246,47 +246,6 @@ export async function getMetar(icao: string): Promise<MetarData | null> {
   }
 }
 
-// Weather.gov API types for NBM-derived forecasts
-interface WeatherGovGridpointsResponse {
-  properties: {
-    updateTime?: string;
-    validTimes?: string;
-    windSpeed?: {
-      uom: string;
-      values: Array<{ validTime: string; value: number }>;
-    };
-    windGust?: {
-      uom: string;
-      values: Array<{ validTime: string; value: number }>;
-    };
-    windDirection?: {
-      uom: string;
-      values: Array<{ validTime: string; value: number }>;
-    };
-    temperature?: {
-      uom: string;
-      values: Array<{ validTime: string; value: number }>;
-    };
-    skyCover?: {
-      uom: string;
-      values: Array<{ validTime: string; value: number }>;
-    };
-    probabilityOfPrecipitation?: {
-      uom: string;
-      values: Array<{ validTime: string; value: number }>;
-    };
-  };
-}
-
-interface WeatherGovPointsResponse {
-  properties: {
-    gridId: string;
-    gridX: number;
-    gridY: number;
-    forecastGridData: string;
-  };
-}
-
 // NBM Text Bulletin Parser
 // URL pattern: https://nomads.ncep.noaa.gov/pub/data/nccf/com/blend/prod/blend.{date}/{hour}/text/blend_nbhtx.t{hour}z
 
@@ -492,230 +451,70 @@ async function fetchNbmBulletin(): Promise<string | null> {
   }
 }
 
-// Convert m/s to knots
-const MS_TO_KNOTS = 1.94384;
-
-// Convert Celsius to Fahrenheit
-const celsiusToFahrenheit = (c: number): number => (c * 9) / 5 + 32;
-
-// Parse ISO 8601 duration (e.g., "PT1H" -> 1 hour in milliseconds)
-function parseIsoDuration(duration: string): number {
-  const match = duration.match(/PT(\d+)H/);
-  if (match) {
-    return parseInt(match[1]) * 60 * 60 * 1000;
-  }
-  return 60 * 60 * 1000; // Default to 1 hour
-}
-
-// Expand weather.gov time series data to hourly values
-function expandTimeSeries(
-  values: Array<{ validTime: string; value: number }>,
-  startTime: number,
-  endTime: number,
-  convertFn?: (v: number) => number
-): Map<number, number> {
-  const result = new Map<number, number>();
-
-  for (const entry of values) {
-    const [timeStr, durationStr] = entry.validTime.split('/');
-    const entryStart = new Date(timeStr).getTime();
-    const duration = durationStr ? parseIsoDuration(durationStr) : 60 * 60 * 1000;
-    const entryEnd = entryStart + duration;
-
-    // Expand this entry into hourly slots
-    let current = entryStart;
-    while (current < entryEnd && current < endTime) {
-      if (current >= startTime) {
-        // Round to hour
-        const hourTimestamp = Math.floor(current / (60 * 60 * 1000)) * 60 * 60 * 1000;
-        const value = convertFn ? convertFn(entry.value) : entry.value;
-        result.set(hourTimestamp / 1000, value); // Store as Unix seconds
-      }
-      current += 60 * 60 * 1000; // Move to next hour
-    }
-  }
-
-  return result;
-}
-
-// Fetch NBM forecast - tries real NBM text bulletin first, falls back to weather.gov gridpoints
+// Fetch NBM forecast from NOAA NBM text bulletins
 export async function getNbmForecast(
   icao: string,
   hours: number = 24
 ): Promise<ForecastData | null> {
   const upperIcao = icao.toUpperCase();
 
-  // First, get airport info
+  // Get airport info for name
   const airport = await getAirport(upperIcao);
   if (!airport) {
     console.error('Airport not found:', upperIcao);
     return null;
   }
 
-  // Try real NBM text bulletin first
   try {
     const bulletinText = await fetchNbmBulletin();
-    if (bulletinText) {
-      const nbmData = parseNbmBulletin(bulletinText, upperIcao);
-      if (nbmData && nbmData.times.length > 0) {
-        // Convert parsed NBM data to ForecastData format
-        const forecasts: ForecastDataPoint[] = [];
-        const now = Date.now();
-
-        for (let i = 0; i < Math.min(nbmData.times.length, hours); i++) {
-          const forecastTime = nbmData.times[i];
-          // Skip forecasts in the past
-          if (forecastTime.getTime() < now - 30 * 60 * 1000) continue;
-
-          forecasts.push({
-            time: forecastTime.toLocaleTimeString('en-US', {
-              hour: 'numeric',
-              minute: '2-digit',
-              hour12: true,
-            }),
-            timestamp: Math.floor(forecastTime.getTime() / 1000),
-            wspd: nbmData.wsp[i] ?? null,
-            wgst: nbmData.gst[i] ?? null,
-            wdir: nbmData.wdr[i] ?? null,
-            temp: nbmData.tmp[i] ?? null,
-            sky: nbmData.sky[i] ?? null,
-            pop: nbmData.pop[i] ?? null,
-          });
-        }
-
-        if (forecasts.length > 0) {
-          return {
-            icao: upperIcao,
-            name: airport.name,
-            forecasts,
-            generatedAt: Math.floor(nbmData.times[0].getTime() / 1000),
-          };
-        }
-      }
-    }
-  } catch (error) {
-    console.error('NBM bulletin parse error, falling back to weather.gov:', error);
-  }
-
-  // Fallback to weather.gov gridpoints API (NDFD data)
-  if (airport.lat === undefined || airport.lon === undefined) {
-    console.error('Airport missing coordinates for fallback:', upperIcao);
-    return null;
-  }
-
-  try {
-    // Step 1: Get grid coordinates from lat/lon
-    const pointsUrl = `https://api.weather.gov/points/${airport.lat.toFixed(4)},${airport.lon.toFixed(4)}`;
-    const pointsResponse = await fetchWithTimeoutAndRetry(pointsUrl, {
-      headers: {
-        'User-Agent': 'WindPlot/1.0 (aviation weather visualization)',
-        'Accept': 'application/geo+json',
-      },
-      next: { revalidate: 3600 }, // Cache for 1 hour
-    });
-
-    if (!pointsResponse.ok) {
-      console.error('Weather.gov points API error:', pointsResponse.status);
+    if (!bulletinText) {
+      console.error('Failed to fetch NBM bulletin');
       return null;
     }
 
-    const pointsData: WeatherGovPointsResponse = await pointsResponse.json();
-    const { gridId, gridX, gridY } = pointsData.properties;
-
-    // Step 2: Fetch gridpoint forecast data (raw numerical data)
-    const gridUrl = `https://api.weather.gov/gridpoints/${gridId}/${gridX},${gridY}`;
-    const gridResponse = await fetchWithTimeoutAndRetry(gridUrl, {
-      headers: {
-        'User-Agent': 'WindPlot/1.0 (aviation weather visualization)',
-        'Accept': 'application/geo+json',
-      },
-      next: { revalidate: 900 }, // Cache for 15 minutes
-    });
-
-    if (!gridResponse.ok) {
-      console.error('Weather.gov gridpoints API error:', gridResponse.status);
+    const nbmData = parseNbmBulletin(bulletinText, upperIcao);
+    if (!nbmData || nbmData.times.length === 0) {
+      console.error('Station not found in NBM bulletin:', upperIcao);
       return null;
     }
 
-    const gridData: WeatherGovGridpointsResponse = await gridResponse.json();
-    const props = gridData.properties;
-
-    // Define time range
-    const now = Date.now();
-    const startTime = now;
-    const endTime = now + hours * 60 * 60 * 1000;
-
-    // Expand all time series to hourly values
-    const windSpeeds = props.windSpeed?.values
-      ? expandTimeSeries(props.windSpeed.values, startTime, endTime, (v) =>
-          Math.round(v * MS_TO_KNOTS)
-        )
-      : new Map();
-
-    const windGusts = props.windGust?.values
-      ? expandTimeSeries(props.windGust.values, startTime, endTime, (v) =>
-          Math.round(v * MS_TO_KNOTS)
-        )
-      : new Map();
-
-    const windDirs = props.windDirection?.values
-      ? expandTimeSeries(props.windDirection.values, startTime, endTime)
-      : new Map();
-
-    const temps = props.temperature?.values
-      ? expandTimeSeries(props.temperature.values, startTime, endTime, celsiusToFahrenheit)
-      : new Map();
-
-    const skyCover = props.skyCover?.values
-      ? expandTimeSeries(props.skyCover.values, startTime, endTime)
-      : new Map();
-
-    const pop = props.probabilityOfPrecipitation?.values
-      ? expandTimeSeries(props.probabilityOfPrecipitation.values, startTime, endTime)
-      : new Map();
-
-    // Build hourly forecast points
+    // Convert parsed NBM data to ForecastData format
     const forecasts: ForecastDataPoint[] = [];
-    const timestamps = new Set([
-      ...windSpeeds.keys(),
-      ...windGusts.keys(),
-      ...windDirs.keys(),
-    ]);
+    const now = Date.now();
 
-    // Sort timestamps and create forecast points
-    const sortedTimestamps = Array.from(timestamps).sort((a, b) => a - b);
+    for (let i = 0; i < Math.min(nbmData.times.length, hours); i++) {
+      const forecastTime = nbmData.times[i];
+      // Skip forecasts in the past
+      if (forecastTime.getTime() < now - 30 * 60 * 1000) continue;
 
-    for (const ts of sortedTimestamps) {
-      if (ts * 1000 < startTime || ts * 1000 > endTime) continue;
-
-      const date = new Date(ts * 1000);
       forecasts.push({
-        time: date.toLocaleTimeString('en-US', {
+        time: forecastTime.toLocaleTimeString('en-US', {
           hour: 'numeric',
           minute: '2-digit',
           hour12: true,
         }),
-        timestamp: ts,
-        wspd: windSpeeds.get(ts) ?? null,
-        wgst: windGusts.get(ts) ?? null,
-        wdir: windDirs.get(ts) ?? null,
-        temp: temps.get(ts) ? Math.round(temps.get(ts)!) : null,
-        sky: skyCover.get(ts) ?? null,
-        pop: pop.get(ts) ?? null,
+        timestamp: Math.floor(forecastTime.getTime() / 1000),
+        wspd: nbmData.wsp[i] ?? null,
+        wgst: nbmData.gst[i] ?? null,
+        wdir: nbmData.wdr[i] ?? null,
+        temp: nbmData.tmp[i] ?? null,
+        sky: nbmData.sky[i] ?? null,
+        pop: nbmData.pop[i] ?? null,
       });
     }
 
-    // Limit to requested hours
-    const limitedForecasts = forecasts.slice(0, hours);
+    if (forecasts.length === 0) {
+      return null;
+    }
 
     return {
       icao: upperIcao,
       name: airport.name,
-      forecasts: limitedForecasts,
-      generatedAt: props.updateTime ? new Date(props.updateTime).getTime() / 1000 : undefined,
+      forecasts,
+      generatedAt: Math.floor(nbmData.times[0].getTime() / 1000),
     };
   } catch (error) {
-    console.error('Weather.gov fallback fetch error:', error);
+    console.error('NBM forecast fetch error:', error);
     return null;
   }
 }

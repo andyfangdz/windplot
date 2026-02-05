@@ -493,7 +493,7 @@ export default function WindPlot({
             )}
 
             <footer className="text-center mt-6 text-xs text-[#8899a6]">
-              <p>Forecast data from NOAA National Blend of Models via weather.gov</p>
+              <p>Forecast data from NOAA National Blend of Models (NBM)</p>
               <button
                 onClick={() => {
                   setForecast(null);

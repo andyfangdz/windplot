@@ -114,23 +114,20 @@ export default function ForecastWindTable({
   runways,
 }: ForecastWindTableProps) {
   // Allow selecting a specific forecast hour
-  const [selectedHour, setSelectedHour] = useState(0);
+  const [selectedIdx, setSelectedIdx] = useState(0);
 
-  // Get forecast options (every 3 hours for cleaner selection)
+  // Build hour options for all 24 forecast hours
   const hourOptions = useMemo(() => {
-    const options: { idx: number; time: string }[] = [];
-    for (let i = 0; i < forecasts.length; i += 3) {
-      options.push({ idx: i, time: forecasts[i]?.time || '' });
-    }
-    // Always include first hour if not already
-    if (options.length === 0 && forecasts.length > 0) {
-      options.push({ idx: 0, time: forecasts[0].time });
-    }
-    return options;
+    return forecasts.map((f, idx) => ({
+      idx,
+      time: f.time,
+      // Extract just the hour for compact display
+      hourLabel: f.time.replace(/:00\s*(AM|PM)/i, ' $1').replace(/\s+/g, ''),
+    }));
   }, [forecasts]);
 
   // Get selected forecast
-  const selectedForecast = forecasts[selectedHour];
+  const selectedForecast = forecasts[selectedIdx];
 
   // Compute wind components for selected forecast
   const { components: windComponents, hasGusts } = useMemo(() => {
@@ -149,22 +146,26 @@ export default function ForecastWindTable({
 
   return (
     <div className="chart-section mt-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="chart-title mb-0">🛬 Forecast Runway Winds</div>
-        <div className="flex gap-1 text-xs overflow-x-auto">
-          {hourOptions.map((opt) => (
-            <button
-              key={opt.idx}
-              onClick={() => setSelectedHour(opt.idx)}
-              className={`px-2 py-1 rounded transition-colors whitespace-nowrap ${
-                selectedHour === opt.idx
-                  ? 'bg-[#10b981] text-white'
-                  : 'bg-[#38444d] text-[#8899a6] hover:bg-[#4a5568]'
-              }`}
-            >
-              {opt.time}
-            </button>
-          ))}
+      <div className="mb-3">
+        <div className="chart-title mb-2">🛬 Forecast Runway Winds</div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[#8899a6] whitespace-nowrap">Hour:</span>
+          <div className="flex gap-1 text-xs overflow-x-auto pb-1 flex-1" style={{ scrollbarWidth: 'thin' }}>
+            {hourOptions.map((opt, i) => (
+              <button
+                key={opt.idx}
+                onClick={() => setSelectedIdx(opt.idx)}
+                className={`px-2 py-1 rounded transition-colors whitespace-nowrap flex-shrink-0 ${
+                  selectedIdx === opt.idx
+                    ? 'bg-[#10b981] text-white font-medium'
+                    : 'bg-[#38444d] text-[#8899a6] hover:bg-[#4a5568]'
+                }`}
+                title={`Forecast for ${opt.time}`}
+              >
+                {i === 0 ? 'Now' : `+${i}h`}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

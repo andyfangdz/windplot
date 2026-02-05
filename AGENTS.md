@@ -394,7 +394,7 @@ ctx.scale(dpr, dpr);
 **Observations**: Synoptic API returns times in the airport's local timezone via the `obtimezone=local` parameter. The `time` field is display-only; use `timestamp` (Unix seconds) for calculations.
 
 **Forecasts**: NBM bulletins use UTC times. The `getNbmForecast` function:
-1. Gets the airport's timezone using the `geo-tz` library based on lat/lon coordinates
+1. Gets the airport's timezone using the `@photostructure/tz-lookup` library based on lat/lon coordinates
 2. Converts UTC forecast times to the airport's local timezone when formatting display strings
 3. Uses the Intl API's `timeZone` option to ensure consistency with observations
 

@@ -207,7 +207,7 @@ export default function ForecastWindTable({
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-lg border border-[var(--border-color)]">
+          <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-[var(--text-tertiary)] bg-[var(--bg-primary)]/50 border-b border-[var(--border-color)]">

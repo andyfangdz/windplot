@@ -30,6 +30,7 @@ This document provides comprehensive guidance for AI agents working on this code
 - **Weather API**: Synoptic Data API (5-minute AWOS observations)
 - **METAR**: Aviation Weather Center API
 - **Forecast API**: NOAA National Blend of Models (NBM) via NOMADS text bulletins
+- **Timezone**: geo-tz (lat/lon to IANA timezone lookup)
 - **Styling**: Tailwind CSS 4
 - **Airport Data**: FAA NASR subscription (bundled JSON)
 
@@ -260,6 +261,8 @@ Both bulletins share the same aviation-relevant fields:
 
 The parser (`src/lib/nbm-parser.ts`) extracts station-specific sections from the bulk bulletin file using delimiter patterns. The fetch logic (`fetchNbmBulletin` in `actions.ts`) includes fallback to the previous cycle hour if the current one is not yet available. Only airports that are NBM forecast stations will have forecast data.
 
+**Timezone Conversion**: NBM bulletins provide times in UTC. The `getNbmForecast` function uses the `geo-tz` library to determine the airport's IANA timezone from its coordinates, then converts UTC times to local time for display using the Intl API's `timeZone` option.
+
 ---
 
 ## Testing & Verification
@@ -388,7 +391,14 @@ ctx.scale(dpr, dpr);
 
 ### 4. Timezone Handling
 
-Synoptic returns local time strings. The `time` field is display-only; use `timestamp` (Unix seconds) for calculations.
+**Observations**: Synoptic API returns times in the airport's local timezone via the `obtimezone=local` parameter. The `time` field is display-only; use `timestamp` (Unix seconds) for calculations.
+
+**Forecasts**: NBM bulletins use UTC times. The `getNbmForecast` function:
+1. Gets the airport's timezone using the `geo-tz` library based on lat/lon coordinates
+2. Converts UTC forecast times to the airport's local timezone when formatting display strings
+3. Uses the Intl API's `timeZone` option to ensure consistency with observations
+
+Both observations and forecasts display times in the **airport's local timezone**, not the user's browser timezone.
 
 ---
 

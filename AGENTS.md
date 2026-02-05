@@ -214,30 +214,36 @@ GET https://aviationweather.gov/api/data/metar?ids={icao}&format=json
 
 Returns latest METAR with current conditions. Used for "live" wind display when Synoptic is stale.
 
-### Weather.gov API (NBM Forecasts)
+### NOAA NBM Text Bulletins (Primary Forecast Source)
 
-NBM-derived gridpoint forecasts require two API calls:
+NBM (National Blend of Models) hourly forecasts are fetched from NOMADS:
 
-**Step 1: Get grid coordinates from lat/lon**
+```
+GET https://nomads.ncep.noaa.gov/pub/data/nccf/com/blend/prod/blend.{YYYYMMDD}/{HH}/text/blend_nbhtx.t{HH}z
+```
+
+The NBH (hourly) bulletin contains station-specific forecasts with aviation-relevant fields:
+- `WDR` - Wind direction (tens of degrees, multiply by 10)
+- `WSP` - Wind speed (knots)
+- `GST` - Wind gust (knots)
+- `TMP` - Temperature (°F)
+- `SKY` - Sky cover (%)
+- `CIG` - Ceiling (hundreds of feet, 888 = unlimited)
+- `VIS` - Visibility (tenths of miles)
+- `P01` - 1-hour precipitation probability (%)
+
+The parser extracts station-specific sections from the bulk bulletin file using delimiter patterns.
+
+### Weather.gov API (Fallback)
+
+If the station isn't in NBM bulletins, falls back to weather.gov gridpoints API:
+
 ```
 GET https://api.weather.gov/points/{lat},{lon}
-```
-Returns `gridId`, `gridX`, `gridY` for the location.
-
-**Step 2: Fetch gridpoint forecast data**
-```
 GET https://api.weather.gov/gridpoints/{gridId}/{gridX},{gridY}
 ```
 
-Returns hourly forecast data in ISO 8601 interval format. Fields used:
-- `windSpeed` (m/s, converted to knots)
-- `windGust` (m/s, converted to knots)
-- `windDirection` (degrees)
-- `temperature` (Celsius, converted to Fahrenheit)
-- `skyCover` (percentage)
-- `probabilityOfPrecipitation` (percentage)
-
-**Important**: Weather.gov API requires a `User-Agent` header and returns data in variable-duration time buckets that must be expanded to hourly intervals.
+This provides NDFD (forecaster-edited) data rather than pure NBM model output.
 
 ---
 

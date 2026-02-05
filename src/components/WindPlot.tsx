@@ -60,6 +60,7 @@ export default function WindPlot({
   // Forecast view state
   const [viewMode, setViewMode] = useState<'observations' | 'forecast'>('observations');
   const [forecastRange, setForecastRange] = useState<24 | 72>(24);
+  const [forecastHoursLimit, setForecastHoursLimit] = useState<number>(24);
   const [forecast, setForecast] = useState<ForecastData | null>(null);
   const [forecastLoading, setForecastLoading] = useState(false);
   const [forecastError, setForecastError] = useState<string | null>(null);
@@ -263,6 +264,18 @@ export default function WindPlot({
     });
   }, [airport?.runways, settings.allowedSurfaces]);
 
+  // Filter forecasts by the hours limit
+  const filteredForecasts = useMemo(() => {
+    if (!forecast) return [];
+    const allForecasts = forecast.forecasts;
+    if (forecastHoursLimit >= forecastRange) return allForecasts;
+
+    // Use timestamps to filter: keep only forecasts within limit from the first one
+    const baseTimestamp = allForecasts[0]?.timestamp || 0;
+    const cutoff = baseTimestamp + forecastHoursLimit * 3600;
+    return allForecasts.filter((f) => f.timestamp <= cutoff);
+  }, [forecast, forecastHoursLimit, forecastRange]);
+
   // Get current timestamp once per render cycle for staleness checks
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -319,7 +332,7 @@ export default function WindPlot({
           </button>
           <h1 className="text-2xl font-bold mb-1">✈️ {icao} Wind</h1>
           <p className="text-[#8899a6] text-sm">
-            {data?.name || airport?.name || icao} • {viewMode === 'observations' ? `Last ${hours}h (5-min obs)` : `Next ${forecastRange}h Forecast`}
+            {data?.name || airport?.name || icao} • {viewMode === 'observations' ? `Last ${hours}h (5-min obs)` : `Next ${forecastHoursLimit}h Forecast`}
           </p>
           {viewMode === 'observations' && lastDataTime && (
             <p className="text-[#8899a6] text-xs mt-1">
@@ -360,7 +373,7 @@ export default function WindPlot({
           {viewMode === 'forecast' && (
             <div className="flex justify-center gap-1 mt-2">
               <button
-                onClick={() => setForecastRange(24)}
+                onClick={() => { setForecastRange(24); setForecastHoursLimit(24); }}
                 className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
                   forecastRange === 24
                     ? 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]'
@@ -370,7 +383,7 @@ export default function WindPlot({
                 24h (hourly)
               </button>
               <button
-                onClick={() => setForecastRange(72)}
+                onClick={() => { setForecastRange(72); setForecastHoursLimit(72); }}
                 className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
                   forecastRange === 72
                     ? 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]'
@@ -391,6 +404,13 @@ export default function WindPlot({
             onSelect={handleAirportChange}
             hours={hours}
             onHoursChange={handleHoursChange}
+            viewMode={viewMode}
+            forecastRange={forecastRange}
+            forecastHoursLimit={forecastHoursLimit}
+            onForecastHoursLimitChange={(h) => {
+              setForecastHoursLimit(h);
+              setSelectedForecastIdx(0);
+            }}
           />
         </div>
 
@@ -501,20 +521,20 @@ export default function WindPlot({
               </>
             )}
 
-            {forecast && forecast.forecasts.length > 0 && (
+            {forecast && filteredForecasts.length > 0 && (
               <>
                 {/* Forecast Charts: stacked on mobile, side-by-side on desktop */}
                 <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-stretch">
                   <div className="lg:min-w-0 lg:flex lg:flex-col">
                     <ForecastChart
-                      forecasts={forecast.forecasts}
+                      forecasts={filteredForecasts}
                       selectedIdx={selectedForecastIdx}
                       onSelectIdx={setSelectedForecastIdx}
                     />
                   </div>
                   <div className="lg:min-w-0 lg:flex lg:flex-col">
                     <ForecastDirectionChart
-                      forecasts={forecast.forecasts}
+                      forecasts={filteredForecasts}
                       runways={runways}
                       selectedIdx={selectedForecastIdx}
                       onSelectIdx={setSelectedForecastIdx}
@@ -523,7 +543,7 @@ export default function WindPlot({
                 </div>
                 {runways.length > 0 && (
                   <ForecastWindTable
-                    forecasts={forecast.forecasts}
+                    forecasts={filteredForecasts}
                     runways={runways}
                     selectedIdx={selectedForecastIdx}
                     onSelectIdx={setSelectedForecastIdx}

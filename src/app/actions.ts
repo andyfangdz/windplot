@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import airportsData from '@/lib/airports-data.json';
 import { WindData, WindDataPoint, ForecastData, ForecastDataPoint } from '@/lib/types';
-import { parseNbmBulletin, getNbmBulletinUrl } from '@/lib/nbm-parser';
+import { parseNbmBulletin, getNbmBulletinUrl, NbmProductType } from '@/lib/nbm-parser';
 import distance from '@turf/distance';
 import { point } from '@turf/helpers';
 import KDBush from 'kdbush';
@@ -248,8 +248,10 @@ export async function getMetar(icao: string): Promise<MetarData | null> {
 }
 
 // Fetch NBM text bulletin from NOMADS
-async function fetchNbmBulletin(): Promise<string | null> {
-  const url = getNbmBulletinUrl();
+// productType: 'nbh' for hourly (24h) or 'nbs' for 3-hourly (72h)
+async function fetchNbmBulletin(productType: NbmProductType = 'nbh'): Promise<string | null> {
+  const url = getNbmBulletinUrl(productType);
+  const productFile = productType === 'nbh' ? 'blend_nbhtx' : 'blend_nbstx';
 
   try {
     const response = await fetchWithTimeoutAndRetry(url, {
@@ -268,7 +270,7 @@ async function fetchNbmBulletin(): Promise<string | null> {
       const month = (now.getUTCMonth() + 1).toString().padStart(2, '0');
       const day = now.getUTCDate().toString().padStart(2, '0');
       const dateStr = `${year}${month}${day}`;
-      const fallbackUrl = `https://nomads.ncep.noaa.gov/pub/data/nccf/com/blend/prod/blend.${dateStr}/${prevHourStr}/text/blend_nbhtx.t${prevHourStr}z`;
+      const fallbackUrl = `https://nomads.ncep.noaa.gov/pub/data/nccf/com/blend/prod/blend.${dateStr}/${prevHourStr}/text/${productFile}.t${prevHourStr}z`;
 
       const fallbackResponse = await fetchWithTimeoutAndRetry(fallbackUrl, {
         headers: {
@@ -293,11 +295,13 @@ async function fetchNbmBulletin(): Promise<string | null> {
 }
 
 // Fetch NBM forecast from NOAA NBM text bulletins
+// forecastRange: 24 for hourly NBH product, 72 for 3-hourly NBS product
 export async function getNbmForecast(
   icao: string,
-  hours: number = 24
+  forecastRange: 24 | 72 = 24
 ): Promise<ForecastData | null> {
   const upperIcao = icao.toUpperCase();
+  const productType: NbmProductType = forecastRange === 72 ? 'nbs' : 'nbh';
 
   // Get airport info for name
   const airport = await getAirport(upperIcao);
@@ -307,13 +311,13 @@ export async function getNbmForecast(
   }
 
   try {
-    const bulletinText = await fetchNbmBulletin();
+    const bulletinText = await fetchNbmBulletin(productType);
     if (!bulletinText) {
       console.error('Failed to fetch NBM bulletin');
       return null;
     }
 
-    const nbmData = parseNbmBulletin(bulletinText, upperIcao);
+    const nbmData = parseNbmBulletin(bulletinText, upperIcao, productType);
     if (!nbmData || nbmData.times.length === 0) {
       console.error('Station not found in NBM bulletin:', upperIcao);
       return null;
@@ -323,17 +327,26 @@ export async function getNbmForecast(
     const forecasts: ForecastDataPoint[] = [];
     const now = Date.now();
 
-    for (let i = 0; i < Math.min(nbmData.times.length, hours); i++) {
+    for (let i = 0; i < nbmData.times.length; i++) {
       const forecastTime = nbmData.times[i];
       // Skip forecasts in the past
       if (forecastTime.getTime() < now - 30 * 60 * 1000) continue;
 
+      // For 72h forecasts, include day info since it spans multiple days
+      const timeFormat = forecastRange === 72
+        ? forecastTime.toLocaleDateString('en-US', {
+            weekday: 'short',
+            hour: 'numeric',
+            hour12: true,
+          })
+        : forecastTime.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+          });
+
       forecasts.push({
-        time: forecastTime.toLocaleTimeString('en-US', {
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true,
-        }),
+        time: timeFormat,
         timestamp: Math.floor(forecastTime.getTime() / 1000),
         wspd: nbmData.wsp[i] ?? null,
         wgst: nbmData.gst[i] ?? null,

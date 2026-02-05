@@ -17,9 +17,10 @@ export interface NbmParsedData {
 
 // Parse NBM text bulletin for a specific station
 export function parseNbmBulletin(text: string, station: string): NbmParsedData | null {
-  // Find station section - format: " KFRG   NBM V4.3 NBH GUIDANCE" (note leading space)
+  // Find station section - format: " KFRG   NBM V4.3 NBH GUIDANCE" (note optional leading space)
   // Also support legacy format: "KFRG   NBH"
-  const stationPattern = new RegExp(`^\\s*${station}\\s+(?:NBM[^\\n]*NBH|NBH)`, 'm');
+  // Use [ \t]* instead of \s* to avoid matching across newlines
+  const stationPattern = new RegExp(`^[ \\t]*${station}\\s+(?:NBM[^\\n]*NBH|NBH)`, 'm');
   const stationMatch = text.match(stationPattern);
   if (!stationMatch || stationMatch.index === undefined) {
     return null;
@@ -27,7 +28,7 @@ export function parseNbmBulletin(text: string, station: string): NbmParsedData |
 
   // Find end of station section (next station or end of file)
   const startIdx = stationMatch.index;
-  const endPattern = /\n\s*[A-Z0-9]{4,6}\s+(?:NBM[^\n]*NBH|NBH)/;
+  const endPattern = /\n[ \t]*[A-Z0-9]{4,6}\s+(?:NBM[^\n]*NBH|NBH)/;
   const endMatch = text.slice(startIdx + 10).match(endPattern);
   const endIdx = endMatch?.index ? startIdx + 10 + endMatch.index : text.length;
 

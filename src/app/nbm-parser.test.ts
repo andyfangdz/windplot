@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseNbmBulletin } from '@/lib/nbm-parser';
+import * as fs from 'fs';
 
 // Real NBM bulletin format (as of 2026)
 const REAL_FORMAT_BULLETIN = `
@@ -398,5 +399,45 @@ describe('parseNbmBulletin with real NBM V4.3 format', () => {
     expect(firstTime.getUTCMonth()).toBe(1); // February
     expect(firstTime.getUTCDate()).toBe(5);
     expect(firstTime.getUTCHours()).toBe(1);
+  });
+});
+
+// Integration test with real bulletin file (if available)
+describe('parseNbmBulletin integration test', () => {
+  // This tests with actual downloaded bulletin data
+  const realBulletinPath = '/tmp/real_bulletin.txt';
+
+  it.skipIf(!fs.existsSync(realBulletinPath))('parses KCDW from real bulletin file', () => {
+    const bulletinText = fs.readFileSync(realBulletinPath, 'utf-8');
+    const result = parseNbmBulletin(bulletinText, 'KCDW');
+
+    expect(result).not.toBeNull();
+    expect(result?.station).toBe('KCDW');
+    expect(result!.times.length).toBe(25);
+    expect(result!.wdr.length).toBe(25);
+    expect(result!.wsp.length).toBe(25);
+    expect(result!.gst.length).toBe(25);
+
+    // Verify wind direction is converted correctly (tens of degrees to degrees)
+    const hasValidWdr = result!.wdr.some((v) => v !== null && v >= 0 && v <= 360);
+    expect(hasValidWdr).toBe(true);
+  });
+
+  it.skipIf(!fs.existsSync(realBulletinPath))('parses KFRG from real bulletin file', () => {
+    const bulletinText = fs.readFileSync(realBulletinPath, 'utf-8');
+    const result = parseNbmBulletin(bulletinText, 'KFRG');
+
+    expect(result).not.toBeNull();
+    expect(result?.station).toBe('KFRG');
+    expect(result!.times.length).toBe(25);
+  });
+
+  it.skipIf(!fs.existsSync(realBulletinPath))('parses KJFK from real bulletin file', () => {
+    const bulletinText = fs.readFileSync(realBulletinPath, 'utf-8');
+    const result = parseNbmBulletin(bulletinText, 'KJFK');
+
+    expect(result).not.toBeNull();
+    expect(result?.station).toBe('KJFK');
+    expect(result!.times.length).toBe(25);
   });
 });

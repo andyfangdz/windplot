@@ -1,12 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { ForecastDataPoint } from '@/lib/types';
 import { Runway } from '@/app/actions';
 
 interface ForecastWindTableProps {
   forecasts: ForecastDataPoint[];
   runways: Runway[];
+  selectedIdx: number;
+  onSelectIdx: (idx: number) => void;
 }
 
 interface RunwayWindComponent {
@@ -109,20 +111,27 @@ function computeWindComponents(
   return { components: results, hasGusts };
 }
 
+// Extract short hour label from time string (e.g., "3:00 PM" -> "3P")
+function getShortHourLabel(time: string): string {
+  const match = time.match(/(\d{1,2}):\d{2}\s*(AM|PM)/i);
+  if (!match) return time;
+  const hour = match[1];
+  const ampm = match[2].toUpperCase()[0]; // 'A' or 'P'
+  return `${hour}${ampm}`;
+}
+
 export default function ForecastWindTable({
   forecasts,
   runways,
+  selectedIdx,
+  onSelectIdx,
 }: ForecastWindTableProps) {
-  // Allow selecting a specific forecast hour
-  const [selectedIdx, setSelectedIdx] = useState(0);
-
   // Build hour options for all 24 forecast hours
   const hourOptions = useMemo(() => {
     return forecasts.map((f, idx) => ({
       idx,
       time: f.time,
-      // Extract just the hour for compact display
-      hourLabel: f.time.replace(/:00\s*(AM|PM)/i, ' $1').replace(/\s+/g, ''),
+      shortLabel: getShortHourLabel(f.time),
     }));
   }, [forecasts]);
 
@@ -154,15 +163,16 @@ export default function ForecastWindTable({
             {hourOptions.map((opt, i) => (
               <button
                 key={opt.idx}
-                onClick={() => setSelectedIdx(opt.idx)}
-                className={`px-2 py-1 rounded transition-colors whitespace-nowrap flex-shrink-0 ${
+                onClick={() => onSelectIdx(opt.idx)}
+                className={`px-1.5 py-1 rounded transition-colors whitespace-nowrap flex-shrink-0 min-w-[36px] ${
                   selectedIdx === opt.idx
                     ? 'bg-[#10b981] text-white font-medium'
                     : 'bg-[#38444d] text-[#8899a6] hover:bg-[#4a5568]'
                 }`}
                 title={`Forecast for ${opt.time}`}
               >
-                {i === 0 ? 'Now' : `+${i}h`}
+                <div className="text-[10px] leading-tight">{opt.shortLabel}</div>
+                <div className="text-[9px] leading-tight opacity-70">{i === 0 ? 'Now' : `+${i}h`}</div>
               </button>
             ))}
           </div>

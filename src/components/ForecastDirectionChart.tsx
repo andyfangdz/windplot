@@ -7,6 +7,8 @@ import { Runway } from '@/app/actions';
 interface ForecastDirectionChartProps {
   forecasts: ForecastDataPoint[];
   runways: Runway[];
+  selectedIdx: number;
+  onSelectIdx: (idx: number) => void;
 }
 
 interface TooltipData {
@@ -26,10 +28,12 @@ const RUNWAY_COLORS = ['#ffcc00', '#00ff88', '#ff6b6b', '#a78bfa'];
 export default function ForecastDirectionChart({
   forecasts,
   runways,
+  selectedIdx,
+  onSelectIdx,
 }: ForecastDirectionChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
-  const pointsRef = useRef<{ x: number; y: number; data: ForecastDataPoint; isGust: boolean }[]>([]);
+  const pointsRef = useRef<{ x: number; y: number; data: ForecastDataPoint; isGust: boolean; idx: number }[]>([]);
 
   const drawChart = useCallback(() => {
     const canvas = canvasRef.current;
@@ -154,28 +158,37 @@ export default function ForecastDirectionChart({
     });
 
     // Plot forecast observations and track points for tooltips
-    const points: { x: number; y: number; data: ForecastDataPoint; isGust: boolean }[] = [];
+    const points: { x: number; y: number; data: ForecastDataPoint; isGust: boolean; idx: number }[] = [];
 
     forecasts.forEach((d, idx) => {
       if (d.wdir === null) return;
       const rad = ((d.wdir - 90) * Math.PI) / 180;
 
-      // Calculate opacity based on time (fade out further forecasts)
-      const opacity = Math.max(0.3, 1 - (idx / forecasts.length) * 0.7);
+      const isSelected = idx === selectedIdx;
+      // Calculate opacity based on time (fade out further forecasts), but keep selected visible
+      const opacity = isSelected ? 1 : Math.max(0.3, 1 - (idx / forecasts.length) * 0.7);
 
       // Plot sustained wind
       if (d.wspd) {
         const r = (d.wspd / scaleMax) * maxRadius;
         const x = centerX + r * Math.cos(rad);
         const y = centerY + r * Math.sin(rad);
+        const dotRadius = isSelected ? 8 : 4;
         ctx.beginPath();
-        ctx.arc(x, y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(16, 185, 129, ${opacity})`; // Green for forecast
-        ctx.fill();
-        ctx.strokeStyle = '#10b981';
-        ctx.lineWidth = 1.5;
+        ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+        if (isSelected) {
+          ctx.fillStyle = '#fff';
+          ctx.fill();
+          ctx.strokeStyle = '#10b981';
+          ctx.lineWidth = 3;
+        } else {
+          ctx.fillStyle = `rgba(16, 185, 129, ${opacity})`; // Green for forecast
+          ctx.fill();
+          ctx.strokeStyle = '#10b981';
+          ctx.lineWidth = 1.5;
+        }
         ctx.stroke();
-        points.push({ x, y, data: d, isGust: false });
+        points.push({ x, y, data: d, isGust: false, idx });
       }
 
       // Plot gust
@@ -183,19 +196,27 @@ export default function ForecastDirectionChart({
         const r = (d.wgst / scaleMax) * maxRadius;
         const x = centerX + r * Math.cos(rad);
         const y = centerY + r * Math.sin(rad);
+        const dotRadius = isSelected ? 8 : 4;
         ctx.beginPath();
-        ctx.arc(x, y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(245, 158, 11, ${opacity})`; // Amber for forecast gusts
-        ctx.fill();
-        ctx.strokeStyle = '#f59e0b';
-        ctx.lineWidth = 1.5;
+        ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+        if (isSelected) {
+          ctx.fillStyle = '#fff';
+          ctx.fill();
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 3;
+        } else {
+          ctx.fillStyle = `rgba(245, 158, 11, ${opacity})`; // Amber for forecast gusts
+          ctx.fill();
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 1.5;
+        }
         ctx.stroke();
-        points.push({ x, y, data: d, isGust: true });
+        points.push({ x, y, data: d, isGust: true, idx });
       }
     });
 
     pointsRef.current = points;
-  }, [forecasts, runways]);
+  }, [forecasts, runways, selectedIdx]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     const canvas = canvasRef.current;
@@ -239,6 +260,32 @@ export default function ForecastDirectionChart({
     setTooltip(null);
   }, []);
 
+  const handleClick = useCallback((e: MouseEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const hitRadius = 15;
+
+    // Find closest point
+    let closest: typeof pointsRef.current[0] | null = null;
+    let minDist = hitRadius;
+
+    for (const point of pointsRef.current) {
+      const dist = Math.sqrt((point.x - x) ** 2 + (point.y - y) ** 2);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = point;
+      }
+    }
+
+    if (closest) {
+      onSelectIdx(closest.idx);
+    }
+  }, [onSelectIdx]);
+
   useEffect(() => {
     drawChart();
     window.addEventListener('resize', drawChart);
@@ -251,11 +298,13 @@ export default function ForecastDirectionChart({
 
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('mouseleave', handleMouseLeave);
+    canvas.addEventListener('click', handleClick);
     return () => {
       canvas.removeEventListener('mousemove', handleMouseMove);
       canvas.removeEventListener('mouseleave', handleMouseLeave);
+      canvas.removeEventListener('click', handleClick);
     };
-  }, [handleMouseMove, handleMouseLeave]);
+  }, [handleMouseMove, handleMouseLeave, handleClick]);
 
   // Format direction as cardinal
   const formatDirection = (deg: number | null) => {
@@ -268,7 +317,7 @@ export default function ForecastDirectionChart({
     <div className="chart-section h-full">
       <div className="chart-title">🧭 Forecast Wind Direction</div>
       <div className="h-[280px] relative">
-        <canvas ref={canvasRef} className="w-full h-full" />
+        <canvas ref={canvasRef} className="w-full h-full cursor-pointer" />
         {tooltip && (
           <div
             className="absolute pointer-events-none z-10 px-3 py-2 rounded-lg text-sm"

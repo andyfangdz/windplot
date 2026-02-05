@@ -9,7 +9,7 @@ import distance from '@turf/distance';
 import { point } from '@turf/helpers';
 import KDBush from 'kdbush';
 import * as geokdbush from 'geokdbush';
-import { find } from 'geo-tz';
+import tzlookup from '@photostructure/tz-lookup';
 
 // Synoptic API config
 const SYNOPTIC_TOKEN = '7c76618b66c74aee913bdbae4b448bdd';
@@ -314,8 +314,7 @@ export async function getNbmForecast(
   }
 
   // Get airport's timezone from lat/lon
-  const timezones = find(airport.lat, airport.lon);
-  const timezone = timezones && timezones.length > 0 ? timezones[0] : 'UTC';
+  const timezone = tzlookup(airport.lat, airport.lon) || 'UTC';
 
   try {
     const bulletinText = await fetchNbmBulletin(productType);

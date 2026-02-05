@@ -276,6 +276,16 @@ export default function WindPlot({
     return allForecasts.filter((f) => f.timestamp <= cutoff);
   }, [forecast, forecastHoursLimit, forecastRange]);
 
+  // Ensure selected forecast index stays within the bounds of the filtered forecasts
+  useEffect(() => {
+    setSelectedForecastIdx((prevIdx) => {
+      if (!filteredForecasts.length) {
+        return 0;
+      }
+      const clampedIdx = Math.min(prevIdx, filteredForecasts.length - 1);
+      return clampedIdx < 0 ? 0 : clampedIdx;
+    });
+  }, [filteredForecasts.length]);
   // Get current timestamp once per render cycle for staleness checks
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {

@@ -59,6 +59,7 @@ export default function WindPlot({
 
   // Forecast view state
   const [viewMode, setViewMode] = useState<'observations' | 'forecast'>('observations');
+  const [forecastRange, setForecastRange] = useState<24 | 72>(24);
   const [forecast, setForecast] = useState<ForecastData | null>(null);
   const [forecastLoading, setForecastLoading] = useState(false);
   const [forecastError, setForecastError] = useState<string | null>(null);
@@ -79,21 +80,30 @@ export default function WindPlot({
     setSettings(loadSettings());
   }, []);
 
-  // Fetch forecast data when switching to forecast view or changing airport
+  // Fetch forecast data when switching to forecast view, changing airport, or changing range
   useEffect(() => {
-    if (viewMode === 'forecast' && (!forecast || forecast.icao !== icao)) {
-      setForecastLoading(true);
-      setForecastError(null);
-      getNbmForecast(icao, 24).then((data) => {
-        if (data) {
-          setForecast(data);
-        } else {
-          setForecastError('Failed to fetch forecast data');
-        }
-        setForecastLoading(false);
-      });
+    if (viewMode === 'forecast') {
+      // Determine if we need to fetch: new airport or range changed
+      const needsFetch = !forecast ||
+        forecast.icao !== icao ||
+        (forecastRange === 24 && forecast.forecasts.length > 25) ||
+        (forecastRange === 72 && forecast.forecasts.length <= 25);
+
+      if (needsFetch) {
+        setForecastLoading(true);
+        setForecastError(null);
+        setSelectedForecastIdx(0);
+        getNbmForecast(icao, forecastRange).then((data) => {
+          if (data) {
+            setForecast(data);
+          } else {
+            setForecastError('Failed to fetch forecast data');
+          }
+          setForecastLoading(false);
+        });
+      }
     }
-  }, [viewMode, icao, forecast]);
+  }, [viewMode, icao, forecastRange, forecast]);
 
   // If initial data from server is stale, immediately refresh
   useEffect(() => {
@@ -307,7 +317,7 @@ export default function WindPlot({
           </button>
           <h1 className="text-2xl font-bold mb-1">✈️ {icao} Wind</h1>
           <p className="text-[#8899a6] text-sm">
-            {data?.name || airport?.name || icao} • {viewMode === 'observations' ? `Last ${hours}h (5-min obs)` : 'Next 24h Forecast'}
+            {data?.name || airport?.name || icao} • {viewMode === 'observations' ? `Last ${hours}h (5-min obs)` : `Next ${forecastRange}h Forecast`}
           </p>
           {viewMode === 'observations' && lastDataTime && (
             <p className="text-[#8899a6] text-xs mt-1">
@@ -343,6 +353,32 @@ export default function WindPlot({
               Forecast (NBM)
             </button>
           </div>
+
+          {/* Forecast range toggle - only visible in forecast mode */}
+          {viewMode === 'forecast' && (
+            <div className="flex justify-center gap-1 mt-2">
+              <button
+                onClick={() => setForecastRange(24)}
+                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                  forecastRange === 24
+                    ? 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]'
+                    : 'bg-[#38444d] text-[#8899a6] hover:bg-[#4a5568]'
+                }`}
+              >
+                24h (hourly)
+              </button>
+              <button
+                onClick={() => setForecastRange(72)}
+                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                  forecastRange === 72
+                    ? 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]'
+                    : 'bg-[#38444d] text-[#8899a6] hover:bg-[#4a5568]'
+                }`}
+              >
+                72h (3-hourly)
+              </button>
+            </div>
+          )}
         </header>
 
         <div className="max-w-md mx-auto lg:max-w-none lg:mx-0">

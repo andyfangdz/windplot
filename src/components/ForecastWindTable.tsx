@@ -111,13 +111,27 @@ function computeWindComponents(
   return { components: results, hasGusts };
 }
 
-// Extract short hour label from time string (e.g., "3:00 PM" -> "3P")
+// Extract short hour label from time string
+// Handles both "3:00 PM" (24h) and "Wed, 3 PM" (72h) formats
 function getShortHourLabel(time: string): string {
-  const match = time.match(/(\d{1,2}):\d{2}\s*(AM|PM)/i);
-  if (!match) return time;
-  const hour = match[1];
-  const ampm = match[2].toUpperCase()[0]; // 'A' or 'P'
-  return `${hour}${ampm}`;
+  // Try 72h format first: "Wed, 3 PM" -> "W3P"
+  const weekdayMatch = time.match(/(\w{3}),?\s*(\d{1,2})\s*(AM|PM)/i);
+  if (weekdayMatch) {
+    const day = weekdayMatch[1][0].toUpperCase(); // First letter of day
+    const hour = weekdayMatch[2];
+    const ampm = weekdayMatch[3].toUpperCase()[0];
+    return `${day}${hour}${ampm}`;
+  }
+
+  // Try 24h format: "3:00 PM" -> "3P"
+  const hourMatch = time.match(/(\d{1,2}):\d{2}\s*(AM|PM)/i);
+  if (hourMatch) {
+    const hour = hourMatch[1];
+    const ampm = hourMatch[2].toUpperCase()[0];
+    return `${hour}${ampm}`;
+  }
+
+  return time;
 }
 
 export default function ForecastWindTable({
@@ -126,13 +140,19 @@ export default function ForecastWindTable({
   selectedIdx,
   onSelectIdx,
 }: ForecastWindTableProps) {
-  // Build hour options for all 24 forecast hours
+  // Build hour options for all forecast hours
   const hourOptions = useMemo(() => {
-    return forecasts.map((f, idx) => ({
-      idx,
-      time: f.time,
-      shortLabel: getShortHourLabel(f.time),
-    }));
+    const baseTimestamp = forecasts[0]?.timestamp || 0;
+    return forecasts.map((f, idx) => {
+      // Calculate relative hours from first forecast
+      const relativeHours = Math.round((f.timestamp - baseTimestamp) / 3600);
+      return {
+        idx,
+        time: f.time,
+        shortLabel: getShortHourLabel(f.time),
+        relativeHours,
+      };
+    });
   }, [forecasts]);
 
   // Get selected forecast
@@ -160,7 +180,7 @@ export default function ForecastWindTable({
         <div className="flex items-center gap-2">
           <span className="text-xs text-[#8899a6] whitespace-nowrap">Hour:</span>
           <div className="flex gap-1 text-xs overflow-x-auto pb-1 flex-1" style={{ scrollbarWidth: 'thin' }}>
-            {hourOptions.map((opt, i) => (
+            {hourOptions.map((opt) => (
               <button
                 key={opt.idx}
                 onClick={() => onSelectIdx(opt.idx)}
@@ -172,7 +192,9 @@ export default function ForecastWindTable({
                 title={`Forecast for ${opt.time}`}
               >
                 <div className="text-[10px] leading-tight">{opt.shortLabel}</div>
-                <div className="text-[9px] leading-tight opacity-70">{i === 0 ? 'Now' : `+${i}h`}</div>
+                <div className="text-[9px] leading-tight opacity-70">
+                  {opt.relativeHours === 0 ? 'Now' : `+${opt.relativeHours}h`}
+                </div>
               </button>
             ))}
           </div>

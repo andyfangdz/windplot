@@ -214,7 +214,7 @@ GET https://aviationweather.gov/api/data/metar?ids={icao}&format=json
 
 Returns latest METAR with current conditions. Used for "live" wind display when Synoptic is stale.
 
-### NOAA NBM Text Bulletins (Primary Forecast Source)
+### NOAA NBM Text Bulletins
 
 NBM (National Blend of Models) hourly forecasts are fetched from NOMADS:
 
@@ -232,18 +232,7 @@ The NBH (hourly) bulletin contains station-specific forecasts with aviation-rele
 - `VIS` - Visibility (tenths of miles)
 - `P01` - 1-hour precipitation probability (%)
 
-The parser extracts station-specific sections from the bulk bulletin file using delimiter patterns.
-
-### Weather.gov API (Fallback)
-
-If the station isn't in NBM bulletins, falls back to weather.gov gridpoints API:
-
-```
-GET https://api.weather.gov/points/{lat},{lon}
-GET https://api.weather.gov/gridpoints/{gridId}/{gridX},{gridY}
-```
-
-This provides NDFD (forecaster-edited) data rather than pure NBM model output.
+The parser extracts station-specific sections from the bulk bulletin file using delimiter patterns. Only airports that are NBM forecast stations will have forecast data available.
 
 ---
 

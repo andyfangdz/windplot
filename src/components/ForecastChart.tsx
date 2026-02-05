@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useRef } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -25,33 +26,10 @@ ChartJS.register(
   Filler
 );
 
-// Custom plugin for vertical crosshair line
-const crosshairPlugin: Plugin<'line'> = {
-  id: 'forecastCrosshair',
-  afterDraw: (chart) => {
-    const tooltip = chart.tooltip;
-    if (tooltip && tooltip.getActiveElements().length > 0) {
-      const ctx = chart.ctx;
-      const activePoint = tooltip.getActiveElements()[0];
-      const x = activePoint.element.x;
-      const topY = chart.scales.y.top;
-      const bottomY = chart.scales.y.bottom;
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(x, topY);
-      ctx.lineTo(x, bottomY);
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-      ctx.setLineDash([4, 4]);
-      ctx.stroke();
-      ctx.restore();
-    }
-  },
-};
-
 interface ForecastChartProps {
   forecasts: ForecastDataPoint[];
+  selectedIdx: number;
+  onSelectIdx: (idx: number) => void;
 }
 
 // Format direction as cardinal
@@ -61,11 +39,40 @@ const formatDirection = (deg: number | null): string => {
   return dirs[Math.round(deg / 22.5) % 16];
 };
 
-export default function ForecastChart({ forecasts }: ForecastChartProps) {
+export default function ForecastChart({ forecasts, selectedIdx, onSelectIdx }: ForecastChartProps) {
+  const chartRef = useRef<ChartJS<'line'>>(null);
+
   const labels = forecasts.map((d) => d.time);
   const windSpeeds = forecasts.map((d) => d.wspd);
   const gustSpeeds = forecasts.map((d) => d.wgst);
   const windDirs = forecasts.map((d) => d.wdir);
+
+  // Custom plugin for selected index vertical line
+  const selectedLinePlugin: Plugin<'line'> = useMemo(() => ({
+    id: 'selectedLine',
+    afterDraw: (chart) => {
+      const meta = chart.getDatasetMeta(0);
+      if (!meta.data[selectedIdx]) return;
+
+      const ctx = chart.ctx;
+      const x = meta.data[selectedIdx].x;
+      const topY = chart.scales.y.top;
+      const bottomY = chart.scales.y.bottom;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x, topY);
+      ctx.lineTo(x, bottomY);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(16, 185, 129, 0.6)';
+      ctx.stroke();
+      ctx.restore();
+    },
+  }), [selectedIdx]);
+
+  // Point radii: larger for selected point
+  const windPointRadii = windSpeeds.map((_, i) => i === selectedIdx ? 7 : 3);
+  const gustPointRadii = gustSpeeds.map((g, i) => g ? (i === selectedIdx ? 8 : 4) : 0);
 
   const data = {
     labels,
@@ -77,12 +84,14 @@ export default function ForecastChart({ forecasts }: ForecastChartProps) {
         backgroundColor: 'rgba(16, 185, 129, 0.15)',
         fill: true,
         tension: 0.3,
-        pointRadius: 3,
-        pointHoverRadius: 6,
+        pointRadius: windPointRadii,
+        pointHoverRadius: 8,
         pointHoverBackgroundColor: '#10b981',
         pointHoverBorderColor: '#fff',
         pointHoverBorderWidth: 2,
-        pointBackgroundColor: '#10b981',
+        pointBackgroundColor: windSpeeds.map((_, i) => i === selectedIdx ? '#fff' : '#10b981'),
+        pointBorderColor: windSpeeds.map((_, i) => i === selectedIdx ? '#10b981' : 'transparent'),
+        pointBorderWidth: windSpeeds.map((_, i) => i === selectedIdx ? 3 : 0),
         borderWidth: 2.5,
       },
       {
@@ -92,11 +101,29 @@ export default function ForecastChart({ forecasts }: ForecastChartProps) {
         backgroundColor: 'transparent',
         borderDash: [5, 5],
         tension: 0.3,
-        pointRadius: gustSpeeds.map((g) => (g ? 4 : 0)),
-        pointBackgroundColor: '#f59e0b',
+        pointRadius: gustPointRadii,
+        pointBackgroundColor: gustSpeeds.map((_, i) => i === selectedIdx ? '#fff' : '#f59e0b'),
+        pointBorderColor: gustSpeeds.map((g, i) => g && i === selectedIdx ? '#f59e0b' : 'transparent'),
+        pointBorderWidth: gustSpeeds.map((g, i) => g && i === selectedIdx ? 3 : 0),
         borderWidth: 2,
       },
     ],
+  };
+
+  const handleClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    const chart = chartRef.current;
+    if (!chart) return;
+
+    const points = chart.getElementsAtEventForMode(
+      event.nativeEvent,
+      'index',
+      { intersect: false },
+      false
+    );
+
+    if (points.length > 0) {
+      onSelectIdx(points[0].index);
+    }
   };
 
   const options: ChartOptions<'line'> = {
@@ -178,8 +205,14 @@ export default function ForecastChart({ forecasts }: ForecastChartProps) {
   return (
     <div className="chart-section w-full overflow-hidden">
       <div className="chart-title">🔮 Wind Forecast (NBM)</div>
-      <div className="relative h-[220px] lg:h-[300px] w-full">
-        <Line data={data} options={options} plugins={[crosshairPlugin]} />
+      <div className="relative h-[220px] lg:h-[300px] w-full cursor-pointer">
+        <Line
+          ref={chartRef}
+          data={data}
+          options={options}
+          plugins={[selectedLinePlugin]}
+          onClick={handleClick}
+        />
       </div>
       <div className="legend">
         <div className="legend-item">

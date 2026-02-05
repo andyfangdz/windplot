@@ -62,6 +62,7 @@ export default function WindPlot({
   const [forecast, setForecast] = useState<ForecastData | null>(null);
   const [forecastLoading, setForecastLoading] = useState(false);
   const [forecastError, setForecastError] = useState<string | null>(null);
+  const [selectedForecastIdx, setSelectedForecastIdx] = useState(0);
   
   // Cache of prefetched data - transform from icao keys to icao-hours keys
   const [cache, setCache] = useState<Record<string, AirportFullData>>(() => {
@@ -467,16 +468,27 @@ export default function WindPlot({
                 {/* Forecast Charts: stacked on mobile, side-by-side on desktop */}
                 <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-stretch">
                   <div className="lg:min-w-0 lg:flex lg:flex-col">
-                    <ForecastChart forecasts={forecast.forecasts} />
+                    <ForecastChart
+                      forecasts={forecast.forecasts}
+                      selectedIdx={selectedForecastIdx}
+                      onSelectIdx={setSelectedForecastIdx}
+                    />
                   </div>
                   <div className="lg:min-w-0 lg:flex lg:flex-col">
-                    <ForecastDirectionChart forecasts={forecast.forecasts} runways={runways} />
+                    <ForecastDirectionChart
+                      forecasts={forecast.forecasts}
+                      runways={runways}
+                      selectedIdx={selectedForecastIdx}
+                      onSelectIdx={setSelectedForecastIdx}
+                    />
                   </div>
                 </div>
                 {runways.length > 0 && (
                   <ForecastWindTable
                     forecasts={forecast.forecasts}
                     runways={runways}
+                    selectedIdx={selectedForecastIdx}
+                    onSelectIdx={setSelectedForecastIdx}
                   />
                 )}
                 <NearbyAirports icao={icao} onSelect={handleAirportChange} />

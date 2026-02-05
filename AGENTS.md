@@ -30,7 +30,7 @@ This document provides comprehensive guidance for AI agents working on this code
 - **Weather API**: Synoptic Data API (5-minute AWOS observations)
 - **METAR**: Aviation Weather Center API
 - **Forecast API**: NOAA National Blend of Models (NBM) via NOMADS text bulletins
-- **Timezone**: geo-tz (lat/lon to IANA timezone lookup)
+- **Timezone**: @photostructure/tz-lookup (lat/lon to IANA timezone lookup)
 - **Styling**: Tailwind CSS 4
 - **Airport Data**: FAA NASR subscription (bundled JSON)
 
@@ -261,7 +261,7 @@ Both bulletins share the same aviation-relevant fields:
 
 The parser (`src/lib/nbm-parser.ts`) extracts station-specific sections from the bulk bulletin file using delimiter patterns. The fetch logic (`fetchNbmBulletin` in `actions.ts`) includes fallback to the previous cycle hour if the current one is not yet available. Only airports that are NBM forecast stations will have forecast data.
 
-**Timezone Conversion**: NBM bulletins provide times in UTC. The `getNbmForecast` function uses the `geo-tz` library to determine the airport's IANA timezone from its coordinates, then converts UTC times to local time for display using the Intl API's `timeZone` option.
+**Timezone Conversion**: NBM bulletins provide times in UTC. The `getNbmForecast` function uses the `@photostructure/tz-lookup` library to determine the airport's IANA timezone from its coordinates, then converts UTC times to local time for display using the Intl API's `timeZone` option.
 
 ---
 

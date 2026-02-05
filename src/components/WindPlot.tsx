@@ -64,6 +64,8 @@ export default function WindPlot({
   const [forecastLoading, setForecastLoading] = useState(false);
   const [forecastError, setForecastError] = useState<string | null>(null);
   const [selectedForecastIdx, setSelectedForecastIdx] = useState(0);
+  // Track what icao+range the current forecast was loaded for
+  const loadedForecastRef = useRef<{ icao: string; range: 24 | 72 } | null>(null);
   
   // Cache of prefetched data - transform from icao keys to icao-hours keys
   const [cache, setCache] = useState<Record<string, AirportFullData>>(() => {
@@ -82,28 +84,28 @@ export default function WindPlot({
 
   // Fetch forecast data when switching to forecast view, changing airport, or changing range
   useEffect(() => {
-    if (viewMode === 'forecast') {
-      // Determine if we need to fetch: new airport or range changed
-      const needsFetch = !forecast ||
-        forecast.icao !== icao ||
-        (forecastRange === 24 && forecast.forecasts.length > 25) ||
-        (forecastRange === 72 && forecast.forecasts.length <= 25);
+    if (viewMode !== 'forecast') return;
 
-      if (needsFetch) {
-        setForecastLoading(true);
-        setForecastError(null);
-        setSelectedForecastIdx(0);
-        getNbmForecast(icao, forecastRange).then((data) => {
-          if (data) {
-            setForecast(data);
-          } else {
-            setForecastError('Failed to fetch forecast data');
-          }
-          setForecastLoading(false);
-        });
-      }
+    // Check if we already have the right data loaded
+    const loaded = loadedForecastRef.current;
+    if (loaded && loaded.icao === icao && loaded.range === forecastRange && forecast) {
+      return;
     }
-  }, [viewMode, icao, forecastRange, forecast]);
+
+    setForecastLoading(true);
+    setForecastError(null);
+    setSelectedForecastIdx(0);
+    getNbmForecast(icao, forecastRange).then((data) => {
+      if (data) {
+        setForecast(data);
+        loadedForecastRef.current = { icao, range: forecastRange };
+      } else {
+        setForecastError('Failed to fetch forecast data');
+        loadedForecastRef.current = null;
+      }
+      setForecastLoading(false);
+    });
+  }, [viewMode, icao, forecastRange]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // If initial data from server is stale, immediately refresh
   useEffect(() => {
@@ -546,6 +548,7 @@ export default function WindPlot({
                 onClick={() => {
                   setForecast(null);
                   setForecastError(null);
+                  loadedForecastRef.current = null;
                 }}
                 disabled={forecastLoading}
                 className="mt-2 px-3 py-1 bg-[#192734] hover:bg-[#22303c] rounded text-sm disabled:opacity-50"

@@ -192,7 +192,7 @@ export default function ForecastChart({ forecasts }: ForecastChartProps) {
         </div>
       </div>
       <p className="text-xs text-[#8899a6] text-center mt-2">
-        Data from NOAA National Blend of Models via weather.gov
+        Data from NOAA National Blend of Models (NBM)
       </p>
     </div>
   );

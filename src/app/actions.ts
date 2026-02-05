@@ -9,6 +9,7 @@ import distance from '@turf/distance';
 import { point } from '@turf/helpers';
 import KDBush from 'kdbush';
 import * as geokdbush from 'geokdbush';
+import tzlookup from '@photostructure/tz-lookup';
 
 // Synoptic API config
 const SYNOPTIC_TOKEN = '7c76618b66c74aee913bdbae4b448bdd';
@@ -305,12 +306,15 @@ export async function getNbmForecast(
   const upperIcao = icao.toUpperCase();
   const productType: NbmProductType = forecastRange === 72 ? 'nbs' : 'nbh';
 
-  // Get airport info for name
+  // Get airport info for name and coordinates
   const airport = await getAirport(upperIcao);
   if (!airport) {
     console.error('Airport not found:', upperIcao);
     return null;
   }
+
+  // Get airport's timezone from lat/lon
+  const timezone = tzlookup(airport.lat, airport.lon) || 'UTC';
 
   try {
     const bulletinText = await fetchNbmBulletin(productType);
@@ -335,16 +339,19 @@ export async function getNbmForecast(
       if (forecastTime.getTime() < now - 30 * 60 * 1000) continue;
 
       // For 72h forecasts, include day info since it spans multiple days
+      // Use airport's local timezone for display
       const timeFormat = forecastRange === 72
         ? forecastTime.toLocaleDateString('en-US', {
             weekday: 'short',
             hour: 'numeric',
             hour12: true,
+            timeZone: timezone,
           })
         : forecastTime.toLocaleTimeString('en-US', {
             hour: 'numeric',
             minute: '2-digit',
             hour12: true,
+            timeZone: timezone,
           });
 
       forecasts.push({

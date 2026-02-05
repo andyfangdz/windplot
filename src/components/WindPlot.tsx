@@ -106,7 +106,7 @@ export default function WindPlot({
       }
       setForecastLoading(false);
     });
-  }, [viewMode, icao, forecastRange]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [viewMode, icao, forecastRange, forecast]);
 
   // If initial data from server is stale, immediately refresh
   useEffect(() => {

@@ -26,3 +26,24 @@ export interface WindData {
   name: string;
   observations: WindDataPoint[];
 }
+
+// NBM Forecast data point (hourly forecast)
+export interface ForecastDataPoint {
+  time: string;           // Display time (HH:MM)
+  timestamp: number;      // Unix timestamp in seconds
+  wspd: number | null;    // Wind speed in knots
+  wgst: number | null;    // Wind gust in knots
+  wdir: number | null;    // Wind direction in degrees
+  temp?: number | null;   // Temperature in Fahrenheit
+  sky?: number | null;    // Sky cover percentage
+  pop?: number | null;    // Probability of precipitation
+}
+
+// NBM Forecast data container
+export interface ForecastData {
+  icao: string;
+  name: string;
+  forecasts: ForecastDataPoint[];
+  generatedAt?: number;   // When the forecast was generated (Unix timestamp)
+  validUntil?: number;    // Forecast valid until (Unix timestamp)
+}

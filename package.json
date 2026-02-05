@@ -15,6 +15,7 @@
     "update-nasr:index": "node scripts/update-nasr.mjs --index"
   },
   "dependencies": {
+    "@photostructure/tz-lookup": "^11.4.0",
     "@turf/distance": "^7.3.3",
     "@turf/helpers": "^7.3.3",
     "@vercel/analytics": "^1.6.1",

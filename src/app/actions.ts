@@ -3,11 +3,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import airportsData from '@/lib/airports-data.json';
-import { WindData, WindDataPoint } from '@/lib/types';
+import { WindData, WindDataPoint, ForecastData, ForecastDataPoint } from '@/lib/types';
+import { parseNbmBulletin, getNbmBulletinUrl, NbmProductType } from '@/lib/nbm-parser';
 import distance from '@turf/distance';
 import { point } from '@turf/helpers';
 import KDBush from 'kdbush';
 import * as geokdbush from 'geokdbush';
+import tzlookup from '@photostructure/tz-lookup';
 
 // Synoptic API config
 const SYNOPTIC_TOKEN = '7c76618b66c74aee913bdbae4b448bdd';
@@ -242,6 +244,140 @@ export async function getMetar(icao: string): Promise<MetarData | null> {
     };
   } catch (error) {
     console.error('METAR fetch error:', error);
+    return null;
+  }
+}
+
+// Fetch NBM text bulletin from NOMADS
+// productType: 'nbh' for hourly (24h) or 'nbs' for 3-hourly (72h)
+async function fetchNbmBulletin(productType: NbmProductType = 'nbh'): Promise<string | null> {
+  const url = getNbmBulletinUrl(productType);
+  const productFile = productType === 'nbh' ? 'blend_nbhtx' : 'blend_nbstx';
+
+  try {
+    const response = await fetchWithTimeoutAndRetry(url, {
+      headers: {
+        'User-Agent': 'WindPlot/1.0 (aviation weather visualization)',
+      },
+      next: { revalidate: 900 }, // Cache for 15 minutes
+    });
+
+    if (!response.ok) {
+      // Try previous hour (2 hours ago) if current hour not available yet,
+      // adjusting both hour and date in UTC.
+      const now = new Date();
+      const fallbackDate = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+      const prevHour = fallbackDate.getUTCHours();
+      const prevHourStr = prevHour.toString().padStart(2, '0');
+      const year = fallbackDate.getUTCFullYear();
+      const month = (fallbackDate.getUTCMonth() + 1).toString().padStart(2, '0');
+      const day = fallbackDate.getUTCDate().toString().padStart(2, '0');
+      const dateStr = `${year}${month}${day}`;
+      const fallbackUrl = `https://nomads.ncep.noaa.gov/pub/data/nccf/com/blend/prod/blend.${dateStr}/${prevHourStr}/text/${productFile}.t${prevHourStr}z`;
+
+      const fallbackResponse = await fetchWithTimeoutAndRetry(fallbackUrl, {
+        headers: {
+          'User-Agent': 'WindPlot/1.0 (aviation weather visualization)',
+        },
+        next: { revalidate: 900 },
+      });
+
+      if (!fallbackResponse.ok) {
+        console.error('NBM bulletin fetch error:', fallbackResponse.status);
+        return null;
+      }
+
+      return await fallbackResponse.text();
+    }
+
+    return await response.text();
+  } catch (error) {
+    console.error('NBM bulletin fetch error:', error);
+    return null;
+  }
+}
+
+// Fetch NBM forecast from NOAA NBM text bulletins
+// forecastRange: 24 for hourly NBH product, 72 for 3-hourly NBS product
+export async function getNbmForecast(
+  icao: string,
+  forecastRange: 24 | 72 = 24
+): Promise<ForecastData | null> {
+  const upperIcao = icao.toUpperCase();
+  const productType: NbmProductType = forecastRange === 72 ? 'nbs' : 'nbh';
+
+  // Get airport info for name and coordinates
+  const airport = await getAirport(upperIcao);
+  if (!airport) {
+    console.error('Airport not found:', upperIcao);
+    return null;
+  }
+
+  // Get airport's timezone from lat/lon
+  const timezone = tzlookup(airport.lat, airport.lon) || 'UTC';
+
+  try {
+    const bulletinText = await fetchNbmBulletin(productType);
+    if (!bulletinText) {
+      console.error('Failed to fetch NBM bulletin');
+      return null;
+    }
+
+    const nbmData = parseNbmBulletin(bulletinText, upperIcao, productType);
+    if (!nbmData || nbmData.times.length === 0) {
+      console.error('Station not found in NBM bulletin:', upperIcao);
+      return null;
+    }
+
+    // Convert parsed NBM data to ForecastData format
+    const forecasts: ForecastDataPoint[] = [];
+    const now = Date.now();
+
+    for (let i = 0; i < nbmData.times.length; i++) {
+      const forecastTime = nbmData.times[i];
+      // Skip forecasts in the past
+      if (forecastTime.getTime() < now - 30 * 60 * 1000) continue;
+
+      // For 72h forecasts, include day info since it spans multiple days
+      // Use airport's local timezone for display
+      const timeFormat = forecastRange === 72
+        ? forecastTime.toLocaleDateString('en-US', {
+            weekday: 'short',
+            hour: 'numeric',
+            hour12: true,
+            timeZone: timezone,
+          })
+        : forecastTime.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+            timeZone: timezone,
+          });
+
+      forecasts.push({
+        time: timeFormat,
+        timestamp: Math.floor(forecastTime.getTime() / 1000),
+        wspd: nbmData.wsp[i] ?? null,
+        wgst: nbmData.gst[i] ?? null,
+        wdir: nbmData.wdr[i] ?? null,
+        temp: nbmData.tmp[i] ?? null,
+        sky: nbmData.sky[i] ?? null,
+        pop: nbmData.pop[i] ?? null,
+      });
+    }
+
+    if (forecasts.length === 0) {
+      return null;
+    }
+
+    return {
+      icao: upperIcao,
+      name: airport.name,
+      forecasts,
+      generatedAt: Math.floor(nbmData.times[0].getTime() / 1000),
+    };
+  } catch (error) {
+    console.error('NBM forecast fetch error:', error);
     return null;
   }
 }

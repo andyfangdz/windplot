@@ -6,12 +6,16 @@ import AirportSelector from './AirportSelector';
 import WindSpeedChart from './WindSpeedChart';
 import WindDirectionChart from './WindDirectionChart';
 import RunwayWindTable from './RunwayWindTable';
+import ForecastChart from './ForecastChart';
+import ForecastDirectionChart from './ForecastDirectionChart';
+import ForecastWindTable from './ForecastWindTable';
 import NearbyAirports from './NearbyAirports';
 import SettingsModal, { Settings, loadSettings } from './SettingsModal';
-import { WindData } from '@/lib/types';
+import { WindData, ForecastData } from '@/lib/types';
 import { isWindDataStale } from '@/lib/cache';
 import {
   getAirportFullData,
+  getNbmForecast,
   Airport,
   AirportSearchResult,
   AirportFullData,
@@ -52,6 +56,17 @@ export default function WindPlot({
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<Settings>({ allowedSurfaces: [] });
+
+  // Forecast view state
+  const [viewMode, setViewMode] = useState<'observations' | 'forecast'>('observations');
+  const [forecastRange, setForecastRange] = useState<24 | 72>(24);
+  const [forecastHoursLimit, setForecastHoursLimit] = useState<number>(24);
+  const [forecast, setForecast] = useState<ForecastData | null>(null);
+  const [forecastLoading, setForecastLoading] = useState(false);
+  const [forecastError, setForecastError] = useState<string | null>(null);
+  const [selectedForecastIdx, setSelectedForecastIdx] = useState(0);
+  // Track what icao+range the current forecast was loaded for
+  const loadedForecastRef = useRef<{ icao: string; range: 24 | 72 } | null>(null);
   
   // Cache of prefetched data - transform from icao keys to icao-hours keys
   const [cache, setCache] = useState<Record<string, AirportFullData>>(() => {
@@ -67,6 +82,31 @@ export default function WindPlot({
   useEffect(() => {
     setSettings(loadSettings());
   }, []);
+
+  // Fetch forecast data when switching to forecast view, changing airport, or changing range
+  useEffect(() => {
+    if (viewMode !== 'forecast') return;
+
+    // Check if we already have the right data loaded
+    const loaded = loadedForecastRef.current;
+    if (loaded && loaded.icao === icao && loaded.range === forecastRange && forecast) {
+      return;
+    }
+
+    setForecastLoading(true);
+    setForecastError(null);
+    setSelectedForecastIdx(0);
+    getNbmForecast(icao, forecastRange).then((data) => {
+      if (data) {
+        setForecast(data);
+        loadedForecastRef.current = { icao, range: forecastRange };
+      } else {
+        setForecastError('Failed to fetch forecast data');
+        loadedForecastRef.current = null;
+      }
+      setForecastLoading(false);
+    });
+  }, [viewMode, icao, forecastRange, forecast]);
 
   // If initial data from server is stale, immediately refresh
   useEffect(() => {
@@ -224,6 +264,28 @@ export default function WindPlot({
     });
   }, [airport?.runways, settings.allowedSurfaces]);
 
+  // Filter forecasts by the hours limit
+  const filteredForecasts = useMemo(() => {
+    if (!forecast) return [];
+    const allForecasts = forecast.forecasts;
+    if (forecastHoursLimit >= forecastRange) return allForecasts;
+
+    // Use timestamps to filter: keep only forecasts within limit from the first one
+    const baseTimestamp = allForecasts[0]?.timestamp || 0;
+    const cutoff = baseTimestamp + forecastHoursLimit * 3600;
+    return allForecasts.filter((f) => f.timestamp <= cutoff);
+  }, [forecast, forecastHoursLimit, forecastRange]);
+
+  // Ensure selected forecast index stays within the bounds of the filtered forecasts
+  useEffect(() => {
+    setSelectedForecastIdx((prevIdx) => {
+      if (!filteredForecasts.length) {
+        return 0;
+      }
+      const clampedIdx = Math.min(prevIdx, filteredForecasts.length - 1);
+      return clampedIdx < 0 ? 0 : clampedIdx;
+    });
+  }, [filteredForecasts.length]);
   // Get current timestamp once per render cycle for staleness checks
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -280,12 +342,67 @@ export default function WindPlot({
           </button>
           <h1 className="text-2xl font-bold mb-1">✈️ {icao} Wind</h1>
           <p className="text-[#8899a6] text-sm">
-            {data?.name || airport?.name || icao} • Last {hours}h (5-min obs)
+            {data?.name || airport?.name || icao} • {viewMode === 'observations' ? `Last ${hours}h (5-min obs)` : `Next ${forecastHoursLimit}h Forecast`}
           </p>
-          {lastDataTime && (
+          {viewMode === 'observations' && lastDataTime && (
             <p className="text-[#8899a6] text-xs mt-1">
               Latest observation: {lastDataTime.toLocaleTimeString()}
             </p>
+          )}
+          {viewMode === 'forecast' && forecast?.generatedAt && (
+            <p className="text-[#8899a6] text-xs mt-1">
+              Forecast updated: {new Date(forecast.generatedAt * 1000).toLocaleTimeString()}
+            </p>
+          )}
+
+          {/* View toggle */}
+          <div className="flex justify-center gap-2 mt-3">
+            <button
+              onClick={() => setViewMode('observations')}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                viewMode === 'observations'
+                  ? 'bg-[#1d9bf0] text-white'
+                  : 'bg-[#38444d] text-[#8899a6] hover:bg-[#4a5568]'
+              }`}
+            >
+              Observations
+            </button>
+            <button
+              onClick={() => setViewMode('forecast')}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                viewMode === 'forecast'
+                  ? 'bg-[#10b981] text-white'
+                  : 'bg-[#38444d] text-[#8899a6] hover:bg-[#4a5568]'
+              }`}
+            >
+              Forecast (NBM)
+            </button>
+          </div>
+
+          {/* Forecast range toggle - only visible in forecast mode */}
+          {viewMode === 'forecast' && (
+            <div className="flex justify-center gap-1 mt-2">
+              <button
+                onClick={() => { setForecastRange(24); setForecastHoursLimit(24); }}
+                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                  forecastRange === 24
+                    ? 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]'
+                    : 'bg-[#38444d] text-[#8899a6] hover:bg-[#4a5568]'
+                }`}
+              >
+                24h (hourly)
+              </button>
+              <button
+                onClick={() => { setForecastRange(72); setForecastHoursLimit(72); }}
+                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                  forecastRange === 72
+                    ? 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]'
+                    : 'bg-[#38444d] text-[#8899a6] hover:bg-[#4a5568]'
+                }`}
+              >
+                72h (3-hourly)
+              </button>
+            </div>
           )}
         </header>
 
@@ -297,82 +414,180 @@ export default function WindPlot({
             onSelect={handleAirportChange}
             hours={hours}
             onHoursChange={handleHoursChange}
+            viewMode={viewMode}
+            forecastRange={forecastRange}
+            forecastHoursLimit={forecastHoursLimit}
+            onForecastHoursLimitChange={(h) => {
+              setForecastHoursLimit(h);
+              setSelectedForecastIdx(0);
+            }}
           />
         </div>
 
-        {loading && !data && (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-[#1d9bf0] border-t-transparent"></div>
-            <p className="text-[#8899a6] mt-4">Loading weather data...</p>
-          </div>
-        )}
-
-        {error && !data && (
+        {/* Observations View */}
+        {viewMode === 'observations' && (
           <>
-            <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 text-center">
-              <p className="text-red-400">{error}</p>
+            {loading && !data && (
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-[#1d9bf0] border-t-transparent"></div>
+                <p className="text-[#8899a6] mt-4">Loading weather data...</p>
+              </div>
+            )}
+
+            {error && !data && (
+              <>
+                <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 text-center">
+                  <p className="text-red-400">{error}</p>
+                  <button
+                    onClick={handleRefresh}
+                    className="mt-2 px-4 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
+                  >
+                    Retry
+                  </button>
+                </div>
+                <NearbyAirports icao={icao} onSelect={handleAirportChange} />
+              </>
+            )}
+
+            {data && data.observations.length > 0 && (
+              <>
+                {/* Stale data warning - only show when not loading fresh data */}
+                {isSynopticStale && !loading && (
+                  <div className="bg-yellow-900/30 border border-yellow-500/50 rounded-lg p-3 mb-4 text-center">
+                    <p className="text-yellow-400 text-sm">
+                      ⚠️ Weather data is {staleMinutes} minutes old — observations may be unavailable
+                    </p>
+                  </div>
+                )}
+
+                {/* Charts: stacked on mobile, side-by-side on desktop */}
+                <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-stretch">
+                  <div className="lg:min-w-0 lg:flex lg:flex-col">
+                    <WindSpeedChart observations={data.observations} />
+                  </div>
+                  <div className="lg:min-w-0 lg:flex lg:flex-col">
+                    <WindDirectionChart observations={data.observations} runways={runways} />
+                  </div>
+                </div>
+                {runways.length > 0 && (
+                  <RunwayWindTable
+                    observations={data.observations}
+                    runways={runways}
+                    metar={metarIcao === icao ? metar : null}
+                    now={now}
+                  />
+                )}
+                <NearbyAirports icao={icao} onSelect={handleAirportChange} />
+              </>
+            )}
+
+            {data && data.observations.length === 0 && (
+              <>
+                <div className="text-center py-12">
+                  <p className="text-[#8899a6]">No observations available for this period.</p>
+                </div>
+                <NearbyAirports icao={icao} onSelect={handleAirportChange} />
+              </>
+            )}
+
+            <footer className="text-center mt-6 text-xs text-[#8899a6]">
+              <p>Data from Synoptic Data API (5-min resolution)</p>
               <button
                 onClick={handleRefresh}
-                className="mt-2 px-4 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
+                disabled={loading}
+                className="mt-2 px-3 py-1 bg-[#192734] hover:bg-[#22303c] rounded text-sm disabled:opacity-50"
               >
-                Retry
+                {loading ? 'Refreshing...' : 'Refresh'}
               </button>
-            </div>
-            <NearbyAirports icao={icao} onSelect={handleAirportChange} />
+            </footer>
           </>
         )}
 
-        {data && data.observations.length > 0 && (
+        {/* Forecast View */}
+        {viewMode === 'forecast' && (
           <>
-            {/* Stale data warning - only show when not loading fresh data */}
-            {isSynopticStale && !loading && (
-              <div className="bg-yellow-900/30 border border-yellow-500/50 rounded-lg p-3 mb-4 text-center">
-                <p className="text-yellow-400 text-sm">
-                  ⚠️ Weather data is {staleMinutes} minutes old — observations may be unavailable
-                </p>
+            {forecastLoading && (
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-[#10b981] border-t-transparent"></div>
+                <p className="text-[#8899a6] mt-4">Loading forecast data...</p>
               </div>
             )}
 
-            {/* Charts: stacked on mobile, side-by-side on desktop */}
-            <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-stretch">
-              <div className="lg:min-w-0 lg:flex lg:flex-col">
-                <WindSpeedChart observations={data.observations} />
-              </div>
-              <div className="lg:min-w-0 lg:flex lg:flex-col">
-                <WindDirectionChart observations={data.observations} runways={runways} />
-              </div>
-            </div>
-            {runways.length > 0 && (
-              <RunwayWindTable
-                observations={data.observations}
-                runways={runways}
-                metar={metarIcao === icao ? metar : null}
-                now={now}
-              />
+            {forecastError && !forecast && (
+              <>
+                <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 text-center">
+                  <p className="text-red-400">{forecastError}</p>
+                  <button
+                    onClick={() => {
+                      setForecast(null);
+                      setForecastError(null);
+                    }}
+                    className="mt-2 px-4 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
+                  >
+                    Retry
+                  </button>
+                </div>
+                <NearbyAirports icao={icao} onSelect={handleAirportChange} />
+              </>
             )}
-            <NearbyAirports icao={icao} onSelect={handleAirportChange} />
+
+            {forecast && filteredForecasts.length > 0 && (
+              <>
+                {/* Forecast Charts: stacked on mobile, side-by-side on desktop */}
+                <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-stretch">
+                  <div className="lg:min-w-0 lg:flex lg:flex-col">
+                    <ForecastChart
+                      forecasts={filteredForecasts}
+                      selectedIdx={selectedForecastIdx}
+                      onSelectIdx={setSelectedForecastIdx}
+                    />
+                  </div>
+                  <div className="lg:min-w-0 lg:flex lg:flex-col">
+                    <ForecastDirectionChart
+                      forecasts={filteredForecasts}
+                      runways={runways}
+                      selectedIdx={selectedForecastIdx}
+                      onSelectIdx={setSelectedForecastIdx}
+                    />
+                  </div>
+                </div>
+                {runways.length > 0 && (
+                  <ForecastWindTable
+                    forecasts={filteredForecasts}
+                    runways={runways}
+                    selectedIdx={selectedForecastIdx}
+                    onSelectIdx={setSelectedForecastIdx}
+                  />
+                )}
+                <NearbyAirports icao={icao} onSelect={handleAirportChange} />
+              </>
+            )}
+
+            {forecast && forecast.forecasts.length === 0 && (
+              <>
+                <div className="text-center py-12">
+                  <p className="text-[#8899a6]">No forecast data available for this location.</p>
+                </div>
+                <NearbyAirports icao={icao} onSelect={handleAirportChange} />
+              </>
+            )}
+
+            <footer className="text-center mt-6 text-xs text-[#8899a6]">
+              <p>Forecast data from NOAA National Blend of Models (NBM)</p>
+              <button
+                onClick={() => {
+                  setForecast(null);
+                  setForecastError(null);
+                  loadedForecastRef.current = null;
+                }}
+                disabled={forecastLoading}
+                className="mt-2 px-3 py-1 bg-[#192734] hover:bg-[#22303c] rounded text-sm disabled:opacity-50"
+              >
+                {forecastLoading ? 'Refreshing...' : 'Refresh Forecast'}
+              </button>
+            </footer>
           </>
         )}
-
-        {data && data.observations.length === 0 && (
-          <>
-            <div className="text-center py-12">
-              <p className="text-[#8899a6]">No observations available for this period.</p>
-            </div>
-            <NearbyAirports icao={icao} onSelect={handleAirportChange} />
-          </>
-        )}
-
-        <footer className="text-center mt-6 text-xs text-[#8899a6]">
-          <p>Data from Synoptic Data API (5-min resolution)</p>
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            className="mt-2 px-3 py-1 bg-[#192734] hover:bg-[#22303c] rounded text-sm disabled:opacity-50"
-          >
-            {loading ? 'Refreshing...' : 'Refresh'}
-          </button>
-        </footer>
       </div>
 
       <SettingsModal

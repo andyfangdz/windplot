@@ -17,6 +17,7 @@ This document provides comprehensive guidance for AI agents working on this code
 | Change favorites | `src/app/actions.ts` (FAVORITE_ICAOS) | Reload page |
 | Modify forecast fetch | `src/app/actions.ts`, `src/lib/nbm-parser.ts` | Toggle to Forecast view |
 | Modify NBM parser | `src/lib/nbm-parser.ts` | `npm run test:run` |
+| Modify nearby airports | `src/components/NearbyAirports.tsx`, `src/app/actions.ts` | Visual inspection, toggle Obs/Forecast |
 
 ---
 
@@ -56,7 +57,7 @@ src/
 │   ├── ForecastDirectionChart.tsx # NBM forecast polar radar with synced selection
 │   ├── ForecastWindTable.tsx # Forecast crosswind/headwind with time picker
 │   ├── AirportSelector.tsx   # Search + quick-select + forecast duration limits
-│   ├── NearbyAirports.tsx    # Nearby airports directory
+│   ├── NearbyAirports.tsx    # Nearby airports table with METAR wind data
 │   └── SettingsModal.tsx     # Runway surface filter settings
 ├── lib/
 │   ├── types.ts              # TypeScript interfaces
@@ -77,7 +78,7 @@ data/
 [Synoptic API]      [Aviation Weather API]      [NOAA NOMADS]
       ↓                      ↓                       ↓
 getWindData()          getMetar()            getNbmForecast()
-      ↓                      ↓               (NBH 24h / NBS 72h)
+      ↓               getMetarBatch()        (NBH 24h / NBS 72h)
       └──────────┬───────────┘                       │
                  ↓                                   │
       getAirportFullData() (parallel fetch)          │
@@ -95,12 +96,12 @@ getWindData()          getMetar()            getNbmForecast()
 Wind  Wind  Runway   ↓
 Speed Dir   Wind   ┌────┼────┐
 Chart Chart Table  ↓    ↓    ↓
-                 Fcst  Fcst  Fcst
-                 Chart Dir   Wind
-                       Chart Table
-                         ↑
-              selectedForecastIdx
-            (synced across all three)
+   └────┼────┘   Fcst  Fcst  Fcst
+        ↓        Chart Dir   Wind
+     Nearby            Chart Table
+     Airports            ↑
+     (+ METAR   selectedForecastIdx
+      wind)   (synced across all three)
 ```
 
 ### Key Abstractions
@@ -226,9 +227,10 @@ Returns 5-minute AWOS observations. Fields used:
 
 ```
 GET https://aviationweather.gov/api/data/metar?ids={icao}&format=json
+GET https://aviationweather.gov/api/data/metar?ids={icao1},{icao2},{icao3}&format=json
 ```
 
-Returns latest METAR with current conditions. Used for "live" wind display when Synoptic is stale.
+Returns latest METAR with current conditions. Single-station fetch (`getMetar`) is used for "live" wind display when Synoptic is stale. Batch fetch (`getMetarBatch`) supports comma-separated IDs and is used by NearbyAirports to show wind data for multiple airports in one request.
 
 ### NOAA NBM Text Bulletins
 
@@ -367,6 +369,22 @@ useEffect(() => {
 }, [condition]);
 ```
 
+Alternatively, derive state from existing values instead of synchronous setState. For example, instead of `setMetarsLoaded(false)` in an effect body, use a derived comparison:
+```typescript
+// Bad - synchronous setState in effect body
+useEffect(() => {
+  setMetarsLoaded(false);
+  fetchData().then(() => setMetarsLoaded(true));
+}, [dep]);
+
+// Good - derive loaded state from tracking which dep was loaded
+const [loadedDep, setLoadedDep] = useState(null);
+const isLoaded = loadedDep === dep;
+useEffect(() => {
+  fetchData().then(() => setLoadedDep(dep));
+}, [dep]);
+```
+
 ---
 
 ## Common Pitfalls
@@ -389,7 +407,17 @@ canvas.height = rect.height * dpr;
 ctx.scale(dpr, dpr);
 ```
 
-### 4. Timezone Handling
+### 4. Calm Wind Handling in METAR
+
+The Aviation Weather API returns `wdir=0, wspd=0` for calm wind and `wdir=0, wspd>0` for variable (VRB) wind. The `getMetar`/`getMetarBatch` functions preserve `wdir=0` only when `wspd=0` (calm); when `wspd>0`, `wdir` is set to `null` (variable direction is not meaningful for crosswind calculations).
+
+In the NearbyAirports table, calm wind displays as **CALM**, airports with no METAR data show **MISSING** (amber), and the `RunwayWindTable` METAR source computes calm as 0kt headwind/crosswind on all runways (matching the 5-min observation behavior).
+
+### 5. NearbyAirports View Mode
+
+`NearbyAirports` accepts a `showWind` prop. When `false` (forecast view), the METAR batch fetch is skipped and the Wind column is hidden. This avoids unnecessary API calls when viewing forecasts, since METAR is observation data.
+
+### 6. Timezone Handling
 
 **Observations**: Synoptic API returns times in the airport's local timezone via the `obtimezone=local` parameter. The `time` field is display-only; use `timestamp` (Unix seconds) for calculations.
 
@@ -419,7 +447,7 @@ Both observations and forecasts display times in the **airport's local timezone*
 | Forecast direction | `src/components/ForecastDirectionChart.tsx` |
 | Forecast table | `src/components/ForecastWindTable.tsx` |
 | Airport search | `src/components/AirportSelector.tsx` |
-| Nearby airports | `src/components/NearbyAirports.tsx` |
+| Nearby airports (table + METAR wind) | `src/components/NearbyAirports.tsx` |
 | Type definitions | `src/lib/types.ts` |
 | Airport data | `src/lib/airports-data.json` |
 | Spatial index | `src/lib/spatial-index.bin` |

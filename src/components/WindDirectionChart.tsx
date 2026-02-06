@@ -259,23 +259,24 @@ export default function WindDirectionChart({
 
   return (
     <div className="chart-section h-full">
-      <div className="chart-title">🧭 Wind Direction & Speed</div>
+      <div className="chart-title">Wind Direction &amp; Speed</div>
       <div className="h-[280px] relative">
         <canvas ref={canvasRef} className="w-full h-full" />
         {tooltip && (
           <div
-            className="absolute pointer-events-none z-10 px-3 py-2 rounded-lg text-sm"
+            className="absolute pointer-events-none z-10 px-3 py-2.5 rounded-lg text-sm"
             style={{
               left: Math.min(tooltip.x + 12, 280),
               top: tooltip.y - 60,
-              backgroundColor: 'rgba(25, 39, 52, 0.95)',
-              border: '1px solid #38444d',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              backgroundColor: 'rgba(17, 26, 36, 0.95)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+              backdropFilter: 'blur(8px)',
             }}
           >
             <div className="font-semibold text-white mb-1">{tooltip.time}</div>
-            <div className="text-[#8899a6] text-xs space-y-0.5">
-              <div>Direction: {tooltip.wdir}° ({formatDirection(tooltip.wdir)})</div>
+            <div className="text-[var(--text-secondary)] text-xs space-y-0.5">
+              <div>Direction: {tooltip.wdir}&deg; ({formatDirection(tooltip.wdir)})</div>
               {tooltip.wspd && <div>Wind: {tooltip.wspd} kt</div>}
               {tooltip.wgst && <div className="text-[#f91880]">Gust: {tooltip.wgst} kt</div>}
             </div>
@@ -284,11 +285,11 @@ export default function WindDirectionChart({
       </div>
       <div className="legend">
         <div className="legend-item">
-          <div className="legend-dot bg-[#1d9bf0]"></div>
+          <div className="legend-dot" style={{ backgroundColor: '#1d9bf0' }}></div>
           Wind
         </div>
         <div className="legend-item">
-          <div className="legend-dot bg-[#f91880]"></div>
+          <div className="legend-dot" style={{ backgroundColor: '#f91880' }}></div>
           Gusts
         </div>
       </div>

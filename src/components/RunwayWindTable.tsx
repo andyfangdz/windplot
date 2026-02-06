@@ -184,14 +184,14 @@ export default function RunwayWindTable({
   return (
     <div className="chart-section mt-4">
       <div className="flex items-center justify-between mb-3">
-        <div className="chart-title mb-0">🛬 Runway Wind Components</div>
+        <div className="chart-title mb-0">Runway Wind Components</div>
         <div className="flex gap-1 text-xs">
           <button
             onClick={() => setSource('5min')}
             className={`px-2 py-1 rounded transition-colors ${
               source === '5min'
                 ? 'bg-[#1d9bf0] text-white'
-                : 'bg-[#38444d] text-[#8899a6] hover:bg-[#4a5568]'
+                : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
             }`}
           >
             5-min
@@ -201,7 +201,7 @@ export default function RunwayWindTable({
             className={`px-2 py-1 rounded transition-colors ${
               source === 'metar'
                 ? 'bg-[#1d9bf0] text-white'
-                : 'bg-[#38444d] text-[#8899a6] hover:bg-[#4a5568]'
+                : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
             }`}
           >
             METAR
@@ -211,18 +211,18 @@ export default function RunwayWindTable({
 
       {/* Stale METAR warning */}
       {source === 'metar' && isMetarStale && metar && (
-        <div className="bg-yellow-900/30 border border-yellow-500/50 rounded-lg p-2 mb-3 text-center">
-          <p className="text-yellow-400 text-xs">
-            ⚠️ METAR is {metarStaleMinutes} minutes old
+        <div className="bg-amber-500/10 border border-amber-500/25 rounded-lg p-2 mb-3 text-center">
+          <p className="text-amber-400 text-xs">
+            METAR is {metarStaleMinutes} minutes old
           </p>
         </div>
       )}
 
       {windComponents.length === 0 ? (
-        <div className="text-center py-4 text-[#8899a6] text-sm">
+        <div className="text-center py-4 text-[var(--text-secondary)] text-sm">
           <p>No wind data available</p>
           {source === 'metar' && metar?.rawOb && (
-            <p className="font-mono text-xs mt-2 break-all">{metar.rawOb}</p>
+            <p className="font-mono text-xs mt-2 break-all text-[var(--text-tertiary)]">{metar.rawOb}</p>
           )}
         </div>
       ) : (
@@ -230,72 +230,72 @@ export default function RunwayWindTable({
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-[#8899a6] border-b border-[#38444d]">
-                  <th className="py-2 px-3 text-left font-medium">Runway</th>
-                  <th className="py-2 px-3 text-right font-medium">LDA</th>
-                  <th className="py-2 px-3 text-right font-medium">Width</th>
-                  <th className="py-2 px-3 text-right font-medium">Headwind</th>
-                  <th className="py-2 px-3 text-right font-medium">Crosswind</th>
+                <tr className="text-[var(--text-tertiary)] bg-[var(--bg-primary)]/50 border-b border-[var(--border-color)]">
+                  <th className="py-2.5 px-3 text-left font-medium text-xs uppercase tracking-wider">Runway</th>
+                  <th className="py-2.5 px-3 text-right font-medium text-xs uppercase tracking-wider">LDA</th>
+                  <th className="py-2.5 px-3 text-right font-medium text-xs uppercase tracking-wider">Width</th>
+                  <th className="py-2.5 px-3 text-right font-medium text-xs uppercase tracking-wider">Headwind</th>
+                  <th className="py-2.5 px-3 text-right font-medium text-xs uppercase tracking-wider">Crosswind</th>
                 </tr>
               </thead>
               <tbody>
                 {windComponents.map((wc) => (
                   <tr
                     key={wc.runway}
-                    className={`border-b border-[#38444d]/50 ${
-                      wc.isFavored ? 'bg-[#1d9bf0]/20' : ''
+                    className={`border-b border-[var(--border-color)] last:border-b-0 transition-colors ${
+                      wc.isFavored ? 'bg-[#1d9bf0]/10' : 'hover:bg-[var(--bg-primary)]/30'
                     }`}
                   >
-                    <td className="py-2 px-3">
+                    <td className="py-2.5 px-3">
                       <span
                         className={`font-mono font-bold ${
-                          wc.isFavored ? 'text-[#1d9bf0]' : 'text-white'
+                          wc.isFavored ? 'text-[#1d9bf0]' : 'text-[var(--text-primary)]'
                         }`}
                       >
                         {wc.runway}
                       </span>
                       {wc.isFavored && (
-                        <span className="ml-2 text-xs text-[#1d9bf0]">★</span>
+                        <span className="ml-2 text-xs text-[#1d9bf0]">&#9733;</span>
                       )}
                     </td>
-                    <td className="py-2 px-3 text-right font-mono text-[#8899a6]">
+                    <td className="py-2.5 px-3 text-right font-mono text-[var(--text-secondary)] tabular-nums">
                       {wc.lda.toLocaleString()}&apos;
                     </td>
-                    <td className="py-2 px-3 text-right font-mono text-[#8899a6]">
+                    <td className="py-2.5 px-3 text-right font-mono text-[var(--text-secondary)] tabular-nums">
                       {wc.width}&apos;
                     </td>
-                    <td className="py-2 px-3 text-right font-mono">
-                      <span className={wc.headwind >= 0 ? 'text-green-400' : 'text-red-400'}>
+                    <td className="py-2.5 px-3 text-right font-mono tabular-nums">
+                      <span className={wc.headwind >= 0 ? 'text-emerald-400' : 'text-red-400'}>
                         {wc.headwind >= 0 ? '+' : ''}{wc.headwind}
                       </span>
                       {wc.gustHeadwind !== null && (
-                        <span className="text-[#8899a6]">
+                        <span className="text-[var(--text-tertiary)]">
                           {' '}({wc.gustHeadwind >= 0 ? '+' : ''}{wc.gustHeadwind})
                         </span>
                       )}
-                      <span className="text-[#8899a6]"> kt</span>
+                      <span className="text-[var(--text-tertiary)]"> kt</span>
                     </td>
-                    <td className="py-2 px-3 text-right font-mono">
-                      <span className="text-yellow-400">
+                    <td className="py-2.5 px-3 text-right font-mono tabular-nums">
+                      <span className="text-amber-400">
                         {wc.crosswind}{wc.crosswindDir && ` ${wc.crosswindDir}`}
                       </span>
                       {wc.gustCrosswind !== null && (
-                        <span className="text-[#8899a6]">
+                        <span className="text-[var(--text-tertiary)]">
                           {' '}({wc.gustCrosswind}{wc.gustCrosswindDir && ` ${wc.gustCrosswindDir}`})
                         </span>
                       )}
-                      <span className="text-[#8899a6]"> kt</span>
+                      <span className="text-[var(--text-tertiary)]"> kt</span>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <div className="text-xs text-[#8899a6] mt-2 text-center">
+          <div className="text-xs text-[var(--text-tertiary)] mt-3 text-center">
             <p className={`${source === 'metar' ? 'font-mono break-all' : ''}`}>
               {sourceInfo}
             </p>
-            {hasGusts && <p className="mt-1">• (gust values in parentheses)</p>}
+            {hasGusts && <p className="mt-1">Gust values in parentheses</p>}
           </div>
         </>
       )}

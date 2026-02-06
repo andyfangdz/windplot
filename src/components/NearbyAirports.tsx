@@ -87,7 +87,7 @@ export default function NearbyAirports({ icao, onSelect, showWind = true }: Near
           <thead>
             <tr className="text-[var(--text-tertiary)] bg-[var(--bg-primary)]/50 border-b border-[var(--border-color)]">
               <th className="py-2 px-3 text-left font-medium text-xs uppercase tracking-wider">ICAO</th>
-              <th className="py-2 px-3 text-left font-medium text-xs uppercase tracking-wider hidden sm:table-cell">Name</th>
+              <th className="py-2 px-3 text-left font-medium text-xs uppercase tracking-wider">Name</th>
               <th className="py-2 px-3 text-right font-medium text-xs uppercase tracking-wider">Dist</th>
               {showWind && <th className="py-2 px-3 text-right font-medium text-xs uppercase tracking-wider">Wind</th>}
             </tr>
@@ -112,7 +112,7 @@ export default function NearbyAirports({ icao, onSelect, showWind = true }: Near
                   <td className="py-2 px-3">
                     <span className="font-mono text-[#1d9bf0] font-bold">{airport.icao}</span>
                   </td>
-                  <td className="py-2 px-3 text-[var(--text-secondary)] truncate max-w-[200px] hidden sm:table-cell">
+                  <td className="py-2 px-3 text-[var(--text-secondary)] truncate max-w-[200px]">
                     {airport.name}
                   </td>
                   <td className="py-2 px-3 text-right font-mono text-[var(--text-secondary)] tabular-nums">

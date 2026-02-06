@@ -6,6 +6,7 @@ import { getNearbyAirports, getMetarBatch, NearbyAirport, MetarData } from '@/ap
 interface NearbyAirportsProps {
   icao: string;
   onSelect: (icao: string) => void;
+  showWind?: boolean;
 }
 
 type WindDisplay = { text: string; style: 'normal' | 'calm' | 'gust' | 'missing' | 'loading' };
@@ -27,7 +28,7 @@ function formatWind(metar: MetarData | undefined, metarsLoaded: boolean): WindDi
   return { text: `${dir}@${spd}`, style: 'normal' };
 }
 
-export default function NearbyAirports({ icao, onSelect }: NearbyAirportsProps) {
+export default function NearbyAirports({ icao, onSelect, showWind = true }: NearbyAirportsProps) {
   const [nearby, setNearby] = useState<NearbyAirport[]>([]);
   const [metars, setMetars] = useState<Record<string, MetarData>>({});
   const [metarsLoadedIcao, setMetarsLoadedIcao] = useState<string | null>(null);
@@ -44,18 +45,20 @@ export default function NearbyAirports({ icao, onSelect }: NearbyAirportsProps) 
       setNearby(airports);
       setLoadedIcao(icao);
 
-      // Fetch METARs for all nearby airports
-      const icaos = airports.map((a) => a.icao);
-      if (icaos.length > 0) {
-        getMetarBatch(icaos).then((data) => {
-          if (fetchIdRef.current === fetchId) {
-            setMetars(data);
-            setMetarsLoadedIcao(icao);
-          }
-        });
+      // Fetch METARs for all nearby airports (only in observations view)
+      if (showWind) {
+        const icaos = airports.map((a) => a.icao);
+        if (icaos.length > 0) {
+          getMetarBatch(icaos).then((data) => {
+            if (fetchIdRef.current === fetchId) {
+              setMetars(data);
+              setMetarsLoadedIcao(icao);
+            }
+          });
+        }
       }
     });
-  }, [icao]);
+  }, [icao, showWind]);
 
   const loading = loadedIcao !== icao;
 
@@ -86,20 +89,20 @@ export default function NearbyAirports({ icao, onSelect }: NearbyAirportsProps) 
               <th className="py-2 px-3 text-left font-medium text-xs uppercase tracking-wider">ICAO</th>
               <th className="py-2 px-3 text-left font-medium text-xs uppercase tracking-wider hidden sm:table-cell">Name</th>
               <th className="py-2 px-3 text-right font-medium text-xs uppercase tracking-wider">Dist</th>
-              <th className="py-2 px-3 text-right font-medium text-xs uppercase tracking-wider">Wind</th>
+              {showWind && <th className="py-2 px-3 text-right font-medium text-xs uppercase tracking-wider">Wind</th>}
             </tr>
           </thead>
           <tbody>
             {displayedAirports.map((airport) => {
-              const metar = metars[airport.icao];
-              const wind = formatWind(metar, metarsLoaded);
-              const windColorClass =
-                wind.style === 'gust' ? 'text-amber-400' :
-                wind.style === 'missing' ? 'text-amber-400' :
-                wind.style === 'calm' ? 'text-[var(--text-tertiary)]' :
-                wind.style === 'loading' ? 'text-[var(--text-tertiary)]' :
-                'text-[var(--text-primary)]';
-              const showUnit = wind.style === 'normal' || wind.style === 'gust';
+              const wind = showWind ? formatWind(metars[airport.icao], metarsLoaded) : null;
+              const windColorClass = wind
+                ? wind.style === 'gust' ? 'text-amber-400' :
+                  wind.style === 'missing' ? 'text-amber-400' :
+                  wind.style === 'calm' ? 'text-[var(--text-tertiary)]' :
+                  wind.style === 'loading' ? 'text-[var(--text-tertiary)]' :
+                  'text-[var(--text-primary)]'
+                : '';
+              const showUnit = wind && (wind.style === 'normal' || wind.style === 'gust');
               return (
                 <tr
                   key={airport.icao}
@@ -115,10 +118,12 @@ export default function NearbyAirports({ icao, onSelect }: NearbyAirportsProps) 
                   <td className="py-2 px-3 text-right font-mono text-[var(--text-secondary)] tabular-nums">
                     {airport.distance}nm
                   </td>
-                  <td className="py-2 px-3 text-right font-mono tabular-nums">
-                    <span className={windColorClass}>{wind.text}</span>
-                    {showUnit && <span className="text-[var(--text-tertiary)]"> kt</span>}
-                  </td>
+                  {wind && (
+                    <td className="py-2 px-3 text-right font-mono tabular-nums">
+                      <span className={windColorClass}>{wind.text}</span>
+                      {showUnit && <span className="text-[var(--text-tertiary)]"> kt</span>}
+                    </td>
+                  )}
                 </tr>
               );
             })}

@@ -535,7 +535,7 @@ export default function WindPlot({
                     Retry
                   </button>
                 </div>
-                <NearbyAirports icao={icao} onSelect={handleAirportChange} />
+                <NearbyAirports icao={icao} onSelect={handleAirportChange} showWind={false} />
               </>
             )}
 
@@ -567,7 +567,7 @@ export default function WindPlot({
                     onSelectIdx={setSelectedForecastIdx}
                   />
                 )}
-                <NearbyAirports icao={icao} onSelect={handleAirportChange} />
+                <NearbyAirports icao={icao} onSelect={handleAirportChange} showWind={false} />
               </>
             )}
 
@@ -576,7 +576,7 @@ export default function WindPlot({
                 <div className="text-center py-16">
                   <p className="text-[var(--text-secondary)] text-sm">No forecast data available for this location.</p>
                 </div>
-                <NearbyAirports icao={icao} onSelect={handleAirportChange} />
+                <NearbyAirports icao={icao} onSelect={handleAirportChange} showWind={false} />
               </>
             )}
 

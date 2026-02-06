@@ -105,7 +105,8 @@ export async function getWindData(
     const observations: WindDataPoint[] = obs.date_time.map((dt, i) => ({
       time: dt.split('T')[1]?.split(/[-+]/)[0]?.substring(0, 5) || '',
       timestamp: new Date(dt).getTime() / 1000,
-      wspd: obs.wind_speed_set_1?.[i] ?? null,
+      // When the wind speed array exists but a value is null, treat as calm (0kt)
+      wspd: obs.wind_speed_set_1 ? (obs.wind_speed_set_1[i] ?? 0) : null,
       wgst: obs.wind_gust_set_1?.[i] ?? null,
       wdir: obs.wind_direction_set_1?.[i] ?? null,
     }));

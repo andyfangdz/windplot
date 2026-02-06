@@ -57,8 +57,8 @@ export default function ForecastDirectionChart({
     // Find max speed for scaling
     let maxSpeed = 0;
     forecasts.forEach((d) => {
-      if (d.wspd && d.wspd > maxSpeed) maxSpeed = d.wspd;
-      if (d.wgst && d.wgst > maxSpeed) maxSpeed = d.wgst;
+      if (d.wspd != null && d.wspd > maxSpeed) maxSpeed = d.wspd;
+      if (d.wgst != null && d.wgst > maxSpeed) maxSpeed = d.wgst;
     });
     const scaleMax = Math.ceil(maxSpeed / 5) * 5 || 25;
 
@@ -169,7 +169,7 @@ export default function ForecastDirectionChart({
       const opacity = isSelected ? 1 : Math.max(0.3, 1 - (idx / forecasts.length) * 0.7);
 
       // Plot sustained wind
-      if (d.wspd) {
+      if (d.wspd != null) {
         const r = (d.wspd / scaleMax) * maxRadius;
         const x = centerX + r * Math.cos(rad);
         const y = centerY + r * Math.sin(rad);
@@ -192,7 +192,7 @@ export default function ForecastDirectionChart({
       }
 
       // Plot gust
-      if (d.wgst) {
+      if (d.wgst != null) {
         const r = (d.wgst / scaleMax) * maxRadius;
         const x = centerX + r * Math.cos(rad);
         const y = centerY + r * Math.sin(rad);
@@ -333,8 +333,8 @@ export default function ForecastDirectionChart({
             <div className="font-semibold text-white mb-1">{tooltip.time}</div>
             <div className="text-[var(--text-secondary)] text-xs space-y-0.5">
               <div>Direction: {tooltip.wdir}&deg; ({formatDirection(tooltip.wdir)})</div>
-              {tooltip.wspd && <div>Wind: {tooltip.wspd} kt</div>}
-              {tooltip.wgst && <div className="text-[#f59e0b]">Gust: {tooltip.wgst} kt</div>}
+              {tooltip.wspd != null && <div>Wind: {tooltip.wspd} kt</div>}
+              {tooltip.wgst != null && <div className="text-[#f59e0b]">Gust: {tooltip.wgst} kt</div>}
               {tooltip.temp !== null && tooltip.temp !== undefined && (
                 <div>Temp: {tooltip.temp}&deg;F</div>
               )}

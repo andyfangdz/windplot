@@ -15,6 +15,7 @@ import {
   Plugin,
 } from 'chart.js';
 import { ForecastDataPoint } from '@/lib/types';
+import { useHorizontalSwipeLock } from '@/lib/useHorizontalSwipeLock';
 
 ChartJS.register(
   CategoryScale,
@@ -41,6 +42,7 @@ const formatDirection = (deg: number | null): string => {
 
 export default function ForecastChart({ forecasts, selectedIdx, onSelectIdx }: ForecastChartProps) {
   const chartRef = useRef<ChartJS<'line'>>(null);
+  const chartContainerRef = useHorizontalSwipeLock<HTMLDivElement>();
 
   const labels = forecasts.map((d) => d.time);
   const windSpeeds = forecasts.map((d) => d.wspd);
@@ -205,7 +207,7 @@ export default function ForecastChart({ forecasts, selectedIdx, onSelectIdx }: F
   return (
     <div className="chart-section w-full overflow-hidden">
       <div className="chart-title">Wind Forecast (NBM)</div>
-      <div className="relative h-[220px] lg:h-[300px] w-full cursor-pointer">
+      <div ref={chartContainerRef} className="relative h-[220px] lg:h-[300px] w-full cursor-pointer">
         <Line
           ref={chartRef}
           data={data}

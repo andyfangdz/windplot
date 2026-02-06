@@ -168,17 +168,17 @@ export default function WindSpeedChart({ observations }: WindSpeedChartProps) {
 
   return (
     <div className="chart-section w-full overflow-hidden h-full">
-      <div className="chart-title">📈 Wind & Gusts</div>
+      <div className="chart-title">Wind &amp; Gusts</div>
       <div className="relative h-[180px] lg:h-[280px] w-full">
         <Line data={data} options={options} plugins={[crosshairPlugin]} />
       </div>
       <div className="legend">
         <div className="legend-item">
-          <div className="legend-dot bg-[#1d9bf0]"></div>
+          <div className="legend-dot" style={{ backgroundColor: '#1d9bf0' }}></div>
           Wind
         </div>
         <div className="legend-item">
-          <div className="legend-dot bg-[#f91880]"></div>
+          <div className="legend-dot" style={{ backgroundColor: '#f91880' }}></div>
           Gusts
         </div>
       </div>

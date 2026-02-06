@@ -236,7 +236,8 @@ export async function getMetar(icao: string): Promise<MetarData | null> {
 
     const latest = data[0];
     return {
-      wdir: latest.wdir === 0 ? null : (latest.wdir ?? null),
+      // wdir=0 + wspd=0 means calm; wdir=0 + wspd>0 means variable (VRB), null out direction
+      wdir: (latest.wdir === 0 && (latest.wspd ?? 0) > 0) ? null : (latest.wdir ?? null),
       wspd: latest.wspd ?? null,
       wgst: latest.wgst ?? null,
       rawOb: latest.rawOb,
@@ -245,6 +246,45 @@ export async function getMetar(icao: string): Promise<MetarData | null> {
   } catch (error) {
     console.error('METAR fetch error:', error);
     return null;
+  }
+}
+
+// Batch fetch latest METARs for multiple airports
+// Returns a map of ICAO -> MetarData
+export async function getMetarBatch(icaos: string[]): Promise<Record<string, MetarData>> {
+  if (icaos.length === 0) return {};
+  const ids = icaos.map((s) => s.toUpperCase()).join(',');
+  const url = `https://aviationweather.gov/api/data/metar?ids=${ids}&format=json`;
+
+  try {
+    const response = await fetchWithTimeoutAndRetry(url, {
+      headers: {
+        'User-Agent': 'WindPlot/1.0',
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) return {};
+
+    const data = await response.json();
+    if (!Array.isArray(data)) return {};
+
+    const result: Record<string, MetarData> = {};
+    for (const entry of data) {
+      const stationId = (entry.icaoId ?? entry.stationId ?? '').toUpperCase();
+      if (!stationId) continue;
+      result[stationId] = {
+        wdir: (entry.wdir === 0 && (entry.wspd ?? 0) > 0) ? null : (entry.wdir ?? null),
+        wspd: entry.wspd ?? null,
+        wgst: entry.wgst ?? null,
+        rawOb: entry.rawOb,
+        obsTime: entry.obsTime,
+      };
+    }
+    return result;
+  } catch (error) {
+    console.error('Batch METAR fetch error:', error);
+    return {};
   }
 }
 

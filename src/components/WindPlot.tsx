@@ -324,34 +324,42 @@ export default function WindPlot({
   const lastDataTime = lastDataTimestamp ? new Date(lastDataTimestamp * 1000) : null;
 
   return (
-    <div className="min-h-screen bg-[#0f1419] text-white p-4 lg:flex lg:justify-center">
+    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 pb-8 lg:flex lg:justify-center">
       <div
         className="w-full"
         style={{ maxWidth: '56rem', marginLeft: 'auto', marginRight: 'auto' }}
       >
-        <header className="text-center mb-4 relative">
-          <button
-            onClick={() => setShowSettings(true)}
-            className="absolute right-0 top-0 p-2 text-[#8899a6] hover:text-white transition-colors"
-            title="Settings"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </button>
-          <h1 className="text-2xl font-bold mb-1">✈️ {icao} Wind</h1>
-          <p className="text-[#8899a6] text-sm">
-            {data?.name || airport?.name || icao} • {viewMode === 'observations' ? `Last ${hours}h (5-min obs)` : `Next ${forecastHoursLimit}h Forecast`}
+        {/* Header */}
+        <header className="text-center mb-4">
+          <div className="flex items-start justify-between mb-1">
+            <div className="w-10" />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl font-bold tracking-tight">{icao} <span className="text-[var(--text-tertiary)] font-light">Wind</span></h1>
+            </div>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="w-10 h-10 flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-[var(--bg-secondary)] transition-colors flex-shrink-0"
+              title="Settings"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+          </div>
+          <p className="text-[var(--text-secondary)] text-sm">
+            {data?.name || airport?.name || icao}
+            <span className="text-[var(--text-tertiary)]"> &middot; </span>
+            {viewMode === 'observations' ? `Last ${hours}h (5-min obs)` : `Next ${forecastHoursLimit}h Forecast`}
           </p>
           {viewMode === 'observations' && lastDataTime && (
-            <p className="text-[#8899a6] text-xs mt-1">
-              Latest observation: {lastDataTime.toLocaleTimeString()}
+            <p className="text-[var(--text-tertiary)] text-xs mt-1">
+              Updated {lastDataTime.toLocaleTimeString()}
             </p>
           )}
           {viewMode === 'forecast' && forecast?.generatedAt && (
-            <p className="text-[#8899a6] text-xs mt-1">
-              Forecast updated: {new Date(forecast.generatedAt * 1000).toLocaleTimeString()}
+            <p className="text-[var(--text-tertiary)] text-xs mt-1">
+              Forecast issued {new Date(forecast.generatedAt * 1000).toLocaleTimeString()}
             </p>
           )}
 
@@ -362,7 +370,7 @@ export default function WindPlot({
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 viewMode === 'observations'
                   ? 'bg-[#1d9bf0] text-white'
-                  : 'bg-[#38444d] text-[#8899a6] hover:bg-[#4a5568]'
+                  : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               Observations
@@ -372,22 +380,22 @@ export default function WindPlot({
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 viewMode === 'forecast'
                   ? 'bg-[#10b981] text-white'
-                  : 'bg-[#38444d] text-[#8899a6] hover:bg-[#4a5568]'
+                  : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
-              Forecast (NBM)
+              Forecast
             </button>
           </div>
 
-          {/* Forecast range toggle - only visible in forecast mode */}
+          {/* Forecast range toggle */}
           {viewMode === 'forecast' && (
-            <div className="flex justify-center gap-1 mt-2">
+            <div className="flex justify-center gap-2 mt-2">
               <button
                 onClick={() => { setForecastRange(24); setForecastHoursLimit(24); }}
                 className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
                   forecastRange === 24
                     ? 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]'
-                    : 'bg-[#38444d] text-[#8899a6] hover:bg-[#4a5568]'
+                    : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 24h (hourly)
@@ -397,7 +405,7 @@ export default function WindPlot({
                 className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
                   forecastRange === 72
                     ? 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]'
-                    : 'bg-[#38444d] text-[#8899a6] hover:bg-[#4a5568]'
+                    : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 72h (3-hourly)
@@ -428,19 +436,19 @@ export default function WindPlot({
         {viewMode === 'observations' && (
           <>
             {loading && !data && (
-              <div className="text-center py-12">
+              <div className="text-center py-16">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-[#1d9bf0] border-t-transparent"></div>
-                <p className="text-[#8899a6] mt-4">Loading weather data...</p>
+                <p className="text-[var(--text-secondary)] mt-4 text-sm">Loading weather data...</p>
               </div>
             )}
 
             {error && !data && (
               <>
-                <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 text-center">
-                  <p className="text-red-400">{error}</p>
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-center">
+                  <p className="text-red-400 text-sm">{error}</p>
                   <button
                     onClick={handleRefresh}
-                    className="mt-2 px-4 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
+                    className="mt-3 px-4 py-1.5 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-red-400 text-sm font-medium"
                   >
                     Retry
                   </button>
@@ -451,17 +459,17 @@ export default function WindPlot({
 
             {data && data.observations.length > 0 && (
               <>
-                {/* Stale data warning - only show when not loading fresh data */}
+                {/* Stale data warning */}
                 {isSynopticStale && !loading && (
-                  <div className="bg-yellow-900/30 border border-yellow-500/50 rounded-lg p-3 mb-4 text-center">
-                    <p className="text-yellow-400 text-sm">
-                      ⚠️ Weather data is {staleMinutes} minutes old — observations may be unavailable
+                  <div className="bg-amber-500/10 border border-amber-500/25 rounded-lg p-3 mb-4 text-center">
+                    <p className="text-amber-400 text-sm">
+                      Weather data is {staleMinutes} minutes old — observations may be unavailable
                     </p>
                   </div>
                 )}
 
                 {/* Charts: stacked on mobile, side-by-side on desktop */}
-                <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-stretch">
+                <div className="lg:grid lg:grid-cols-2 lg:gap-5 lg:items-stretch">
                   <div className="lg:min-w-0 lg:flex lg:flex-col">
                     <WindSpeedChart observations={data.observations} />
                   </div>
@@ -483,19 +491,19 @@ export default function WindPlot({
 
             {data && data.observations.length === 0 && (
               <>
-                <div className="text-center py-12">
-                  <p className="text-[#8899a6]">No observations available for this period.</p>
+                <div className="text-center py-16">
+                  <p className="text-[var(--text-secondary)] text-sm">No observations available for this period.</p>
                 </div>
                 <NearbyAirports icao={icao} onSelect={handleAirportChange} />
               </>
             )}
 
-            <footer className="text-center mt-6 text-xs text-[#8899a6]">
-              <p>Data from Synoptic Data API (5-min resolution)</p>
+            <footer className="text-center mt-8 pt-6 border-t border-[var(--border-color)]">
+              <p className="text-xs text-[var(--text-tertiary)]">Data from Synoptic Data API (5-min resolution)</p>
               <button
                 onClick={handleRefresh}
                 disabled={loading}
-                className="mt-2 px-3 py-1 bg-[#192734] hover:bg-[#22303c] rounded text-sm disabled:opacity-50"
+                className="mt-3 px-4 py-1.5 bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-50 font-medium"
               >
                 {loading ? 'Refreshing...' : 'Refresh'}
               </button>
@@ -507,34 +515,34 @@ export default function WindPlot({
         {viewMode === 'forecast' && (
           <>
             {forecastLoading && (
-              <div className="text-center py-12">
+              <div className="text-center py-16">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-[#10b981] border-t-transparent"></div>
-                <p className="text-[#8899a6] mt-4">Loading forecast data...</p>
+                <p className="text-[var(--text-secondary)] mt-4 text-sm">Loading forecast data...</p>
               </div>
             )}
 
             {forecastError && !forecast && (
               <>
-                <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 text-center">
-                  <p className="text-red-400">{forecastError}</p>
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-center">
+                  <p className="text-red-400 text-sm">{forecastError}</p>
                   <button
                     onClick={() => {
                       setForecast(null);
                       setForecastError(null);
                     }}
-                    className="mt-2 px-4 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
+                    className="mt-3 px-4 py-1.5 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-red-400 text-sm font-medium"
                   >
                     Retry
                   </button>
                 </div>
-                <NearbyAirports icao={icao} onSelect={handleAirportChange} />
+                <NearbyAirports icao={icao} onSelect={handleAirportChange} showWind={false} />
               </>
             )}
 
             {forecast && filteredForecasts.length > 0 && (
               <>
                 {/* Forecast Charts: stacked on mobile, side-by-side on desktop */}
-                <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-stretch">
+                <div className="lg:grid lg:grid-cols-2 lg:gap-5 lg:items-stretch">
                   <div className="lg:min-w-0 lg:flex lg:flex-col">
                     <ForecastChart
                       forecasts={filteredForecasts}
@@ -559,21 +567,21 @@ export default function WindPlot({
                     onSelectIdx={setSelectedForecastIdx}
                   />
                 )}
-                <NearbyAirports icao={icao} onSelect={handleAirportChange} />
+                <NearbyAirports icao={icao} onSelect={handleAirportChange} showWind={false} />
               </>
             )}
 
             {forecast && forecast.forecasts.length === 0 && (
               <>
-                <div className="text-center py-12">
-                  <p className="text-[#8899a6]">No forecast data available for this location.</p>
+                <div className="text-center py-16">
+                  <p className="text-[var(--text-secondary)] text-sm">No forecast data available for this location.</p>
                 </div>
-                <NearbyAirports icao={icao} onSelect={handleAirportChange} />
+                <NearbyAirports icao={icao} onSelect={handleAirportChange} showWind={false} />
               </>
             )}
 
-            <footer className="text-center mt-6 text-xs text-[#8899a6]">
-              <p>Forecast data from NOAA National Blend of Models (NBM)</p>
+            <footer className="text-center mt-8 pt-6 border-t border-[var(--border-color)]">
+              <p className="text-xs text-[var(--text-tertiary)]">Forecast data from NOAA National Blend of Models (NBM)</p>
               <button
                 onClick={() => {
                   setForecast(null);
@@ -581,7 +589,7 @@ export default function WindPlot({
                   loadedForecastRef.current = null;
                 }}
                 disabled={forecastLoading}
-                className="mt-2 px-3 py-1 bg-[#192734] hover:bg-[#22303c] rounded text-sm disabled:opacity-50"
+                className="mt-3 px-4 py-1.5 bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-50 font-medium"
               >
                 {forecastLoading ? 'Refreshing...' : 'Refresh Forecast'}
               </button>

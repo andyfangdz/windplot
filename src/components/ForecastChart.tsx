@@ -204,7 +204,7 @@ export default function ForecastChart({ forecasts, selectedIdx, onSelectIdx }: F
 
   return (
     <div className="chart-section w-full overflow-hidden">
-      <div className="chart-title">🔮 Wind Forecast (NBM)</div>
+      <div className="chart-title">Wind Forecast (NBM)</div>
       <div className="relative h-[220px] lg:h-[300px] w-full cursor-pointer">
         <Line
           ref={chartRef}
@@ -216,16 +216,16 @@ export default function ForecastChart({ forecasts, selectedIdx, onSelectIdx }: F
       </div>
       <div className="legend">
         <div className="legend-item">
-          <div className="legend-dot bg-[#10b981]"></div>
+          <div className="legend-dot" style={{ backgroundColor: '#10b981' }}></div>
           Forecast Wind
         </div>
         <div className="legend-item">
-          <div className="legend-dot bg-[#f59e0b]"></div>
+          <div className="legend-dot" style={{ backgroundColor: '#f59e0b' }}></div>
           Forecast Gusts
         </div>
       </div>
-      <p className="text-xs text-[#8899a6] text-center mt-2">
-        Data from NOAA National Blend of Models (NBM)
+      <p className="text-xs text-[var(--text-tertiary)] text-center mt-2">
+        NOAA National Blend of Models
       </p>
     </div>
   );

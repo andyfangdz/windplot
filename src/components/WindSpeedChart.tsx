@@ -14,6 +14,7 @@ import {
   Plugin,
 } from 'chart.js';
 import { WindDataPoint } from '@/lib/types';
+import { useHorizontalSwipeLock } from '@/lib/useHorizontalSwipeLock';
 
 ChartJS.register(
   CategoryScale,
@@ -62,6 +63,7 @@ const formatDirection = (deg: number | null): string => {
 };
 
 export default function WindSpeedChart({ observations }: WindSpeedChartProps) {
+  const chartContainerRef = useHorizontalSwipeLock<HTMLDivElement>();
   const labels = observations.map((d) => d.time);
   const windSpeeds = observations.map((d) => d.wspd);
   const gustSpeeds = observations.map((d) => d.wgst);
@@ -169,7 +171,7 @@ export default function WindSpeedChart({ observations }: WindSpeedChartProps) {
   return (
     <div className="chart-section w-full overflow-hidden h-full">
       <div className="chart-title">Wind &amp; Gusts</div>
-      <div className="relative h-[180px] lg:h-[280px] w-full">
+      <div ref={chartContainerRef} className="relative h-[180px] lg:h-[280px] w-full">
         <Line data={data} options={options} plugins={[crosshairPlugin]} />
       </div>
       <div className="legend">

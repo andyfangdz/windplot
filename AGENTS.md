@@ -18,6 +18,7 @@ This document provides comprehensive guidance for AI agents working on this code
 | Modify forecast fetch | `src/app/actions.ts`, `src/lib/nbm-parser.ts` | Toggle to Forecast view |
 | Modify NBM parser | `src/lib/nbm-parser.ts` | `npm run test:run` |
 | Modify nearby airports | `src/components/NearbyAirports.tsx`, `src/app/actions.ts` | Visual inspection, toggle Obs/Forecast |
+| Modify touch interactions | `src/lib/useHorizontalSwipeLock.ts` | Test on mobile/touch device |
 
 ---
 
@@ -63,6 +64,7 @@ src/
 │   ├── types.ts              # TypeScript interfaces
 │   ├── nbm-parser.ts         # NBM text bulletin parser (NBH + NBS products)
 │   ├── cache.ts              # Staleness/cache utilities
+│   ├── useHorizontalSwipeLock.ts # Touch gesture hook: prevents scroll on horizontal swipe
 │   ├── airports.ts           # Airport utilities (unused, data in JSON)
 │   ├── airports-data.json    # 4,450 US airports from NASR
 │   └── spatial-index.bin     # Pre-built k-d tree for nearby queries
@@ -417,7 +419,11 @@ In the NearbyAirports table, calm wind displays as **CALM**, airports with no ME
 
 `NearbyAirports` accepts a `showWind` prop. When `false` (forecast view), the METAR batch fetch is skipped and the Wind column is hidden. This avoids unnecessary API calls when viewing forecasts, since METAR is observation data.
 
-### 6. Timezone Handling
+### 6. Touch Scroll on Charts
+
+`WindSpeedChart` and `ForecastChart` use the `useHorizontalSwipeLock` hook to prevent vertical page scrolling when the user swipes horizontally on the chart. The hook detects gesture direction on initial movement and locks it for the duration of the touch. Vertical swipes still scroll normally. If adding new interactive chart components, apply this hook to the chart container div to maintain the same behavior.
+
+### 7. Timezone Handling
 
 **Observations**: Synoptic API returns times in the airport's local timezone via the `obtimezone=local` parameter. The `time` field is display-only; use `timestamp` (Unix seconds) for calculations.
 
@@ -448,6 +454,7 @@ Both observations and forecasts display times in the **airport's local timezone*
 | Forecast table | `src/components/ForecastWindTable.tsx` |
 | Airport search | `src/components/AirportSelector.tsx` |
 | Nearby airports (table + METAR wind) | `src/components/NearbyAirports.tsx` |
+| Horizontal swipe lock hook | `src/lib/useHorizontalSwipeLock.ts` |
 | Type definitions | `src/lib/types.ts` |
 | Airport data | `src/lib/airports-data.json` |
 | Spatial index | `src/lib/spatial-index.bin` |

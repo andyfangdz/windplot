@@ -130,12 +130,15 @@ Chart Chart Table  ↓    ↓    ↓
 
 All external API calls (Synoptic, METAR, airport lookup) must go through server actions in `src/app/actions.ts`. Do not call external APIs directly from client components.
 
-### 2. Synoptic API Token
+### 2. Synoptic API Secrets
 
-The Synoptic API token is hardcoded in `actions.ts`. For production, move to environment variable:
+Synoptic configuration is environment-driven in `src/app/actions.ts`. The app requires both:
 ```typescript
-const SYNOPTIC_TOKEN = process.env.SYNOPTIC_API_TOKEN || '...';
+SYNOPTIC_API_TOKEN
+SYNOPTIC_ORIGIN
 ```
+
+`SYNOPTIC_API_TOKEN` is the Synoptic Data API token. `SYNOPTIC_ORIGIN` is sent as the request `Origin` header (typically `https://www.weather.gov`). Set these in Vercel Project Environment Variables (Production/Preview/Development) and in local `.env.local` for local development.
 
 ### 3. Airport Data is Static
 

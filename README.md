@@ -51,7 +51,10 @@ Open [http://localhost:3000](http://localhost:3000)
 
 1. Push to GitHub
 2. Import in Vercel Dashboard
-3. Deploy (zero configuration needed)
+3. Add required environment variables in Project Settings:
+   - `SYNOPTIC_API_TOKEN` (Synoptic Data API token)
+   - `SYNOPTIC_ORIGIN` (allowed request origin, e.g. `https://www.weather.gov`)
+4. Deploy
 
 ### Manual
 

@@ -12,8 +12,19 @@ import * as geokdbush from 'geokdbush';
 import tzlookup from '@photostructure/tz-lookup';
 
 // Synoptic API config
-const SYNOPTIC_TOKEN = 'REDACTED_SYNOPTIC_TOKEN';
-const SYNOPTIC_ORIGIN = 'https://www.weather.gov';
+function getSynopticConfig(): { token: string; origin: string } | null {
+  const token = process.env.SYNOPTIC_API_TOKEN;
+  const origin = process.env.SYNOPTIC_ORIGIN;
+
+  if (!token || !origin) {
+    console.error(
+      'Missing Synoptic env vars: SYNOPTIC_API_TOKEN and SYNOPTIC_ORIGIN are required'
+    );
+    return null;
+  }
+
+  return { token, origin };
+}
 
 // Fetch configuration
 const FETCH_TIMEOUT_MS = 5000;
@@ -79,12 +90,24 @@ export async function getWindData(
 ): Promise<WindData | null> {
   const upperIcao = icao.toUpperCase();
   const minutes = Math.min(Math.max(1, hours), 720) * 60;
-  const url = `https://api.synopticdata.com/v2/stations/timeseries?STID=${upperIcao}&showemptystations=1&units=temp|F,speed|kts,english&recent=${minutes}&complete=1&token=${SYNOPTIC_TOKEN}&obtimezone=local`;
+  const synopticConfig = getSynopticConfig();
+  if (!synopticConfig) return null;
+
+  const params = new URLSearchParams({
+    STID: upperIcao,
+    showemptystations: '1',
+    units: 'temp|F,speed|kts,english',
+    recent: String(minutes),
+    complete: '1',
+    token: synopticConfig.token,
+    obtimezone: 'local',
+  });
+  const url = `https://api.synopticdata.com/v2/stations/timeseries?${params.toString()}`;
 
   try {
     const response = await fetchWithTimeoutAndRetry(url, {
       headers: {
-        'Origin': SYNOPTIC_ORIGIN,
+        'Origin': synopticConfig.origin,
         'User-Agent': 'WindPlot/1.0',
       },
       // Bypass cache when forceRefresh is true (for manual/auto refresh)

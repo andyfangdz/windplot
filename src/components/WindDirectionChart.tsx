@@ -21,6 +21,67 @@ interface TooltipData {
 
 const RUNWAY_COLORS = ['#ffcc00', '#00ff88', '#ff6b6b', '#a78bfa'];
 
+// Represents a group of parallel runways (or a single runway)
+interface RunwayGroup {
+  trueHdg: number;
+  highLabel: string; // e.g., "22L/R" or "22"
+  lowLabel: string;  // e.g., "04L/R" or "04"
+  legendLabel: string; // e.g., "04L/R/22L/R" or "04/22"
+}
+
+// Group parallel runways and create combined labels
+function groupRunways(runways: Runway[]): RunwayGroup[] {
+  // Group runways by heading (within 1 degree tolerance)
+  const groups: { hdg: number; runways: Runway[] }[] = [];
+
+  runways.forEach((rw) => {
+    const normalizedHdg = Math.round(rw.trueHdg);
+    const existingGroup = groups.find((g) => Math.abs(g.hdg - normalizedHdg) <= 1);
+    if (existingGroup) {
+      existingGroup.runways.push(rw);
+    } else {
+      groups.push({ hdg: normalizedHdg, runways: [rw] });
+    }
+  });
+
+  // Convert groups to RunwayGroup with combined labels
+  return groups.map((group) => {
+    const rwList = group.runways;
+    // Use the average heading for the group
+    const avgHdg = rwList.reduce((sum, rw) => sum + rw.trueHdg, 0) / rwList.length;
+
+    if (rwList.length === 1) {
+      // Single runway - use original labels
+      const rw = rwList[0];
+      return {
+        trueHdg: avgHdg,
+        highLabel: rw.high,
+        lowLabel: rw.low,
+        legendLabel: `${rw.low}/${rw.high}`,
+      };
+    }
+
+    // Multiple parallel runways - extract numbers and unique suffixes
+    const highNum = rwList[0].high.replace(/[LRC]$/, '');
+    const lowNum = rwList[0].low.replace(/[LRC]$/, '');
+
+    // Get unique suffixes, sorted L/C/R
+    const suffixes = [...new Set(rwList.map((rw) => rw.high.replace(/^\d+/, '')))]
+      .sort((a, b) => {
+        const order: Record<string, number> = { L: 0, C: 1, R: 2 };
+        return (order[a] ?? 3) - (order[b] ?? 3);
+      });
+    const suffixStr = suffixes.join('/');
+
+    return {
+      trueHdg: avgHdg,
+      highLabel: `${highNum}${suffixStr}`,
+      lowLabel: `${lowNum}${suffixStr}`,
+      legendLabel: `${lowNum}/${highNum} ${suffixStr}`,
+    };
+  });
+}
+
 export default function WindDirectionChart({
   observations,
   runways,
@@ -107,10 +168,11 @@ export default function WindDirectionChart({
       );
     });
 
-    // Draw runway lines
-    runways.forEach((rw, i) => {
+    // Draw runway lines (grouped for parallel runways)
+    const runwayGroups = groupRunways(runways);
+    runwayGroups.forEach((group, i) => {
       const color = RUNWAY_COLORS[i % RUNWAY_COLORS.length];
-      const hdgRad = ((rw.trueHdg - 90) * Math.PI) / 180;
+      const hdgRad = ((group.trueHdg - 90) * Math.PI) / 180;
       const oppRad = hdgRad + Math.PI;
 
       ctx.save();
@@ -139,12 +201,12 @@ export default function WindDirectionChart({
 
       const labelOffset = maxRadius + 28;
       ctx.fillText(
-        rw.high,
+        group.highLabel,
         centerX + labelOffset * Math.cos(hdgRad),
         centerY + labelOffset * Math.sin(hdgRad)
       );
       ctx.fillText(
-        rw.low,
+        group.lowLabel,
         centerX + labelOffset * Math.cos(oppRad),
         centerY + labelOffset * Math.sin(oppRad)
       );
@@ -153,7 +215,7 @@ export default function WindDirectionChart({
 
     // Plot wind observations and track points for tooltips
     const points: { x: number; y: number; data: WindDataPoint; isGust: boolean }[] = [];
-    
+
     observations.forEach((d) => {
       if (d.wdir === null) return;
       const rad = ((d.wdir - 90) * Math.PI) / 180;
@@ -188,7 +250,7 @@ export default function WindDirectionChart({
         points.push({ x, y, data: d, isGust: true });
       }
     });
-    
+
     pointsRef.current = points;
   }, [observations, runways]);
 
@@ -257,6 +319,9 @@ export default function WindDirectionChart({
     return dirs[Math.round(deg / 22.5) % 16];
   };
 
+  // Get grouped runways for legend
+  const runwayGroups = groupRunways(runways);
+
   return (
     <div className="chart-section h-full">
       <div className="chart-title">Wind Direction &amp; Speed</div>
@@ -293,15 +358,15 @@ export default function WindDirectionChart({
           Gusts
         </div>
       </div>
-      {runways.length > 0 && (
+      {runwayGroups.length > 0 && (
         <div className="runway-legend">
-          {runways.map((rw, i) => (
+          {runwayGroups.map((group, i) => (
             <span
-              key={`${rw.low}/${rw.high}`}
+              key={group.legendLabel}
               className="runway-tag"
               style={{ borderLeftColor: RUNWAY_COLORS[i % RUNWAY_COLORS.length] }}
             >
-              {rw.low}/{rw.high}
+              {group.legendLabel}
             </span>
           ))}
         </div>

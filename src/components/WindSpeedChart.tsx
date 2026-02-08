@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -12,6 +13,7 @@ import {
   Filler,
   ChartOptions,
   Plugin,
+  ScriptableLineSegmentContext,
 } from 'chart.js';
 import { WindDataPoint } from '@/lib/types';
 import { useHorizontalSwipeLock } from '@/lib/useHorizontalSwipeLock';
@@ -25,6 +27,52 @@ ChartJS.register(
   Tooltip,
   Filler
 );
+
+// Interpolate gaps in wind data and return both the filled data and a mask of interpolated indices
+function interpolateWindGaps(data: (number | null)[]): {
+  interpolated: (number | null)[];
+  isInterpolated: boolean[];
+} {
+  const interpolated = [...data];
+  const isInterpolated = new Array(data.length).fill(false);
+
+  // Find all gaps and interpolate them
+  let i = 0;
+  while (i < data.length) {
+    if (data[i] === null) {
+      // Find the start of the gap (last non-null before)
+      let gapStart = i - 1;
+      while (gapStart >= 0 && data[gapStart] === null) {
+        gapStart--;
+      }
+
+      // Find the end of the gap (first non-null after)
+      let gapEnd = i;
+      while (gapEnd < data.length && data[gapEnd] === null) {
+        gapEnd++;
+      }
+
+      // If we have both endpoints, interpolate
+      if (gapStart >= 0 && gapEnd < data.length) {
+        const startVal = data[gapStart]!;
+        const endVal = data[gapEnd]!;
+        const gapLength = gapEnd - gapStart;
+
+        for (let j = gapStart + 1; j < gapEnd; j++) {
+          const t = (j - gapStart) / gapLength;
+          interpolated[j] = startVal + t * (endVal - startVal);
+          isInterpolated[j] = true;
+        }
+      }
+
+      i = gapEnd;
+    } else {
+      i++;
+    }
+  }
+
+  return { interpolated, isInterpolated };
+}
 
 // Custom plugin for vertical crosshair line
 const crosshairPlugin: Plugin<'line'> = {
@@ -69,12 +117,25 @@ export default function WindSpeedChart({ observations }: WindSpeedChartProps) {
   const gustSpeeds = observations.map((d) => d.wgst);
   const windDirs = observations.map((d) => d.wdir);
 
+  // Interpolate gaps in wind data
+  const { interpolated: interpolatedWindSpeeds, isInterpolated } = useMemo(
+    () => interpolateWindGaps(windSpeeds),
+    [windSpeeds]
+  );
+
+  // Segment styling function - checks if either endpoint of a segment is interpolated
+  const getSegmentStyle = (ctx: ScriptableLineSegmentContext, normalValue: string, interpolatedValue: string) => {
+    const p0Interpolated = isInterpolated[ctx.p0DataIndex];
+    const p1Interpolated = isInterpolated[ctx.p1DataIndex];
+    return p0Interpolated || p1Interpolated ? interpolatedValue : normalValue;
+  };
+
   const data = {
     labels,
     datasets: [
       {
         label: 'Wind',
-        data: windSpeeds,
+        data: interpolatedWindSpeeds,
         borderColor: '#1d9bf0',
         backgroundColor: 'rgba(29, 155, 240, 0.15)',
         fill: true,
@@ -85,6 +146,14 @@ export default function WindSpeedChart({ observations }: WindSpeedChartProps) {
         pointHoverBorderColor: '#fff',
         pointHoverBorderWidth: 2,
         borderWidth: 2.5,
+        segment: {
+          borderColor: (ctx: ScriptableLineSegmentContext) =>
+            getSegmentStyle(ctx, '#1d9bf0', 'rgba(29, 155, 240, 0.4)'),
+          borderDash: (ctx: ScriptableLineSegmentContext) =>
+            isInterpolated[ctx.p0DataIndex] || isInterpolated[ctx.p1DataIndex] ? [4, 4] : [],
+          backgroundColor: (ctx: ScriptableLineSegmentContext) =>
+            getSegmentStyle(ctx, 'rgba(29, 155, 240, 0.15)', 'rgba(29, 155, 240, 0.05)'),
+        },
       },
       {
         label: 'Gusts',
@@ -136,12 +205,18 @@ export default function WindSpeedChart({ observations }: WindSpeedChartProps) {
             const idx = items[0].dataIndex;
             const dir = windDirs[idx];
             const dirStr = dir !== null ? `${dir}° (${formatDirection(dir)})` : '—';
-            return [`${items[0].label}`, `Direction: ${dirStr}`];
+            const lines = [`${items[0].label}`, `Direction: ${dirStr}`];
+            if (isInterpolated[idx]) {
+              lines.push('(Interpolated)');
+            }
+            return lines;
           },
           label: (context) => {
             const value = context.parsed.y;
             if (value === null) return '';
-            return ` ${context.dataset.label}: ${value} kt`;
+            const idx = context.dataIndex;
+            const suffix = context.dataset.label === 'Wind' && isInterpolated[idx] ? ' (est.)' : '';
+            return ` ${context.dataset.label}: ${Math.round(value)} kt${suffix}`;
           },
         },
       },

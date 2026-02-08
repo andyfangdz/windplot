@@ -45,7 +45,9 @@ This document provides comprehensive guidance for AI agents working on this code
 ```
 src/
 ├── app/
-│   ├── page.tsx              # Main page (server component, data fetching)
+│   ├── page.tsx              # Root page + legacy query route compatibility
+│   ├── WindPlotPage.tsx      # Shared server page loader for all routes
+│   ├── [icao]/[mode]/[duration]/page.tsx # Path-routed entry: /KCDW/observation/4h
 │   ├── actions.ts            # Server actions: wind data, airport search, METAR, forecast
 │   ├── layout.tsx            # Root layout
 │   └── nbm-parser.test.ts   # NBM parser unit tests (vitest)
@@ -64,6 +66,7 @@ src/
 │   ├── types.ts              # TypeScript interfaces
 │   ├── nbm-parser.ts         # NBM text bulletin parser (NBH + NBS products)
 │   ├── cache.ts              # Staleness/cache utilities
+│   ├── windplot-route.ts     # URL route parsing/building helpers
 │   ├── useHorizontalSwipeLock.ts # Touch gesture hook: prevents scroll on horizontal swipe
 │   ├── airports.ts           # Airport utilities (unused, data in JSON)
 │   ├── airports-data.json    # 4,450 US airports from NASR
@@ -85,7 +88,7 @@ getWindData()          getMetar()            getNbmForecast()
                  ↓                                   │
       getAirportFullData() (parallel fetch)          │
                  ↓                                   │
-      page.tsx (server component)                    │
+      WindPlotPage.tsx (server loader used by root + path routes) │
                  ↓                                   │
       WindPlot (client state holder) ←───────────────┘
                  ↓                   (on-demand fetch when viewing forecast)
@@ -161,10 +164,11 @@ Both polar radars use raw Canvas API, not Chart.js. Key points:
 
 ### 5. URL State Sync
 
-Airport and hours sync to URL query params (`?icao=KFRG&hours=6`). When changing state:
-```typescript
-router.push(`?icao=${icao}&hours=${hours}`, { scroll: false });
-```
+WindPlot uses path routing for UI state:
+- Observation: `/{ICAO}/observation/{hours}h` (example: `/KFRG/observation/6h`)
+- Forecast: `/{ICAO}/forecast/{hours}h` (example: `/KFRG/forecast/24h`)
+
+Legacy query links (`?icao=...&hours=...`) are still accepted on `/` and upgraded client-side with `router.replace(...)` (no full refresh).
 
 ---
 
@@ -295,7 +299,7 @@ npm run update-nasr:index  # Rebuild spatial index only
 | Data fetching | Check browser console + network tab |
 | Chart rendering | Visual inspection on multiple airports |
 | Airport search | Type partial ICAO/name, verify results |
-| URL params | Refresh page, verify state persists |
+| URL routing | Navigate between airports/modes/hours and verify path updates + state persistence |
 | Mobile layout | Test on narrow viewport |
 | NBM parser | `npm run test:run` (37 test cases) |
 | Forecast view | Toggle Obs/Forecast, switch 24h/72h, verify synced selection |
@@ -443,8 +447,11 @@ Both observations and forecasts display times in the **airport's local timezone*
 
 | Purpose | File(s) |
 |---------|---------|
-| Main page | `src/app/page.tsx` |
+| Main page loader | `src/app/WindPlotPage.tsx` |
+| Root + legacy query compatibility route | `src/app/page.tsx` |
+| Path-routed page | `src/app/[icao]/[mode]/[duration]/page.tsx` |
 | All API calls | `src/app/actions.ts` |
+| URL route utilities | `src/lib/windplot-route.ts` |
 | NBM bulletin parser | `src/lib/nbm-parser.ts` |
 | NBM parser tests | `src/app/nbm-parser.test.ts` |
 | Cache utilities | `src/lib/cache.ts` |

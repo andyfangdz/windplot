@@ -68,11 +68,11 @@ npm start
 - **Weather**: [Synoptic Data API](https://synopticdata.com/) (5-minute AWOS observations)
 - **Airports**: [FAA NASR Subscription](https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/NASR_Subscription/)
 
-## URL Parameters
+## URL Routing
 
-- `?icao=KFRG` - Select airport (any valid ICAO)
-- `?hours=6` - Time range (1, 2, 4, 6, 12, 24)
-- `?icao=KTEB&hours=12` - Combined
+- `/KFRG/observation/6h` - Observation view for the last 6 hours
+- `/KTEB/forecast/24h` - Forecast view with a 24-hour forecast window
+- Legacy query URLs like `/?icao=KTEB&hours=12` are still supported and upgraded client-side to path URLs
 
 ## Tech Stack
 

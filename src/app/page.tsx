@@ -1,26 +1,14 @@
-import { Suspense } from 'react';
-import WindPlot from '@/components/WindPlot';
+import WindPlotPage from './WindPlotPage';
 import {
-  getFavoriteAirports,
-  getAirportFullData,
-  prefetchFavorites,
-} from './actions';
+  buildWindPlotPath,
+  DEFAULT_FORECAST_HOURS,
+  normalizeLegacyQueryRoute,
+} from '@/lib/windplot-route';
 
 export const metadata = {
   title: 'WindPlot - Aviation Wind Data',
   description: 'Real-time wind speed, gusts, and direction for local airports',
 };
-
-function LoadingFallback() {
-  return (
-    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 flex items-center justify-center">
-      <div className="text-center">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-[#1d9bf0] border-t-transparent"></div>
-        <p className="text-[var(--text-secondary)] mt-4 text-sm">Loading...</p>
-      </div>
-    </div>
-  );
-}
 
 interface PageProps {
   searchParams: Promise<{ icao?: string; hours?: string }>;
@@ -28,33 +16,16 @@ interface PageProps {
 
 export default async function Home({ searchParams }: PageProps) {
   const params = await searchParams;
-  const icao = params.icao?.toUpperCase() || 'KCDW';
-  const hours = parseInt(params.hours || '4', 10);
-
-  // Fetch data server-side: current airport + prefetch top 3 favorites
-  const [favorites, initialFullData, prefetchedData] = await Promise.all([
-    getFavoriteAirports(),
-    getAirportFullData(icao, hours),
-    prefetchFavorites(hours, 3),
-  ]);
-
-  // Merge initial data into prefetched (in case it's a favorite)
-  const allPrefetched = {
-    ...prefetchedData,
-    [icao]: initialFullData,
-  };
+  const route = normalizeLegacyQueryRoute(params);
+  const hasLegacyParams = Boolean(params.icao || params.hours);
 
   return (
-    <Suspense fallback={<LoadingFallback />}>
-      <WindPlot
-        initialIcao={icao}
-        initialHours={hours}
-        initialAirport={initialFullData.airport}
-        initialData={initialFullData.windData}
-        initialMetar={initialFullData.metar}
-        favorites={favorites}
-        prefetchedData={allPrefetched}
-      />
-    </Suspense>
+    <WindPlotPage
+      initialIcao={route.icao}
+      observationHours={route.durationHours}
+      initialViewMode="observations"
+      initialForecastHoursLimit={DEFAULT_FORECAST_HOURS}
+      legacyRedirectPath={hasLegacyParams ? buildWindPlotPath(route) : null}
+    />
   );
 }

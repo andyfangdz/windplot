@@ -21,10 +21,17 @@ import {
   AirportFullData,
   MetarData,
 } from '@/app/actions';
+import {
+  buildWindPlotPathForState,
+  WindPlotViewMode,
+} from '@/lib/windplot-route';
 
 interface WindPlotProps {
   initialIcao: string;
   initialHours: number;
+  initialViewMode: WindPlotViewMode;
+  initialForecastHoursLimit: number;
+  legacyRedirectPath?: string | null;
   initialAirport: Airport | null;
   initialData: WindData | null;
   initialMetar: MetarData | null;
@@ -35,6 +42,9 @@ interface WindPlotProps {
 export default function WindPlot({
   initialIcao,
   initialHours,
+  initialViewMode,
+  initialForecastHoursLimit,
+  legacyRedirectPath = null,
   initialAirport,
   initialData,
   initialMetar,
@@ -58,9 +68,11 @@ export default function WindPlot({
   const [settings, setSettings] = useState<Settings>({ allowedSurfaces: [] });
 
   // Forecast view state
-  const [viewMode, setViewMode] = useState<'observations' | 'forecast'>('observations');
-  const [forecastRange, setForecastRange] = useState<24 | 72>(24);
-  const [forecastHoursLimit, setForecastHoursLimit] = useState<number>(24);
+  const [viewMode, setViewMode] = useState<WindPlotViewMode>(initialViewMode);
+  const [forecastRange, setForecastRange] = useState<24 | 72>(
+    initialForecastHoursLimit > 24 ? 72 : 24
+  );
+  const [forecastHoursLimit, setForecastHoursLimit] = useState<number>(initialForecastHoursLimit);
   const [forecast, setForecast] = useState<ForecastData | null>(null);
   const [forecastLoading, setForecastLoading] = useState(false);
   const [forecastError, setForecastError] = useState<string | null>(null);
@@ -77,6 +89,29 @@ export default function WindPlot({
     }
     return transformed;
   });
+
+  const pushRoute = (
+    nextIcao: string,
+    nextViewMode: WindPlotViewMode,
+    nextObservationHours: number,
+    nextForecastHoursLimit: number
+  ) => {
+    router.push(
+      buildWindPlotPathForState(
+        nextIcao,
+        nextViewMode,
+        nextObservationHours,
+        nextForecastHoursLimit
+      ),
+      { scroll: false }
+    );
+  };
+
+  // Upgrade legacy query-string URLs to canonical path URLs client-side.
+  useEffect(() => {
+    if (!legacyRedirectPath) return;
+    router.replace(legacyRedirectPath, { scroll: false });
+  }, [legacyRedirectPath, router]);
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -166,7 +201,7 @@ export default function WindPlot({
       setMetar(prefetched.metar);
       setMetarIcao(upperIcao);
       setError(null);
-      router.push(`?icao=${upperIcao}&hours=${hours}`, { scroll: false });
+      pushRoute(upperIcao, viewMode, hours, forecastHoursLimit);
       return;
     }
 
@@ -180,7 +215,7 @@ export default function WindPlot({
     setLoading(true);
     setError(null);
 
-    router.push(`?icao=${upperIcao}&hours=${hours}`, { scroll: false });
+    pushRoute(upperIcao, viewMode, hours, forecastHoursLimit);
 
     let fullData = await getAirportFullData(upperIcao, hours, hasStaleCache);
 
@@ -216,7 +251,7 @@ export default function WindPlot({
     setLoading(true);
     setError(null);
 
-    router.push(`?icao=${icao}&hours=${newHours}`, { scroll: false });
+    pushRoute(icao, viewMode, newHours, forecastHoursLimit);
 
     const fullData = await getAirportFullData(icao, newHours);
     setAirport(fullData.airport);
@@ -366,7 +401,10 @@ export default function WindPlot({
           {/* View toggle */}
           <div className="flex justify-center gap-2 mt-3">
             <button
-              onClick={() => setViewMode('observations')}
+              onClick={() => {
+                setViewMode('observations');
+                pushRoute(icao, 'observations', hours, forecastHoursLimit);
+              }}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 viewMode === 'observations'
                   ? 'bg-[#1d9bf0] text-white'
@@ -376,7 +414,10 @@ export default function WindPlot({
               Observations
             </button>
             <button
-              onClick={() => setViewMode('forecast')}
+              onClick={() => {
+                setViewMode('forecast');
+                pushRoute(icao, 'forecast', hours, forecastHoursLimit);
+              }}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 viewMode === 'forecast'
                   ? 'bg-[#10b981] text-white'
@@ -391,7 +432,12 @@ export default function WindPlot({
           {viewMode === 'forecast' && (
             <div className="flex justify-center gap-2 mt-2">
               <button
-                onClick={() => { setForecastRange(24); setForecastHoursLimit(24); }}
+                onClick={() => {
+                  setForecastRange(24);
+                  setForecastHoursLimit(24);
+                  setSelectedForecastIdx(0);
+                  pushRoute(icao, 'forecast', hours, 24);
+                }}
                 className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
                   forecastRange === 24
                     ? 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]'
@@ -401,7 +447,12 @@ export default function WindPlot({
                 24h (hourly)
               </button>
               <button
-                onClick={() => { setForecastRange(72); setForecastHoursLimit(72); }}
+                onClick={() => {
+                  setForecastRange(72);
+                  setForecastHoursLimit(72);
+                  setSelectedForecastIdx(0);
+                  pushRoute(icao, 'forecast', hours, 72);
+                }}
                 className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
                   forecastRange === 72
                     ? 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]'
@@ -428,6 +479,7 @@ export default function WindPlot({
             onForecastHoursLimitChange={(h) => {
               setForecastHoursLimit(h);
               setSelectedForecastIdx(0);
+              pushRoute(icao, 'forecast', hours, h);
             }}
           />
         </div>

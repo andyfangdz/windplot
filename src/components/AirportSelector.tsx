@@ -221,7 +221,7 @@ export default function AirportSelector({
               <button
                 key={airport.icao}
                 onClick={() => handleSelectAirport(airport.icao)}
-                className={`w-full px-4 py-2 text-left text-sm transition-colors ${
+                className={`w-full px-4 py-2 text-left text-sm transition-colors flex items-baseline gap-2 ${
                   index === highlightedIndex
                     ? 'bg-[var(--bg-hover)] text-[var(--text-primary)]'
                     : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
@@ -232,8 +232,8 @@ export default function AirportSelector({
                 <span className="font-mono font-bold text-[#1d9bf0]">
                   {airport.icao}
                 </span>
-                <span className="ml-2">{airport.name}</span>
-                <span className="ml-1 text-xs text-[var(--text-tertiary)]">
+                <span className="truncate">{airport.name}</span>
+                <span className="text-xs text-[var(--text-tertiary)] shrink-0">
                   ({airport.city}, {airport.state})
                 </span>
               </button>

@@ -33,6 +33,7 @@ This document provides comprehensive guidance for AI agents working on this code
 - **METAR**: Aviation Weather Center API
 - **Forecast API**: NOAA National Blend of Models (NBM) via NOMADS text bulletins
 - **Timezone**: @photostructure/tz-lookup (lat/lon to IANA timezone lookup)
+- **Telemetry**: Datadog Browser RUM (`@datadog/browser-rum`, env-gated)
 - **Styling**: Tailwind CSS 4
 - **Airport Data**: FAA NASR subscription (bundled JSON)
 
@@ -50,6 +51,7 @@ src/
 │   ├── [icao]/[mode]/[duration]/page.tsx # Path-routed entry: /KCDW/observation/4h
 │   ├── actions.ts            # Server actions: wind data, airport search, METAR, forecast
 │   ├── layout.tsx            # Root layout
+│   ├── DatadogRumInit.tsx    # Client-only Datadog RUM bootstrap (env-gated)
 │   └── nbm-parser.test.ts   # NBM parser unit tests (vitest)
 ├── components/
 │   ├── WindPlot.tsx          # Main client component, state management
@@ -142,6 +144,14 @@ SYNOPTIC_ORIGIN
 ```
 
 `SYNOPTIC_API_TOKEN` is the Synoptic Data API token. `SYNOPTIC_ORIGIN` is sent as the request `Origin` header (typically `https://www.weather.gov`). Set these in Vercel Project Environment Variables (Production/Preview/Development) and in local `.env.local` for local development.
+
+Optional Datadog RUM configuration is enabled when both of these are set:
+```typescript
+NEXT_PUBLIC_DD_RUM_APPLICATION_ID
+NEXT_PUBLIC_DD_RUM_CLIENT_TOKEN
+```
+
+Set these in Vercel Project Environment Variables (Production/Preview/Development) for browser telemetry in deployed environments.
 
 ### 3. Airport Data is Static
 

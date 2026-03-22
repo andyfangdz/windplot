@@ -1,6 +1,6 @@
 {
-  "generated": "2026-03-15T06:26:00.481Z",
-  "count": 4445,
+  "generated": "2026-03-22T06:22:08.242Z",
+  "count": 4443,
   "airports": [
     {
       "icao": "CYCD",
@@ -2368,28 +2368,6 @@
       ]
     },
     {
-      "icao": "K0AK",
-      "faaId": "0AK",
-      "name": "PILOT STATION",
-      "city": "PILOT STATION",
-      "state": "AK",
-      "lat": 61.96147697,
-      "lon": -162.94235461,
-      "runways": [
-        {
-          "id": "04/22",
-          "low": "04",
-          "high": "22",
-          "trueHdg": 57,
-          "length": 4000,
-          "width": 75,
-          "surface": "GRVL-DIRT",
-          "lowLda": 4000,
-          "highLda": 4000
-        }
-      ]
-    },
-    {
       "icao": "K0B2",
       "faaId": "0B2",
       "name": "BREWER",
@@ -4298,8 +4276,8 @@
       "name": "WINSTED MUNI",
       "city": "WINSTED",
       "state": "MN",
-      "lat": 44.95385,
-      "lon": -94.06539027,
+      "lat": 44.9538163,
+      "lon": -94.06531744,
       "runways": [
         {
           "id": "09/27",
@@ -4307,7 +4285,7 @@
           "high": "27",
           "trueHdg": 90,
           "length": 3248,
-          "width": 200,
+          "width": 160,
           "surface": "TURF",
           "lowLda": 3248,
           "highLda": 3248
@@ -7054,28 +7032,6 @@
       ]
     },
     {
-      "icao": "K1H6",
-      "faaId": "1H6",
-      "name": "HARVEY YOUNG",
-      "city": "TULSA",
-      "state": "OK",
-      "lat": 36.13891666,
-      "lon": -95.82505555,
-      "runways": [
-        {
-          "id": "17/35",
-          "low": "17",
-          "high": "35",
-          "trueHdg": 179,
-          "length": 2580,
-          "width": 40,
-          "surface": "ASPH",
-          "lowLda": 2580,
-          "highLda": 2580
-        }
-      ]
-    },
-    {
       "icao": "K1H8",
       "faaId": "1H8",
       "name": "CASEY MUNI",
@@ -7499,19 +7455,19 @@
       "name": "PAROWAN",
       "city": "PAROWAN",
       "state": "UT",
-      "lat": 37.85963888,
-      "lon": -112.81586111,
+      "lat": 37.85961416,
+      "lon": -112.81590611,
       "runways": [
         {
           "id": "04/22",
           "low": "04",
           "high": "22",
           "trueHdg": 53,
-          "length": 5000,
+          "length": 5001,
           "width": 75,
           "surface": "ASPH",
-          "lowLda": 5000,
-          "highLda": 5000
+          "lowLda": 5001,
+          "highLda": 5001
         }
       ]
     },
@@ -17009,28 +16965,6 @@
       ]
     },
     {
-      "icao": "K4A2",
-      "faaId": "4A2",
-      "name": "ATMAUTLUAK",
-      "city": "ATMAUTLUAK",
-      "state": "AK",
-      "lat": 60.86787472,
-      "lon": -162.274275,
-      "runways": [
-        {
-          "id": "15/33",
-          "low": "15",
-          "high": "33",
-          "trueHdg": 166,
-          "length": 3000,
-          "width": 75,
-          "surface": "GRAVEL",
-          "lowLda": 3000,
-          "highLda": 3000
-        }
-      ]
-    },
-    {
       "icao": "K4A3",
       "faaId": "4A3",
       "name": "LAKE LUCILLE",
@@ -17797,28 +17731,6 @@
           "surface": "GRVL-DIRT",
           "lowLda": 3002,
           "highLda": 3002
-        }
-      ]
-    },
-    {
-      "icao": "K4K5",
-      "faaId": "4K5",
-      "name": "OUZINKIE",
-      "city": "OUZINKIE",
-      "state": "AK",
-      "lat": 57.94215516,
-      "lon": -152.46499305,
-      "runways": [
-        {
-          "id": "08/26",
-          "low": "08",
-          "high": "26",
-          "trueHdg": 101,
-          "length": 3300,
-          "width": 60,
-          "surface": "GRAVEL",
-          "lowLda": 3300,
-          "highLda": 3300
         }
       ]
     },
@@ -19297,28 +19209,6 @@
       ]
     },
     {
-      "icao": "K51Z",
-      "faaId": "51Z",
-      "name": "MINTO AL WRIGHT",
-      "city": "MINTO",
-      "state": "AK",
-      "lat": 65.14816666,
-      "lon": -149.36858333,
-      "runways": [
-        {
-          "id": "02/20",
-          "low": "02",
-          "high": "20",
-          "trueHdg": 42,
-          "length": 3400,
-          "width": 75,
-          "surface": "GRAVEL",
-          "lowLda": 3400,
-          "highLda": 3400
-        }
-      ]
-    },
-    {
       "icao": "K52A",
       "faaId": "52A",
       "name": "MADISON MUNI",
@@ -19838,7 +19728,7 @@
     {
       "icao": "K55M",
       "faaId": "55M",
-      "name": "STAR CITY MUNI",
+      "name": "JB WEST MUNICIPAL AIRPORT",
       "city": "STAR CITY",
       "state": "AR",
       "lat": 33.92641666,
@@ -26678,28 +26568,6 @@
       ]
     },
     {
-      "icao": "K7MI",
-      "faaId": "7MI",
-      "name": "FLUGPLATZ",
-      "city": "LEXINGTON",
-      "state": "MI",
-      "lat": 43.34174305,
-      "lon": -82.54828472,
-      "runways": [
-        {
-          "id": "09/27",
-          "low": "09",
-          "high": "27",
-          "trueHdg": 83,
-          "length": 3873,
-          "width": 80,
-          "surface": "TURF",
-          "lowLda": 3873,
-          "highLda": 3873
-        }
-      ]
-    },
-    {
       "icao": "K7N1",
       "faaId": "7N1",
       "name": "CORNING-PAINTED POST",
@@ -28281,6 +28149,17 @@
       "lat": 44.40580958,
       "lon": -69.65967394,
       "runways": [
+        {
+          "id": "04W/22W",
+          "low": "04W",
+          "high": "22W",
+          "trueHdg": 42,
+          "length": 10000,
+          "width": 2000,
+          "surface": "WATER",
+          "lowLda": 10000,
+          "highLda": 10000
+        },
         {
           "id": "13/31",
           "low": "13",
@@ -31122,6 +31001,28 @@
       ]
     },
     {
+      "icao": "K9SD8",
+      "faaId": "9SD8",
+      "name": "OAKLEAF",
+      "city": "HARTFORD",
+      "state": "SD",
+      "lat": 43.5823975,
+      "lon": -96.944982,
+      "runways": [
+        {
+          "id": "11/29",
+          "low": "11",
+          "high": "29",
+          "trueHdg": 110,
+          "length": 2412,
+          "width": 100,
+          "surface": "TURF",
+          "lowLda": 2412,
+          "highLda": 2412
+        }
+      ]
+    },
+    {
       "icao": "K9U1",
       "faaId": "9U1",
       "name": "WILSALL",
@@ -31283,28 +31184,6 @@
           "surface": "ASPH",
           "lowLda": 4200,
           "highLda": 4200
-        }
-      ]
-    },
-    {
-      "icao": "K9Z8",
-      "faaId": "9Z8",
-      "name": "LEVELOCK",
-      "city": "LEVELOCK",
-      "state": "AK",
-      "lat": 59.12708333,
-      "lon": -156.85988888,
-      "runways": [
-        {
-          "id": "01/19",
-          "low": "01",
-          "high": "19",
-          "trueHdg": 26,
-          "length": 3284,
-          "width": 60,
-          "surface": "GRVL-DIRT",
-          "lowLda": 3284,
-          "highLda": 3284
         }
       ]
     },
@@ -32290,7 +32169,7 @@
     {
       "icao": "KADT",
       "faaId": "ADT",
-      "name": "ATWOOD-RAWLINS COUNTY CITY-COUNTY",
+      "name": "ATWOOD/RAWLINS COUNTY",
       "city": "ATWOOD",
       "state": "KS",
       "lat": 39.8403385,
@@ -43629,28 +43508,6 @@
       ]
     },
     {
-      "icao": "KCKX",
-      "faaId": "CKX",
-      "name": "CHICKEN",
-      "city": "CHICKEN",
-      "state": "AK",
-      "lat": 64.06675138,
-      "lon": -141.95134722,
-      "runways": [
-        {
-          "id": "13/31",
-          "low": "13",
-          "high": "31",
-          "trueHdg": 157,
-          "length": 2500,
-          "width": 60,
-          "surface": "GRVL-DIRT",
-          "lowLda": 2500,
-          "highLda": 2500
-        }
-      ]
-    },
-    {
       "icao": "KCKZ",
       "faaId": "CKZ",
       "name": "PENNRIDGE",
@@ -46357,28 +46214,6 @@
       ]
     },
     {
-      "icao": "KCXC",
-      "faaId": "CXC",
-      "name": "CHITINA",
-      "city": "CHITINA",
-      "state": "AK",
-      "lat": 61.58320277,
-      "lon": -144.42980277,
-      "runways": [
-        {
-          "id": "13/31",
-          "low": "13",
-          "high": "31",
-          "trueHdg": 160,
-          "length": 2850,
-          "width": 75,
-          "surface": "GRVL-DIRT",
-          "lowLda": 2850,
-          "highLda": 2850
-        }
-      ]
-    },
-    {
       "icao": "KCXE",
       "faaId": "CXE",
       "name": "CHASE CITY MUNI",
@@ -47891,19 +47726,19 @@
       "name": "DODGE CITY RGNL",
       "city": "DODGE CITY",
       "state": "KS",
-      "lat": 37.76311111,
-      "lon": -99.96541666,
+      "lat": 37.76312111,
+      "lon": -99.96542361,
       "runways": [
         {
           "id": "02/20",
           "low": "02",
           "high": "20",
           "trueHdg": 32,
-          "length": 4649,
-          "width": 100,
+          "length": 4650,
+          "width": 75,
           "surface": "ASPH",
-          "lowLda": 4649,
-          "highLda": 4649
+          "lowLda": 4650,
+          "highLda": 4650
         },
         {
           "id": "14/32",
@@ -49079,7 +48914,7 @@
           "length": 12903,
           "width": 150,
           "surface": "ASPH-CONC",
-          "lowLda": 12903,
+          "lowLda": 8653,
           "highLda": 12903
         }
       ]
@@ -50700,9 +50535,9 @@
       "lon": -120.86480555,
       "runways": [
         {
-          "id": "16/34",
-          "low": "16",
-          "high": "34",
+          "id": "17/35",
+          "low": "17",
+          "high": "35",
           "trueHdg": 181,
           "length": 2979,
           "width": 62,
@@ -50803,7 +50638,7 @@
     {
       "icao": "KE45",
       "faaId": "E45",
-      "name": "PINE MOUNTAIN LAKE",
+      "name": "GROVELAND/YOSEMITE",
       "city": "GROVELAND",
       "state": "CA",
       "lat": 37.86166666,
@@ -51862,20 +51697,9 @@
       "name": "EMMETSBURG MUNI",
       "city": "EMMETSBURG",
       "state": "IA",
-      "lat": 43.10205555,
-      "lon": -94.70452777,
+      "lat": 43.10374361,
+      "lon": -94.70732,
       "runways": [
-        {
-          "id": "04/22",
-          "low": "04",
-          "high": "22",
-          "trueHdg": 45,
-          "length": 2537,
-          "width": 120,
-          "surface": "TURF",
-          "lowLda": 2537,
-          "highLda": 2537
-        },
         {
           "id": "13/31",
           "low": "13",
@@ -51886,17 +51710,6 @@
           "surface": "CONC",
           "lowLda": 3401,
           "highLda": 3401
-        },
-        {
-          "id": "17/35",
-          "low": "17",
-          "high": "35",
-          "trueHdg": 180,
-          "length": 2157,
-          "width": 150,
-          "surface": "TURF",
-          "lowLda": 2157,
-          "highLda": 2157
         }
       ]
     },
@@ -53732,19 +53545,19 @@
       "name": "NEWTON-CITY-COUNTY",
       "city": "NEWTON",
       "state": "KS",
-      "lat": 38.05710138,
-      "lon": -97.27522833,
+      "lat": 38.05707944,
+      "lon": -97.27520666,
       "runways": [
         {
           "id": "08/26",
           "low": "08",
           "high": "26",
           "trueHdg": 90,
-          "length": 3501,
+          "length": 3438,
           "width": 60,
           "surface": "ASPH",
-          "lowLda": 3501,
-          "highLda": 3501
+          "lowLda": 3438,
+          "highLda": 3438
         },
         {
           "id": "17/35",
@@ -57318,8 +57131,8 @@
       "name": "FOSSTON MUNI/ANDERSON FLD",
       "city": "FOSSTON",
       "state": "MN",
-      "lat": 47.59282972,
-      "lon": -95.77348666,
+      "lat": 47.59283,
+      "lon": -95.77348805,
       "runways": [
         {
           "id": "16/34",
@@ -67405,8 +67218,8 @@
           "length": 4200,
           "width": 75,
           "surface": "CONC",
-          "lowLda": 4200,
-          "highLda": 4200
+          "lowLda": 3700,
+          "highLda": 3900
         }
       ]
     },
@@ -67724,8 +67537,8 @@
       "name": "ALEXANDER FLD SOUTH WOOD COUNTY",
       "city": "WISCONSIN RAPIDS",
       "state": "WI",
-      "lat": 44.360355,
-      "lon": -89.83903944,
+      "lat": 44.36035555,
+      "lon": -89.83904333,
       "runways": [
         {
           "id": "02/20",
@@ -67743,22 +67556,22 @@
           "low": "12",
           "high": "30",
           "trueHdg": 116,
-          "length": 3470,
+          "length": 3472,
           "width": 60,
           "surface": "ASPH",
-          "lowLda": 3470,
-          "highLda": 3470
+          "lowLda": 3472,
+          "highLda": 3472
         },
         {
           "id": "18/36",
           "low": "18",
           "high": "36",
           "trueHdg": 176,
-          "length": 2072,
+          "length": 2089,
           "width": 50,
           "surface": "TURF",
-          "lowLda": 2072,
-          "highLda": 2072
+          "lowLda": 2089,
+          "highLda": 2089
         }
       ]
     },
@@ -70289,28 +70102,6 @@
           "surface": "ASPH",
           "lowLda": 3200,
           "highLda": 3200
-        }
-      ]
-    },
-    {
-      "icao": "KKEK",
-      "faaId": "KEK",
-      "name": "EKWOK",
-      "city": "EKWOK",
-      "state": "AK",
-      "lat": 59.35683888,
-      "lon": -157.47113944,
-      "runways": [
-        {
-          "id": "02/20",
-          "low": "02",
-          "high": "20",
-          "trueHdg": 38,
-          "length": 3300,
-          "width": 75,
-          "surface": "GRAVEL",
-          "lowLda": 3300,
-          "highLda": 3300
         }
       ]
     },
@@ -78570,7 +78361,7 @@
           "length": 6827,
           "width": 150,
           "surface": "CONC",
-          "lowLda": 6527,
+          "lowLda": 6528,
           "highLda": 6526
         },
         {
@@ -78713,7 +78504,7 @@
       "name": "JACKSON RGNL",
       "city": "JACKSON",
       "state": "TN",
-      "lat": 35.59988055,
+      "lat": 35.59987972,
       "lon": -88.91561194,
       "runways": [
         {
@@ -78721,11 +78512,11 @@
           "low": "02",
           "high": "20",
           "trueHdg": 22,
-          "length": 6005,
-          "width": 150,
+          "length": 6007,
+          "width": 100,
           "surface": "ASPH",
-          "lowLda": 6005,
-          "highLda": 6005
+          "lowLda": 6007,
+          "highLda": 6007
         },
         {
           "id": "11/29",
@@ -88146,28 +87937,6 @@
       ]
     },
     {
-      "icao": "KORI",
-      "faaId": "ORI",
-      "name": "PORT LIONS",
-      "city": "PORT LIONS",
-      "state": "AK",
-      "lat": 57.884925,
-      "lon": -152.84757222,
-      "runways": [
-        {
-          "id": "07/25",
-          "low": "07",
-          "high": "25",
-          "trueHdg": 79,
-          "length": 2200,
-          "width": 75,
-          "surface": "GRAVEL",
-          "lowLda": 2200,
-          "highLda": 2200
-        }
-      ]
-    },
-    {
       "icao": "KORK",
       "faaId": "ORK",
       "name": "NORTH LITTLE ROCK MUNI",
@@ -89009,7 +88778,7 @@
           "length": 5953,
           "width": 100,
           "surface": "ASPH",
-          "lowLda": 5954,
+          "lowLda": 5654,
           "highLda": 5500
         }
       ]
@@ -95177,7 +94946,7 @@
     {
       "icao": "KRMN",
       "faaId": "RMN",
-      "name": "STAFFORD RGNL",
+      "name": "WASHINGTON EXEC/STAFFORD RGNL",
       "city": "STAFFORD",
       "state": "VA",
       "lat": 38.39913472,
@@ -95620,19 +95389,19 @@
       "name": "BELLEVILLE MUNI",
       "city": "BELLEVILLE",
       "state": "KS",
-      "lat": 39.81775972,
-      "lon": -97.65958638,
+      "lat": 39.8177425,
+      "lon": -97.65980861,
       "runways": [
         {
           "id": "14/32",
           "low": "14",
           "high": "32",
-          "trueHdg": 141,
-          "length": 1415,
+          "trueHdg": 142,
+          "length": 1461,
           "width": 100,
           "surface": "TURF",
-          "lowLda": 1415,
-          "highLda": 1415
+          "lowLda": 1461,
+          "highLda": 1461
         },
         {
           "id": "18/36",
@@ -95774,19 +95543,19 @@
       "name": "ROBEN-HOOD",
       "city": "BIG RAPIDS",
       "state": "MI",
-      "lat": 43.72281138,
-      "lon": -85.50531916,
+      "lat": 43.72281111,
+      "lon": -85.50532,
       "runways": [
         {
           "id": "10/28",
           "low": "10",
           "high": "28",
           "trueHdg": 90,
-          "length": 5004,
+          "length": 5003,
           "width": 75,
           "surface": "ASPH",
-          "lowLda": 5004,
-          "highLda": 5004
+          "lowLda": 5003,
+          "highLda": 5003
         },
         {
           "id": "14/32",
@@ -96786,8 +96555,8 @@
       "name": "CONRAD",
       "city": "CONRAD",
       "state": "MT",
-      "lat": 48.16827777,
-      "lon": -111.97644444,
+      "lat": 48.16827361,
+      "lon": -111.97642944,
       "runways": [
         {
           "id": "06/24",
@@ -102000,7 +101769,7 @@
       "name": "FRIEDMAN MEML",
       "city": "HAILEY",
       "state": "ID",
-      "lat": 43.50378055,
+      "lat": 43.50378138,
       "lon": -114.29555833,
       "runways": [
         {
@@ -102541,28 +102310,6 @@
           "surface": "ASPH",
           "lowLda": 3015,
           "highLda": 3015
-        }
-      ]
-    },
-    {
-      "icao": "KSXP",
-      "faaId": "SXP",
-      "name": "NUNAM IQUA",
-      "city": "NUNAM IQUA",
-      "state": "AK",
-      "lat": 62.52041638,
-      "lon": -164.84764583,
-      "runways": [
-        {
-          "id": "02/20",
-          "low": "02",
-          "high": "20",
-          "trueHdg": 27,
-          "length": 3016,
-          "width": 60,
-          "surface": "GRAVEL",
-          "lowLda": 3016,
-          "highLda": 3016
         }
       ]
     },
@@ -103399,28 +103146,6 @@
           "surface": "ASPH",
           "lowLda": 3716,
           "highLda": 3716
-        }
-      ]
-    },
-    {
-      "icao": "KT93",
-      "faaId": "T93",
-      "name": "FOLLETT/LIPSCOMB COUNTY",
-      "city": "FOLLETT",
-      "state": "TX",
-      "lat": 36.44080555,
-      "lon": -100.12380555,
-      "runways": [
-        {
-          "id": "17/35",
-          "low": "17",
-          "high": "35",
-          "trueHdg": 180,
-          "length": 4073,
-          "width": 60,
-          "surface": "ASPH",
-          "lowLda": 4073,
-          "highLda": 4073
         }
       ]
     },
@@ -109937,28 +109662,6 @@
       ]
     },
     {
-      "icao": "KWBB",
-      "faaId": "WBB",
-      "name": "STEBBINS",
-      "city": "STEBBINS",
-      "state": "AK",
-      "lat": 63.51596916,
-      "lon": -162.27800666,
-      "runways": [
-        {
-          "id": "05/23",
-          "low": "05",
-          "high": "23",
-          "trueHdg": 64,
-          "length": 3000,
-          "width": 60,
-          "surface": "GRAVEL",
-          "lowLda": 3000,
-          "highLda": 3000
-        }
-      ]
-    },
-    {
       "icao": "KWBW",
       "faaId": "WBW",
       "name": "WILKES-BARRE WYOMING VALLEY",
@@ -112247,28 +111950,6 @@
       ]
     },
     {
-      "icao": "KZ55",
-      "faaId": "Z55",
-      "name": "LAKE LOUISE",
-      "city": "LAKE LOUISE",
-      "state": "AK",
-      "lat": 62.29161805,
-      "lon": -146.57735,
-      "runways": [
-        {
-          "id": "13/31",
-          "low": "13",
-          "high": "31",
-          "trueHdg": 150,
-          "length": 2900,
-          "width": 60,
-          "surface": "GRAVEL",
-          "lowLda": 2900,
-          "highLda": 2900
-        }
-      ]
-    },
-    {
       "icao": "KZ98",
       "faaId": "Z98",
       "name": "OTTAWA EXEC",
@@ -113006,6 +112687,50 @@
       ]
     },
     {
+      "icao": "PAAB",
+      "faaId": "4A2",
+      "name": "ATMAUTLUAK",
+      "city": "ATMAUTLUAK",
+      "state": "AK",
+      "lat": 60.86787472,
+      "lon": -162.274275,
+      "runways": [
+        {
+          "id": "15/33",
+          "low": "15",
+          "high": "33",
+          "trueHdg": 166,
+          "length": 3000,
+          "width": 75,
+          "surface": "GRAVEL",
+          "lowLda": 3000,
+          "highLda": 3000
+        }
+      ]
+    },
+    {
+      "icao": "PAAC",
+      "faaId": "0AK",
+      "name": "PILOT STATION",
+      "city": "PILOT STATION",
+      "state": "AK",
+      "lat": 61.96147697,
+      "lon": -162.94235461,
+      "runways": [
+        {
+          "id": "04/22",
+          "low": "04",
+          "high": "22",
+          "trueHdg": 57,
+          "length": 4000,
+          "width": 75,
+          "surface": "GRVL-DIRT",
+          "lowLda": 4000,
+          "highLda": 4000
+        }
+      ]
+    },
+    {
       "icao": "PAAD",
       "faaId": "37AA",
       "name": "POINT THOMSON AIRSTRIP",
@@ -113024,6 +112749,72 @@
           "surface": "GRVL",
           "lowLda": 5000,
           "highLda": 5000
+        }
+      ]
+    },
+    {
+      "icao": "PAAE",
+      "faaId": "4K5",
+      "name": "OUZINKIE",
+      "city": "OUZINKIE",
+      "state": "AK",
+      "lat": 57.94215516,
+      "lon": -152.46499305,
+      "runways": [
+        {
+          "id": "08/26",
+          "low": "08",
+          "high": "26",
+          "trueHdg": 101,
+          "length": 3300,
+          "width": 60,
+          "surface": "GRAVEL",
+          "lowLda": 3300,
+          "highLda": 3300
+        }
+      ]
+    },
+    {
+      "icao": "PAAF",
+      "faaId": "51Z",
+      "name": "MINTO AL WRIGHT",
+      "city": "MINTO",
+      "state": "AK",
+      "lat": 65.14816666,
+      "lon": -149.36858333,
+      "runways": [
+        {
+          "id": "02/20",
+          "low": "02",
+          "high": "20",
+          "trueHdg": 42,
+          "length": 3400,
+          "width": 75,
+          "surface": "GRAVEL",
+          "lowLda": 3400,
+          "highLda": 3400
+        }
+      ]
+    },
+    {
+      "icao": "PAAI",
+      "faaId": "9Z8",
+      "name": "LEVELOCK",
+      "city": "LEVELOCK",
+      "state": "AK",
+      "lat": 59.12708333,
+      "lon": -156.85988888,
+      "runways": [
+        {
+          "id": "01/19",
+          "low": "01",
+          "high": "19",
+          "trueHdg": 26,
+          "length": 3284,
+          "width": 60,
+          "surface": "GRVL-DIRT",
+          "lowLda": 3284,
+          "highLda": 3284
         }
       ]
     },
@@ -113068,6 +112859,28 @@
           "surface": "GRVL-DIRT",
           "lowLda": 2558,
           "highLda": 2558
+        }
+      ]
+    },
+    {
+      "icao": "PAAO",
+      "faaId": "Z55",
+      "name": "LAKE LOUISE",
+      "city": "LAKE LOUISE",
+      "state": "AK",
+      "lat": 62.29161805,
+      "lon": -146.57735,
+      "runways": [
+        {
+          "id": "13/31",
+          "low": "13",
+          "high": "31",
+          "trueHdg": 150,
+          "length": 2900,
+          "width": 60,
+          "surface": "GRAVEL",
+          "lowLda": 2900,
+          "highLda": 2900
         }
       ]
     },
@@ -117109,6 +116922,50 @@
       ]
     },
     {
+      "icao": "PCKX",
+      "faaId": "CKX",
+      "name": "CHICKEN",
+      "city": "CHICKEN",
+      "state": "AK",
+      "lat": 64.06675138,
+      "lon": -141.95134722,
+      "runways": [
+        {
+          "id": "13/31",
+          "low": "13",
+          "high": "31",
+          "trueHdg": 157,
+          "length": 2500,
+          "width": 60,
+          "surface": "GRVL-DIRT",
+          "lowLda": 2500,
+          "highLda": 2500
+        }
+      ]
+    },
+    {
+      "icao": "PCXC",
+      "faaId": "CXC",
+      "name": "CHITINA",
+      "city": "CHITINA",
+      "state": "AK",
+      "lat": 61.58320277,
+      "lon": -144.42980277,
+      "runways": [
+        {
+          "id": "13/31",
+          "low": "13",
+          "high": "31",
+          "trueHdg": 160,
+          "length": 2850,
+          "width": 75,
+          "surface": "GRVL-DIRT",
+          "lowLda": 2850,
+          "highLda": 2850
+        }
+      ]
+    },
+    {
       "icao": "PFAK",
       "faaId": "AKI",
       "name": "AKIAK",
@@ -117784,7 +117641,7 @@
           "trueHdg": 185,
           "length": 11000,
           "width": 150,
-          "surface": "ASPH",
+          "surface": "ASPH-CONC",
           "lowLda": 11000,
           "highLda": 11000
         }
@@ -118110,6 +117967,28 @@
       ]
     },
     {
+      "icao": "PKEK",
+      "faaId": "KEK",
+      "name": "EKWOK",
+      "city": "EKWOK",
+      "state": "AK",
+      "lat": 59.35683888,
+      "lon": -157.47113944,
+      "runways": [
+        {
+          "id": "02/20",
+          "low": "02",
+          "high": "20",
+          "trueHdg": 38,
+          "length": 3300,
+          "width": 75,
+          "surface": "GRAVEL",
+          "lowLda": 3300,
+          "highLda": 3300
+        }
+      ]
+    },
+    {
       "icao": "PKMJ",
       "faaId": "MAJ",
       "name": "AMATA KABUA INTL",
@@ -118198,6 +118077,28 @@
       ]
     },
     {
+      "icao": "PORI",
+      "faaId": "ORI",
+      "name": "PORT LIONS",
+      "city": "PORT LIONS",
+      "state": "AK",
+      "lat": 57.884925,
+      "lon": -152.84757222,
+      "runways": [
+        {
+          "id": "07/25",
+          "low": "07",
+          "high": "25",
+          "trueHdg": 79,
+          "length": 2200,
+          "width": 75,
+          "surface": "GRAVEL",
+          "lowLda": 2200,
+          "highLda": 2200
+        }
+      ]
+    },
+    {
       "icao": "PPIT",
       "faaId": "16A",
       "name": "NUNAPITCHUK",
@@ -118238,6 +118139,28 @@
           "surface": "GRAVEL",
           "lowLda": 4500,
           "highLda": 4500
+        }
+      ]
+    },
+    {
+      "icao": "PSXP",
+      "faaId": "SXP",
+      "name": "NUNAM IQUA",
+      "city": "NUNAM IQUA",
+      "state": "AK",
+      "lat": 62.52041638,
+      "lon": -164.84764583,
+      "runways": [
+        {
+          "id": "02/20",
+          "low": "02",
+          "high": "20",
+          "trueHdg": 27,
+          "length": 3016,
+          "width": 60,
+          "surface": "GRAVEL",
+          "lowLda": 3016,
+          "highLda": 3016
         }
       ]
     },
@@ -118370,6 +118293,28 @@
           "surface": "ASPH",
           "lowLda": 9844,
           "highLda": 9844
+        }
+      ]
+    },
+    {
+      "icao": "PWBB",
+      "faaId": "WBB",
+      "name": "STEBBINS",
+      "city": "STEBBINS",
+      "state": "AK",
+      "lat": 63.51596916,
+      "lon": -162.27800666,
+      "runways": [
+        {
+          "id": "05/23",
+          "low": "05",
+          "high": "23",
+          "trueHdg": 64,
+          "length": 3000,
+          "width": 60,
+          "surface": "GRAVEL",
+          "lowLda": 3000,
+          "highLda": 3000
         }
       ]
     },

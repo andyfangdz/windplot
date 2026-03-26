@@ -6,6 +6,7 @@ export type NbmProductType = 'nbh' | 'nbs';
 
 export interface NbmParsedData {
   station: string;
+  baseTime: Date;           // Bulletin issuance time (UTC)
   times: Date[];
   wdr: (number | null)[];  // Wind direction in degrees
   wsp: (number | null)[];  // Wind speed in knots
@@ -194,6 +195,7 @@ export function parseNbmBulletin(text: string, station: string, productType: Nbm
 
   return {
     station,
+    baseTime,
     times,
     wdr,
     wsp,

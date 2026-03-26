@@ -437,7 +437,7 @@ export async function getNbmForecast(
       icao: upperIcao,
       name: airport.name,
       forecasts,
-      generatedAt: Math.floor(nbmData.times[0].getTime() / 1000),
+      generatedAt: Math.floor(nbmData.baseTime.getTime() / 1000),
     };
   } catch (error) {
     console.error('NBM forecast fetch error:', error);

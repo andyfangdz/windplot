@@ -1,6 +1,6 @@
 {
-  "generated": "2026-06-07T07:30:27.404Z",
-  "count": 4445,
+  "generated": "2026-06-14T07:42:53.654Z",
+  "count": 4449,
   "airports": [
     {
       "icao": "CYCD",
@@ -2989,8 +2989,8 @@
       "name": "CYNTHIANA-HARRISON COUNTY",
       "city": "CYNTHIANA",
       "state": "KY",
-      "lat": 38.36616388,
-      "lon": -84.28334444,
+      "lat": 38.36616222,
+      "lon": -84.283345,
       "runways": [
         {
           "id": "11/29",
@@ -3000,7 +3000,7 @@
           "length": 3850,
           "width": 75,
           "surface": "ASPH",
-          "lowLda": 3852,
+          "lowLda": 3850,
           "highLda": 2757
         }
       ]
@@ -6201,8 +6201,8 @@
       "name": "COLUMBIA COUNTY",
       "city": "HUDSON",
       "state": "NY",
-      "lat": 42.29130555,
-      "lon": -73.71033333,
+      "lat": 42.29129472,
+      "lon": -73.7103225,
       "runways": [
         {
           "id": "03/21",
@@ -8543,7 +8543,7 @@
           "trueHdg": 135,
           "length": 3550,
           "width": 100,
-          "surface": "ASPH",
+          "surface": "ASPH-DIRT",
           "lowLda": 3550,
           "highLda": 3550
         }
@@ -9861,7 +9861,7 @@
     {
       "icao": "K2A8",
       "faaId": "2A8",
-      "name": "ADDISON MUNI",
+      "name": "ADDISON",
       "city": "ADDISON",
       "state": "AL",
       "lat": 34.21714166,
@@ -11674,28 +11674,6 @@
       ]
     },
     {
-      "icao": "K2V5",
-      "faaId": "2V5",
-      "name": "WRAY MUNI",
-      "city": "WRAY",
-      "state": "CO",
-      "lat": 40.10039694,
-      "lon": -102.2411725,
-      "runways": [
-        {
-          "id": "17/35",
-          "low": "17",
-          "high": "35",
-          "trueHdg": 180,
-          "length": 5399,
-          "width": 75,
-          "surface": "ASPH",
-          "lowLda": 5399,
-          "highLda": 5399
-        }
-      ]
-    },
-    {
       "icao": "K2V6",
       "faaId": "2V6",
       "name": "YUMA MUNI",
@@ -12427,8 +12405,8 @@
       "name": "PADGHAM FLD",
       "city": "ALLEGAN",
       "state": "MI",
-      "lat": 42.53043652,
-      "lon": -85.823779,
+      "lat": 42.53007611,
+      "lon": -85.82263083,
       "runways": [
         {
           "id": "11/29",
@@ -12440,17 +12418,6 @@
           "surface": "ASPH",
           "lowLda": 4300,
           "highLda": 4300
-        },
-        {
-          "id": "15/33",
-          "low": "15",
-          "high": "33",
-          "trueHdg": 141,
-          "length": 1830,
-          "width": 150,
-          "surface": "TURF",
-          "lowLda": 1830,
-          "highLda": 1830
         }
       ]
     },
@@ -13018,7 +12985,7 @@
     {
       "icao": "K3A2",
       "faaId": "3A2",
-      "name": "NEW TAZEWELL MUNI",
+      "name": "THE NEW TAZEWELL/WAYNE COFFEY MUNI",
       "city": "TAZEWELL",
       "state": "TN",
       "lat": 36.40889722,
@@ -25127,6 +25094,28 @@
       ]
     },
     {
+      "icao": "K72OH",
+      "faaId": "72OH",
+      "name": "NO FLY ZONE",
+      "city": "CASSTOWN",
+      "state": "OH",
+      "lat": 40.03533425,
+      "lon": -84.07734358,
+      "runways": [
+        {
+          "id": "10/28",
+          "low": "10",
+          "high": "28",
+          "trueHdg": 95,
+          "length": 900,
+          "width": 30,
+          "surface": "TURF",
+          "lowLda": 900,
+          "highLda": 900
+        }
+      ]
+    },
+    {
       "icao": "K72S",
       "faaId": "72S",
       "name": "ROSALIA MUNI",
@@ -26135,28 +26124,6 @@
           "surface": "TURF-GRVL",
           "lowLda": 2800,
           "highLda": 2800
-        }
-      ]
-    },
-    {
-      "icao": "K7D9",
-      "faaId": "7D9",
-      "name": "GERMACK",
-      "city": "GENEVA",
-      "state": "OH",
-      "lat": 41.77783222,
-      "lon": -80.90397972,
-      "runways": [
-        {
-          "id": "01/19",
-          "low": "01",
-          "high": "19",
-          "trueHdg": 4,
-          "length": 3260,
-          "width": 28,
-          "surface": "ASPH",
-          "lowLda": 3260,
-          "highLda": 3260
         }
       ]
     },
@@ -27554,6 +27521,28 @@
           "surface": "ASPH-TURF",
           "lowLda": 1668,
           "highLda": 1668
+        }
+      ]
+    },
+    {
+      "icao": "K81OH",
+      "faaId": "81OH",
+      "name": "OLDSTOWN FLYING TAILS",
+      "city": "CORTLAND",
+      "state": "OH",
+      "lat": 41.324025,
+      "lon": -80.79207777,
+      "runways": [
+        {
+          "id": "11/29",
+          "low": "11",
+          "high": "29",
+          "trueHdg": 112,
+          "length": 1400,
+          "width": 60,
+          "surface": "TURF",
+          "lowLda": 1400,
+          "highLda": 1400
         }
       ]
     },
@@ -30271,17 +30260,6 @@
           "surface": "CONC",
           "lowLda": 4994,
           "highLda": 4994
-        },
-        {
-          "id": "18/36",
-          "low": "18",
-          "high": "36",
-          "trueHdg": 175,
-          "length": 3484,
-          "width": 150,
-          "surface": "CONC",
-          "lowLda": 3484,
-          "highLda": 3484
         }
       ]
     },
@@ -37016,9 +36994,9 @@
       "lon": -121.20022111,
       "runways": [
         {
-          "id": "16/34",
-          "low": "16",
-          "high": "34",
+          "id": "17/35",
+          "low": "17",
+          "high": "35",
           "trueHdg": 180,
           "length": 5201,
           "width": 75,
@@ -39388,8 +39366,8 @@
       "name": "SAMUELS FLD",
       "city": "BARDSTOWN",
       "state": "KY",
-      "lat": 37.81433333,
-      "lon": -85.49963888,
+      "lat": 37.81432222,
+      "lon": -85.49963944,
       "runways": [
         {
           "id": "03/21",
@@ -40490,28 +40468,6 @@
           "surface": "ASPH",
           "lowLda": 8994,
           "highLda": 8994
-        }
-      ]
-    },
-    {
-      "icao": "KC02",
-      "faaId": "C02",
-      "name": "GRAND GENEVA RESORT",
-      "city": "LAKE GENEVA",
-      "state": "WI",
-      "lat": 42.61468305,
-      "lon": -88.38998666,
-      "runways": [
-        {
-          "id": "05/23",
-          "low": "05",
-          "high": "23",
-          "trueHdg": 53,
-          "length": 4100,
-          "width": 75,
-          "surface": "ASPH",
-          "lowLda": 4100,
-          "highLda": 4100
         }
       ]
     },
@@ -43880,10 +43836,10 @@
           "highLda": 9000
         },
         {
-          "id": "18C/36C",
-          "low": "18C",
-          "high": "36C",
-          "trueHdg": 176,
+          "id": "01R/19L",
+          "low": "01R",
+          "high": "19L",
+          "trueHdg": 356,
           "length": 10000,
           "width": 150,
           "surface": "CONC",
@@ -48298,8 +48254,8 @@
       "name": "DRIGGS/REED MEML",
       "city": "DRIGGS",
       "state": "ID",
-      "lat": 43.7462575,
-      "lon": -111.0913,
+      "lat": 43.74626722,
+      "lon": -111.091285,
       "runways": [
         {
           "id": "04/22",
@@ -48344,6 +48300,50 @@
           "surface": "CONC",
           "lowLda": 7301,
           "highLda": 7301
+        }
+      ]
+    },
+    {
+      "icao": "KDJT",
+      "faaId": "DJT",
+      "name": "PRESIDENT DONALD J TRUMP INTL",
+      "city": "WEST PALM BEACH",
+      "state": "FL",
+      "lat": 26.68316166,
+      "lon": -80.09559194,
+      "runways": [
+        {
+          "id": "10L/28R",
+          "low": "10L",
+          "high": "28R",
+          "trueHdg": 93,
+          "length": 10001,
+          "width": 150,
+          "surface": "ASPH",
+          "lowLda": 8151,
+          "highLda": 8240
+        },
+        {
+          "id": "10R/28L",
+          "low": "10R",
+          "high": "28L",
+          "trueHdg": 93,
+          "length": 3214,
+          "width": 75,
+          "surface": "ASPH",
+          "lowLda": 3214,
+          "highLda": 3214
+        },
+        {
+          "id": "14/32",
+          "low": "14",
+          "high": "32",
+          "trueHdg": 135,
+          "length": 6931,
+          "width": 150,
+          "surface": "ASPH",
+          "lowLda": 6000,
+          "highLda": 6513
         }
       ]
     },
@@ -58913,8 +58913,8 @@
       "name": "GRAND FORKS INTL",
       "city": "GRAND FORKS",
       "state": "ND",
-      "lat": 47.94786833,
-      "lon": -97.17569166,
+      "lat": 47.94786844,
+      "lon": -97.17568536,
       "runways": [
         {
           "id": "09L/27R",
@@ -62166,7 +62166,7 @@
     {
       "icao": "KHEF",
       "faaId": "HEF",
-      "name": "MANASSAS RGNL/HARRY P DAVIS FLD",
+      "name": "WASHINGTON MANASSAS/HARRY P DAVIS FLD",
       "city": "WASHINGTON",
       "state": "DC",
       "lat": 38.72102472,
@@ -62345,8 +62345,8 @@
       "name": "HARTFORD-BRAINARD",
       "city": "HARTFORD",
       "state": "CT",
-      "lat": 41.73672222,
-      "lon": -72.64944444,
+      "lat": 41.73671,
+      "lon": -72.6494325,
       "runways": [
         {
           "id": "02/20",
@@ -62369,6 +62369,17 @@
           "surface": "ASPH",
           "lowLda": 2314,
           "highLda": 2314
+        },
+        {
+          "id": "NE/SW",
+          "low": "NE",
+          "high": "SW",
+          "trueHdg": 9,
+          "length": 2323,
+          "width": 150,
+          "surface": "TURF",
+          "lowLda": 2323,
+          "highLda": 2323
         }
       ]
     },
@@ -67614,8 +67625,8 @@
       "name": "ITHACA TOMPKINS INTL",
       "city": "ITHACA",
       "state": "NY",
-      "lat": 42.49136111,
-      "lon": -76.45872222,
+      "lat": 42.49136888,
+      "lon": -76.45872833,
       "runways": [
         {
           "id": "14/32",
@@ -67629,9 +67640,9 @@
           "highLda": 6602
         },
         {
-          "id": "15/33",
-          "low": "15",
-          "high": "33",
+          "id": "15U/33U",
+          "low": "15U",
+          "high": "33U",
           "trueHdg": 132,
           "length": 2018,
           "width": 50,
@@ -68960,9 +68971,9 @@
       "lon": -94.80291666,
       "runways": [
         {
-          "id": "17/35",
-          "low": "17",
-          "high": "35",
+          "id": "18/36",
+          "low": "18",
+          "high": "36",
           "trueHdg": 180,
           "length": 4006,
           "width": 75,
@@ -74665,9 +74676,20 @@
       "name": "BOLIVAR MUNI",
       "city": "BOLIVAR",
       "state": "MO",
-      "lat": 37.59610694,
-      "lon": -93.34769861,
+      "lat": 37.59656138,
+      "lon": -93.34770833,
       "runways": [
+        {
+          "id": "17/35",
+          "low": "17",
+          "high": "35",
+          "trueHdg": 182,
+          "length": 2120,
+          "width": 100,
+          "surface": "TURF",
+          "lowLda": 2120,
+          "highLda": 2120
+        },
         {
           "id": "18/36",
           "low": "18",
@@ -75248,8 +75270,8 @@
       "name": "LEBANON MUNI",
       "city": "LEBANON",
       "state": "TN",
-      "lat": 36.19041122,
-      "lon": -86.31569041,
+      "lat": 36.19041111,
+      "lon": -86.31568916,
       "runways": [
         {
           "id": "01/19",
@@ -76403,8 +76425,8 @@
       "name": "MIDLAND AIRPARK",
       "city": "MIDLAND",
       "state": "TX",
-      "lat": 32.03657044,
-      "lon": -102.10152755,
+      "lat": 32.03654472,
+      "lon": -102.10151194,
       "runways": [
         {
           "id": "07/25",
@@ -76422,11 +76444,11 @@
           "low": "16",
           "high": "34",
           "trueHdg": 165,
-          "length": 3977,
+          "length": 3839,
           "width": 75,
           "surface": "ASPH",
-          "lowLda": 3977,
-          "highLda": 3977
+          "lowLda": 3839,
+          "highLda": 3839
         }
       ]
     },
@@ -77978,6 +78000,28 @@
           "surface": "TURF",
           "lowLda": 2310,
           "highLda": 2310
+        }
+      ]
+    },
+    {
+      "icao": "KMI98",
+      "faaId": "MI98",
+      "name": "POULTER FLD",
+      "city": "CHELSEA",
+      "state": "MI",
+      "lat": 42.3652305,
+      "lon": -83.9808055,
+      "runways": [
+        {
+          "id": "18/36",
+          "low": "18",
+          "high": "36",
+          "trueHdg": 179,
+          "length": 1812,
+          "width": 65,
+          "surface": "TURF",
+          "lowLda": 1812,
+          "highLda": 1812
         }
       ]
     },
@@ -86056,6 +86100,28 @@
       ]
     },
     {
+      "icao": "KOH07",
+      "faaId": "OH07",
+      "name": "SUNSET STRIP",
+      "city": "MARLBORO",
+      "state": "OH",
+      "lat": 40.94394694,
+      "lon": -81.23899305,
+      "runways": [
+        {
+          "id": "09/27",
+          "low": "09",
+          "high": "27",
+          "trueHdg": 93,
+          "length": 2350,
+          "width": 100,
+          "surface": "TURF-GRVL",
+          "lowLda": 2350,
+          "highLda": 2350
+        }
+      ]
+    },
+    {
       "icao": "KOH09",
       "faaId": "OH09",
       "name": "ONE SHOT",
@@ -86320,6 +86386,28 @@
       ]
     },
     {
+      "icao": "KOI71",
+      "faaId": "OI71",
+      "name": "GERMACK",
+      "city": "GENEVA",
+      "state": "OH",
+      "lat": 41.7772445,
+      "lon": -80.9037545,
+      "runways": [
+        {
+          "id": "01/19",
+          "low": "01",
+          "high": "19",
+          "trueHdg": 3,
+          "length": 3242,
+          "width": 28,
+          "surface": "ASPH",
+          "lowLda": 3242,
+          "highLda": 3242
+        }
+      ]
+    },
+    {
       "icao": "KOI85",
       "faaId": "OI85",
       "name": "BEAM FARMS",
@@ -86338,6 +86426,28 @@
           "surface": "ASPH",
           "lowLda": 3300,
           "highLda": 3300
+        }
+      ]
+    },
+    {
+      "icao": "KOI88",
+      "faaId": "OI88",
+      "name": "ADA",
+      "city": "ADA",
+      "state": "OH",
+      "lat": 40.79060277,
+      "lon": -83.829075,
+      "runways": [
+        {
+          "id": "09/27",
+          "low": "09",
+          "high": "27",
+          "trueHdg": 90,
+          "length": 1975,
+          "width": 110,
+          "surface": "TURF",
+          "lowLda": 1975,
+          "highLda": 1975
         }
       ]
     },
@@ -87667,7 +87777,7 @@
       "name": "QUONSET STATE",
       "city": "NORTH KINGSTOWN",
       "state": "RI",
-      "lat": 41.5974075,
+      "lat": 41.59740722,
       "lon": -71.41240944,
       "runways": [
         {
@@ -87898,8 +88008,8 @@
       "name": "NORFOLK INTL",
       "city": "NORFOLK",
       "state": "VA",
-      "lat": 36.89563111,
-      "lon": -76.19886583,
+      "lat": 36.89563055,
+      "lon": -76.19886527,
       "runways": [
         {
           "id": "05/23",
@@ -89251,8 +89361,8 @@
       "name": "SEATTLE PAINE FLD INTL",
       "city": "EVERETT",
       "state": "WA",
-      "lat": 47.90731805,
-      "lon": -122.28209388,
+      "lat": 47.90401111,
+      "lon": -122.28086888,
       "runways": [
         {
           "id": "16L/34R",
@@ -89270,11 +89380,11 @@
           "low": "16R",
           "high": "34L",
           "trueHdg": 179,
-          "length": 9010,
+          "length": 6000,
           "width": 150,
           "surface": "ASPH-CONC",
-          "lowLda": 9010,
-          "highLda": 9010
+          "lowLda": 6000,
+          "highLda": 6000
         }
       ]
     },
@@ -89462,50 +89572,6 @@
           "surface": "ASPH",
           "lowLda": 3951,
           "highLda": 3951
-        }
-      ]
-    },
-    {
-      "icao": "KPBI",
-      "faaId": "PBI",
-      "name": "PALM BEACH INTL",
-      "city": "WEST PALM BEACH",
-      "state": "FL",
-      "lat": 26.68316166,
-      "lon": -80.09559194,
-      "runways": [
-        {
-          "id": "10L/28R",
-          "low": "10L",
-          "high": "28R",
-          "trueHdg": 93,
-          "length": 10001,
-          "width": 150,
-          "surface": "ASPH",
-          "lowLda": 8151,
-          "highLda": 8240
-        },
-        {
-          "id": "10R/28L",
-          "low": "10R",
-          "high": "28L",
-          "trueHdg": 93,
-          "length": 3214,
-          "width": 75,
-          "surface": "ASPH",
-          "lowLda": 3214,
-          "highLda": 3214
-        },
-        {
-          "id": "14/32",
-          "low": "14",
-          "high": "32",
-          "trueHdg": 135,
-          "length": 6931,
-          "width": 150,
-          "surface": "ASPH",
-          "lowLda": 6000,
-          "highLda": 6513
         }
       ]
     },
@@ -90747,8 +90813,8 @@
       "name": "ZELIENOPLE MUNI",
       "city": "ZELIENOPLE",
       "state": "PA",
-      "lat": 40.80270305,
-      "lon": -80.16109972,
+      "lat": 40.80270333,
+      "lon": -80.16110055,
       "runways": [
         {
           "id": "17/35",
@@ -93211,20 +93277,9 @@
       "name": "CHICAGO EXEC",
       "city": "CHICAGO/PROSPECT HEIGHTS/WHEELING",
       "state": "IL",
-      "lat": 42.11427944,
-      "lon": -87.90154083,
+      "lat": 42.11488277,
+      "lon": -87.9019925,
       "runways": [
-        {
-          "id": "06/24",
-          "low": "06",
-          "high": "24",
-          "trueHdg": 63,
-          "length": 3677,
-          "width": 50,
-          "surface": "ASPH",
-          "lowLda": 3677,
-          "highLda": 3677
-        },
         {
           "id": "12/30",
           "low": "12",
@@ -94110,7 +94165,7 @@
     {
       "icao": "KRDM",
       "faaId": "RDM",
-      "name": "ROBERTS FLD REDMOND MUNI",
+      "name": "ROBERTS FLD/REDMOND MUNI",
       "city": "REDMOND",
       "state": "OR",
       "lat": 44.25406888,
@@ -94960,29 +95015,29 @@
       "name": "RICHARD B RUSSELL RGNL - J H TOWERS FLD",
       "city": "ROME",
       "state": "GA",
-      "lat": 34.3516375,
-      "lon": -85.15857444,
+      "lat": 34.35163972,
+      "lon": -85.15857611,
       "runways": [
         {
           "id": "01/19",
           "low": "01",
           "high": "19",
           "trueHdg": 5,
-          "length": 7010,
+          "length": 7007,
           "width": 150,
           "surface": "ASPH",
-          "lowLda": 7010,
-          "highLda": 7010
+          "lowLda": 7007,
+          "highLda": 7007
         },
         {
           "id": "07/25",
           "low": "07",
           "high": "25",
           "trueHdg": 70,
-          "length": 4498,
+          "length": 4495,
           "width": 100,
           "surface": "ASPH",
-          "lowLda": 4380,
+          "lowLda": 4381,
           "highLda": 4495
         }
       ]
@@ -96359,6 +96414,28 @@
           "surface": "ASPH",
           "lowLda": 3900,
           "highLda": 3900
+        }
+      ]
+    },
+    {
+      "icao": "KRYA",
+      "faaId": "RYA",
+      "name": "WRAY MUNI",
+      "city": "WRAY",
+      "state": "CO",
+      "lat": 40.10039694,
+      "lon": -102.2411725,
+      "runways": [
+        {
+          "id": "17/35",
+          "low": "17",
+          "high": "35",
+          "trueHdg": 180,
+          "length": 5399,
+          "width": 75,
+          "surface": "ASPH",
+          "lowLda": 5399,
+          "highLda": 5399
         }
       ]
     },
@@ -108402,8 +108479,8 @@
       "name": "VENICE MUNI",
       "city": "VENICE",
       "state": "FL",
-      "lat": 27.07126777,
-      "lon": -82.4400325,
+      "lat": 27.07126861,
+      "lon": -82.44003138,
       "runways": [
         {
           "id": "05/23",
@@ -113473,7 +113550,7 @@
       "name": "CROOKED CREEK",
       "city": "CROOKED CREEK",
       "state": "AK",
-      "lat": 61.87111805,
+      "lat": 61.87111861,
       "lon": -158.13795638,
       "runways": [
         {

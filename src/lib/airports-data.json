@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-05T07:11:12.998Z",
-  "count": 4449,
+  "generated": "2026-07-12T06:57:48.920Z",
+  "count": 4450,
   "airports": [
     {
       "icao": "CYCD",
@@ -8090,7 +8090,7 @@
     {
       "icao": "K1S6",
       "faaId": "1S6",
-      "name": "PRIEST RIVER MUNI",
+      "name": "PRIEST RIVER",
       "city": "PRIEST RIVER",
       "state": "ID",
       "lat": 48.19064611,
@@ -9151,6 +9151,28 @@
           "surface": "TURF",
           "lowLda": 1500,
           "highLda": 1500
+        }
+      ]
+    },
+    {
+      "icao": "K24MN",
+      "faaId": "24MN",
+      "name": "LBT",
+      "city": "NEVIS",
+      "state": "MN",
+      "lat": 46.9356155,
+      "lon": -94.8932825,
+      "runways": [
+        {
+          "id": "08/26",
+          "low": "08",
+          "high": "26",
+          "trueHdg": 80,
+          "length": 7109,
+          "width": 200,
+          "surface": "WATER",
+          "lowLda": 7109,
+          "highLda": 7109
         }
       ]
     },
@@ -18670,39 +18692,6 @@
       ]
     },
     {
-      "icao": "K4XS0",
-      "faaId": "4XS0",
-      "name": "PFEFFER & SON FARMS",
-      "city": "WALLER",
-      "state": "TX",
-      "lat": 29.93026861,
-      "lon": -95.96388872,
-      "runways": [
-        {
-          "id": "08/26",
-          "low": "08",
-          "high": "26",
-          "trueHdg": 90,
-          "length": 5200,
-          "width": 200,
-          "surface": "TURF",
-          "lowLda": 5200,
-          "highLda": 5200
-        },
-        {
-          "id": "17/35",
-          "low": "17",
-          "high": "35",
-          "trueHdg": 179,
-          "length": 2500,
-          "width": 150,
-          "surface": "TURF",
-          "lowLda": 2500,
-          "highLda": 2500
-        }
-      ]
-    },
-    {
       "icao": "K4Y4",
       "faaId": "4Y4",
       "name": "LAKES OF THE NORTH",
@@ -22624,19 +22613,19 @@
       "name": "PROSPECT STATE",
       "city": "PROSPECT",
       "state": "OR",
-      "lat": 42.74258461,
-      "lon": -122.48890013,
+      "lat": 42.74259947,
+      "lon": -122.48889194,
       "runways": [
         {
           "id": "02/20",
           "low": "02",
           "high": "20",
           "trueHdg": 40,
-          "length": 4000,
+          "length": 3986,
           "width": 50,
           "surface": "ASPH",
-          "lowLda": 4000,
-          "highLda": 4000
+          "lowLda": 3986,
+          "highLda": 3986
         }
       ]
     },
@@ -25484,19 +25473,19 @@
       "name": "HICKERSON",
       "city": "SPRINGFIELD",
       "state": "OH",
-      "lat": 39.93929722,
-      "lon": -83.90208194,
+      "lat": 39.93926252,
+      "lon": -83.90127466,
       "runways": [
         {
-          "id": "09/27",
-          "low": "09",
-          "high": "27",
+          "id": "10/28",
+          "low": "10",
+          "high": "28",
           "trueHdg": 94,
-          "length": 2100,
+          "length": 2500,
           "width": 80,
           "surface": "TURF",
-          "lowLda": 2100,
-          "highLda": 2100
+          "lowLda": 2500,
+          "highLda": 2500
         }
       ]
     },
@@ -27789,6 +27778,28 @@
       ]
     },
     {
+      "icao": "K85MN",
+      "faaId": "85MN",
+      "name": "SPARKYS",
+      "city": "MONTEVIDEO",
+      "state": "MN",
+      "lat": 44.96527916,
+      "lon": -95.82914027,
+      "runways": [
+        {
+          "id": "09/27",
+          "low": "09",
+          "high": "27",
+          "trueHdg": 90,
+          "length": 1781,
+          "width": 100,
+          "surface": "TURF",
+          "lowLda": 1781,
+          "highLda": 1781
+        }
+      ]
+    },
+    {
       "icao": "K86F",
       "faaId": "86F",
       "name": "CARNEGIE MUNI",
@@ -28091,8 +28102,8 @@
       "name": "BLACK ROCK CITY",
       "city": "GERLACH",
       "state": "NV",
-      "lat": 40.76183877,
-      "lon": -119.21073938,
+      "lat": 40.76039816,
+      "lon": -119.20946816,
       "runways": [
         {
           "id": "05L/23R",
@@ -28109,12 +28120,12 @@
           "id": "05R/23L",
           "low": "05R",
           "high": "23L",
-          "trueHdg": 66,
-          "length": 6000,
+          "trueHdg": 65,
+          "length": 6001,
           "width": 75,
           "surface": "DIRT",
-          "lowLda": 6000,
-          "highLda": 6000
+          "lowLda": 6001,
+          "highLda": 6001
         }
       ]
     },
@@ -33096,8 +33107,8 @@
       "name": "LEE C FINE MEML",
       "city": "KAISER/LAKE OZARK",
       "state": "MO",
-      "lat": 38.09602777,
-      "lon": -92.54947972,
+      "lat": 38.0960275,
+      "lon": -92.54948083,
       "runways": [
         {
           "id": "04/22",
@@ -34416,8 +34427,8 @@
       "name": "ZAPATA COUNTY",
       "city": "ZAPATA",
       "state": "TX",
-      "lat": 26.96878611,
-      "lon": -99.24890833,
+      "lat": 26.96878444,
+      "lon": -99.24891916,
       "runways": [
         {
           "id": "12/30",
@@ -38539,7 +38550,7 @@
           "high": "32",
           "trueHdg": 132,
           "length": 7345,
-          "width": 85,
+          "width": 100,
           "surface": "ASPH",
           "lowLda": 7345,
           "highLda": 7345
@@ -38739,7 +38750,7 @@
       "name": "NASHVILLE INTL",
       "city": "NASHVILLE",
       "state": "TN",
-      "lat": 36.124475,
+      "lat": 36.12447527,
       "lon": -86.67818055,
       "runways": [
         {
@@ -72971,8 +72982,8 @@
       "name": "LORAIN COUNTY RGNL",
       "city": "LORAIN/ELYRIA",
       "state": "OH",
-      "lat": 41.34427777,
-      "lon": -82.17763888,
+      "lat": 41.34427638,
+      "lon": -82.17762888,
       "runways": [
         {
           "id": "07/25",
@@ -76271,8 +76282,8 @@
       "name": "ORLANDO INTL",
       "city": "ORLANDO",
       "state": "FL",
-      "lat": 28.42938888,
-      "lon": -81.309,
+      "lat": 28.42939361,
+      "lon": -81.3089925,
       "runways": [
         {
           "id": "17L/35R",
@@ -89691,19 +89702,19 @@
       "name": "WAUPACA MUNI",
       "city": "WAUPACA",
       "state": "WI",
-      "lat": 44.33325,
-      "lon": -89.01977777,
+      "lat": 44.33325833,
+      "lon": -89.01977027,
       "runways": [
         {
           "id": "10/28",
           "low": "10",
           "high": "28",
           "trueHdg": 93,
-          "length": 5200,
+          "length": 5201,
           "width": 100,
           "surface": "ASPH",
-          "lowLda": 5200,
-          "highLda": 5200
+          "lowLda": 5201,
+          "highLda": 5201
         },
         {
           "id": "13/31",
@@ -89886,11 +89897,11 @@
           "low": "16",
           "high": "34",
           "trueHdg": 167,
-          "length": 5403,
+          "length": 5402,
           "width": 75,
           "surface": "CONC",
-          "lowLda": 5000,
-          "highLda": 5000
+          "lowLda": 5003,
+          "highLda": 5003
         }
       ]
     },
@@ -90923,8 +90934,8 @@
       "name": "PARK FALLS MUNI",
       "city": "PARK FALLS",
       "state": "WI",
-      "lat": 45.95509063,
-      "lon": -90.4244345,
+      "lat": 45.95509055,
+      "lon": -90.42443444,
       "runways": [
         {
           "id": "18/36",
@@ -95818,8 +95829,8 @@
       "name": "RUSSELL MUNI",
       "city": "RUSSELL",
       "state": "KS",
-      "lat": 38.87136358,
-      "lon": -98.81160372,
+      "lat": 38.87136361,
+      "lon": -98.81160361,
       "runways": [
         {
           "id": "03/21",
@@ -98645,8 +98656,8 @@
       "name": "STEPHENVILLE CLARK RGNL",
       "city": "STEPHENVILLE",
       "state": "TX",
-      "lat": 32.21533333,
-      "lon": -98.17766666,
+      "lat": 32.21532388,
+      "lon": -98.17767666,
       "runways": [
         {
           "id": "14/32",
@@ -98722,8 +98733,8 @@
       "name": "ST CHARLES COUNTY RGNL/SMARTT FLD",
       "city": "ST CHARLES",
       "state": "MO",
-      "lat": 38.92969444,
-      "lon": -90.42997222,
+      "lat": 38.92969083,
+      "lon": -90.42996138,
       "runways": [
         {
           "id": "09/27",

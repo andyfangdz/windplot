@@ -3,7 +3,9 @@ import {
   ceilingFromClouds,
   cloudCoverOktas,
   computeFlightCategory,
+  decodeSynopticCloudLayer,
   decodeWeatherString,
+  normalizeAltimeterToInHg,
   densityAltitude,
   describeCloudLayer,
   formatCeiling,
@@ -138,6 +140,71 @@ describe('cloud layers', () => {
     expect(cloudCoverOktas('SCT')).toBe(4);
     expect(cloudCoverOktas('BKN')).toBe(6);
     expect(cloudCoverOktas('OVC')).toBe(8);
+  });
+});
+
+describe('decodeSynopticCloudLayer', () => {
+  it('decodes the documented examples', () => {
+    // Synoptic docs: 222 = 2,200 ft scattered, 807 = 8,000 ft thin broken
+    expect(decodeSynopticCloudLayer(222)).toEqual({ cover: 'SCT', base: 2200 });
+    expect(decodeSynopticCloudLayer(807)).toEqual({ cover: 'BKN', base: 8000 });
+    expect(decodeSynopticCloudLayer(2504)).toEqual({ cover: 'OVC', base: 25000 });
+  });
+
+  it('decodes each sky condition digit', () => {
+    expect(decodeSynopticCloudLayer(103)?.cover).toBe('BKN');
+    expect(decodeSynopticCloudLayer(104)?.cover).toBe('OVC');
+    expect(decodeSynopticCloudLayer(105)?.cover).toBe('OVX');
+    expect(decodeSynopticCloudLayer(102)?.cover).toBe('SCT');
+  });
+
+  it('maps thin variants to their base coverage', () => {
+    expect(decodeSynopticCloudLayer(106)?.cover).toBe('SCT');
+    expect(decodeSynopticCloudLayer(107)?.cover).toBe('BKN');
+    expect(decodeSynopticCloudLayer(108)?.cover).toBe('OVC');
+    expect(decodeSynopticCloudLayer(109)?.cover).toBe('OVX');
+  });
+
+  it('returns a clear layer with no base', () => {
+    expect(decodeSynopticCloudLayer(1)).toEqual({ cover: 'CLR', base: null });
+  });
+
+  it('returns null for missing or invalid codes', () => {
+    expect(decodeSynopticCloudLayer(0)).toBeNull();   // missing
+    expect(decodeSynopticCloudLayer(250)).toBeNull(); // trailing 0 = missing
+    expect(decodeSynopticCloudLayer(null)).toBeNull();
+    expect(decodeSynopticCloudLayer(undefined)).toBeNull();
+    expect(decodeSynopticCloudLayer(-5)).toBeNull();
+    expect(decodeSynopticCloudLayer(NaN)).toBeNull();
+  });
+
+  it('produces layers the ceiling helper understands', () => {
+    const layers = [222, 807, 2504]
+      .map(decodeSynopticCloudLayer)
+      .filter((l): l is NonNullable<typeof l> => l !== null);
+    // 8,000 ft broken is the lowest ceiling layer
+    expect(ceilingFromClouds(layers)).toBe(8000);
+  });
+});
+
+describe('normalizeAltimeterToInHg', () => {
+  it('passes through inches of mercury', () => {
+    expect(normalizeAltimeterToInHg(29.92)).toBeCloseTo(29.92, 4);
+  });
+
+  it('converts hectopascals', () => {
+    expect(normalizeAltimeterToInHg(1013.25)).toBeCloseTo(29.92, 2);
+  });
+
+  it('converts pascals', () => {
+    expect(normalizeAltimeterToInHg(101325)).toBeCloseTo(29.92, 2);
+  });
+
+  it('returns null for missing or nonsensical values', () => {
+    expect(normalizeAltimeterToInHg(null)).toBeNull();
+    expect(normalizeAltimeterToInHg(undefined)).toBeNull();
+    expect(normalizeAltimeterToInHg(0)).toBeNull();
+    expect(normalizeAltimeterToInHg(-5)).toBeNull();
   });
 });
 

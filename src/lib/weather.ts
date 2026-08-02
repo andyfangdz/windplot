@@ -171,6 +171,56 @@ export function lowestCloudBase(
   return lowest;
 }
 
+// Synoptic packs height and coverage into one number: every digit but the last
+// is the height in hundreds of feet, and the last digit is the sky condition.
+// https://docs.synopticdata.com/services/cloud-height-and-sky-condition
+//
+// Synoptic's scale has no FEW and adds "thin" variants inherited from legacy
+// SAO coding. Thin layers are mapped to their base coverage, which can only
+// over-state a restriction (thin broken still counts as a ceiling) — the safe
+// direction for a flight-planning display.
+const SYNOPTIC_SKY_CONDITIONS: Record<number, string | null> = {
+  0: null, // missing
+  1: 'CLR',
+  2: 'SCT',
+  3: 'BKN',
+  4: 'OVC',
+  5: 'OVX',
+  6: 'SCT', // thin scattered
+  7: 'BKN', // thin broken
+  8: 'OVC', // thin overcast
+  9: 'OVX', // thin obscured
+};
+
+export function decodeSynopticCloudLayer(
+  code: number | null | undefined
+): CloudLayer | null {
+  if (code === null || code === undefined || !Number.isFinite(code)) return null;
+  if (code < 0) return null;
+
+  const rounded = Math.round(code);
+  const cover = SYNOPTIC_SKY_CONDITIONS[rounded % 10];
+  if (!cover) return null;
+
+  const heightFt = Math.floor(rounded / 10) * 100;
+  // A clear report carries no meaningful base
+  if (cover === 'CLR') return { cover, base: null };
+  return { cover, base: heightFt };
+}
+
+// Altimeter arrives as inHg, hPa or Pa depending on the station and the unit
+// system in play. The three ranges do not overlap for any real sea-level
+// pressure, so normalize by magnitude rather than trusting the request units.
+export function normalizeAltimeterToInHg(
+  value: number | null | undefined
+): number | null {
+  if (value === null || value === undefined || !Number.isFinite(value)) return null;
+  if (value <= 0) return null;
+  if (value > 10000) return value / 3386.389;  // Pascals
+  if (value > 100) return hpaToInHg(value);     // Hectopascals / millibars
+  return value;                                 // Already inches of mercury
+}
+
 // Convert an NBM sky-cover percentage into a METAR-style coverage code
 export function skyCoverCode(percent: number | null | undefined): string | null {
   if (percent === null || percent === undefined || !Number.isFinite(percent)) {

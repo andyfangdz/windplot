@@ -5,6 +5,7 @@ import * as path from 'path';
 import airportsData from '@/lib/airports-data.json';
 import { WindData, WindDataPoint, ForecastData, ForecastDataPoint, CloudLayer } from '@/lib/types';
 import { parseNbmBulletin, getNbmBulletinUrl, NbmProductType } from '@/lib/nbm-parser';
+import { decodeSynopticCloudLayer, normalizeAltimeterToInHg } from '@/lib/weather';
 import distance from '@turf/distance';
 import { point } from '@turf/helpers';
 import KDBush from 'kdbush';
@@ -69,11 +70,22 @@ interface SynopticObservations {
   wind_speed_set_1?: (number | null)[];
   wind_direction_set_1?: (number | null)[];
   wind_gust_set_1?: (number | null)[];
+  // Sky/surface condition variables — only present for reporting stations
+  air_temp_set_1?: (number | null)[];
+  dew_point_temperature_set_1?: (number | null)[];
+  visibility_set_1?: (number | null)[];
+  altimeter_set_1?: (number | null)[];
+  cloud_layer_1_code_set_1?: (number | null)[];
+  cloud_layer_2_code_set_1?: (number | null)[];
+  cloud_layer_3_code_set_1?: (number | null)[];
+  weather_condition_set_1?: (string | null)[];
+  weather_summary_set_1?: (string | null)[];
 }
 
 interface SynopticStation {
   STID: string;
   NAME: string;
+  ELEVATION?: string | number | null;
   OBSERVATIONS: SynopticObservations;
 }
 
@@ -81,6 +93,7 @@ interface SynopticResponse {
   SUMMARY: { RESPONSE_CODE: number; RESPONSE_MESSAGE: string };
   STATION?: SynopticStation[];
 }
+
 
 // Fetch wind data from Synoptic API
 export async function getWindData(
@@ -125,19 +138,47 @@ export async function getWindData(
     const obs = station.OBSERVATIONS;
     if (!obs.date_time?.length) return null;
 
-    const observations: WindDataPoint[] = obs.date_time.map((dt, i) => ({
-      time: dt.split('T')[1]?.split(/[-+]/)[0]?.substring(0, 5) || '',
-      timestamp: new Date(dt).getTime() / 1000,
-      wspd: obs.wind_speed_set_1?.[i] ?? null,
-      wgst: obs.wind_gust_set_1?.[i] ?? null,
-      wdir: obs.wind_direction_set_1?.[i] ?? null,
-    }));
+    const observations: WindDataPoint[] = obs.date_time.map((dt, i) => {
+      // Layers arrive as three separate variables; decode and order them
+      const clouds = [
+        obs.cloud_layer_1_code_set_1?.[i],
+        obs.cloud_layer_2_code_set_1?.[i],
+        obs.cloud_layer_3_code_set_1?.[i],
+      ]
+        .map(decodeSynopticCloudLayer)
+        .filter((layer): layer is CloudLayer => layer !== null)
+        .sort((a, b) => (a.base ?? Infinity) - (b.base ?? Infinity));
+
+      return {
+        time: dt.split('T')[1]?.split(/[-+]/)[0]?.substring(0, 5) || '',
+        timestamp: new Date(dt).getTime() / 1000,
+        wspd: obs.wind_speed_set_1?.[i] ?? null,
+        wgst: obs.wind_gust_set_1?.[i] ?? null,
+        wdir: obs.wind_direction_set_1?.[i] ?? null,
+        temp: obs.air_temp_set_1?.[i] ?? null,
+        dewp: obs.dew_point_temperature_set_1?.[i] ?? null,
+        visib: obs.visibility_set_1?.[i] ?? null,
+        altim: normalizeAltimeterToInHg(obs.altimeter_set_1?.[i]),
+        clouds,
+        weather:
+          obs.weather_condition_set_1?.[i] ?? obs.weather_summary_set_1?.[i] ?? null,
+      };
+    });
+
+    const elevationRaw = station.ELEVATION;
+    const elevationFt =
+      typeof elevationRaw === 'number'
+        ? elevationRaw
+        : typeof elevationRaw === 'string' && elevationRaw.trim() !== ''
+          ? Number(elevationRaw)
+          : null;
 
     const airport = await getAirport(upperIcao);
     return {
       icao: upperIcao,
       name: airport?.name || station.NAME || upperIcao,
       observations,
+      elevationFt: Number.isFinite(elevationFt) ? elevationFt : null,
     };
   } catch (error) {
     console.error('Synoptic fetch error:', error);

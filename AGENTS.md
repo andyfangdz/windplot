@@ -19,6 +19,7 @@ This document provides comprehensive guidance for AI agents working on this code
 | Modify NBM parser | `src/lib/nbm-parser.ts` | `npm run test:run` |
 | Modify nearby airports | `src/components/NearbyAirports.tsx`, `src/app/actions.ts` | Visual inspection, toggle Obs/Forecast |
 | Modify cloud/visibility display | `src/components/CurrentConditions.tsx`, `src/components/ForecastConditions.tsx` | Visual inspection on VFR + IFR airports |
+| Modify observation source handling | `src/lib/conditions.ts` | `npm run test:run` |
 | Modify weather derivations | `src/lib/weather.ts` | `npm run test:run` |
 | Modify touch interactions | `src/lib/useHorizontalSwipeLock.ts` | Test on mobile/touch device |
 
@@ -65,7 +66,7 @@ src/
 │   ├── ForecastWindTable.tsx # Forecast crosswind/headwind with time picker
 │   ├── AirportSelector.tsx   # Search + quick-select + forecast duration limits
 │   ├── NearbyAirports.tsx    # Nearby airports table with METAR wind + flight category
-│   ├── CurrentConditions.tsx # METAR clouds/visibility/temp/altimeter/density alt
+│   ├── CurrentConditions.tsx # Clouds/visibility/temp/altimeter/density alt (5-min or METAR)
 │   ├── ForecastConditions.tsx # NBM ceiling & visibility forecast with synced selection
 │   ├── SkyDiagram.tsx        # Cloud layer stack visualization (pure DOM)
 │   ├── FlightCategoryBadge.tsx # VFR/MVFR/IFR/LIFR badge
@@ -75,11 +76,13 @@ src/
 │   ├── types.ts              # TypeScript interfaces
 │   ├── nbm-parser.ts         # NBM text bulletin parser (NBH + NBS products)
 │   ├── weather.ts            # Cloud/visibility/flight-category/derived-value utilities
+│   ├── conditions.ts         # Normalizes Synoptic 5-min + METAR into one shape
 │   ├── cache.ts              # Staleness/cache utilities
 │   ├── windplot-route.ts     # URL route parsing/building helpers
 │   ├── useHorizontalSwipeLock.ts # Touch gesture hook: prevents scroll on horizontal swipe
 │   ├── airports.ts           # Airport utilities (unused, data in JSON)
 │   ├── weather.test.ts       # Weather utility unit tests (vitest)
+│   ├── conditions.test.ts    # Source-normalization unit tests (vitest)
 │   ├── airports-data.json    # 4,450 US airports from NASR
 │   └── spatial-index.bin     # Pre-built k-d tree for nearby queries
 scripts/
@@ -251,10 +254,20 @@ GET https://api.synopticdata.com/v2/stations/timeseries
   &obtimezone=local
 ```
 
-Returns 5-minute AWOS observations. Fields used:
+Returns 5-minute AWOS observations. No `vars` parameter is sent, so the response carries every variable the station reports. Fields used:
 - `wind_speed_set_1` (knots)
 - `wind_gust_set_1` (knots)
 - `wind_direction_set_1` (degrees)
+- `air_temp_set_1` / `dew_point_temperature_set_1` (°F, from `units=temp|F`)
+- `visibility_set_1` (statute miles regardless of unit system; a negative value means "less than", e.g. `-0.25` = under 1/4 mile)
+- `altimeter_set_1` (unit varies — see `normalizeAltimeterToInHg`)
+- `cloud_layer_1_code_set_1` … `cloud_layer_3_code_set_1` (packed height + coverage)
+- `weather_condition_set_1`, falling back to `weather_summary_set_1`
+
+Station metadata supplies `ELEVATION` (feet), used as the density-altitude fallback when METAR is unavailable.
+
+**Cloud layer codes**: every digit but the last is the height in hundreds of feet; the last digit is the sky condition — 0 missing, 1 clear, 2 scattered, 3 broken, 4 overcast, 5 obscured, 6–9 the "thin" variants. `222` is 2,200 ft scattered. `decodeSynopticCloudLayer` maps thin variants to their base coverage, which can only over-state a restriction — the safe direction for flight planning. Synoptic's scale has no FEW.
+See https://docs.synopticdata.com/services/cloud-height-and-sky-condition.
 
 ### Aviation Weather API (METAR)
 
@@ -336,7 +349,7 @@ npm run update-nasr:index  # Rebuild spatial index only
 | Mobile layout | Test on narrow viewport |
 | NBM parser | `npm run test:run` |
 | Weather utilities | `npm run test:run` |
-| Conditions panels | Compare a VFR airport (KSFO), an MVFR/IFR airport (KMRY, KSEA), and one with many layers (KEWR) |
+| Conditions panels | Compare a VFR airport (KSFO), an MVFR/IFR airport (KMRY, KSEA), and one with many layers (KEWR); toggle 5-min/METAR on each |
 | Forecast view | Toggle Obs/Forecast, switch 24h/72h, verify synced selection across all four forecast components |
 
 ---
@@ -469,11 +482,19 @@ In the NearbyAirports table, calm wind displays as **CALM**, airports with no ME
 
 The app never reads the API's `fltCat` field. `computeFlightCategory` in `src/lib/weather.ts` derives it from the ceiling (lowest BKN/OVC/OVX layer, or vertical visibility) and visibility, taking the more restrictive of the two. This keeps observations and NBM forecasts on the same rules — NBM has no `fltCat` to read. A null ceiling means "no ceiling", so visibility alone decides; a null on both sides yields `null` and the badge renders as a dash.
 
-### 8. NBM Ceilings: Null Means Unlimited
+### 8. Conditions Come From Two Sources With Different Units
+
+`CurrentConditions` defaults to the Synoptic 5-minute observation and offers a METAR toggle, mirroring `RunwayWindTable`. The two sources disagree on units — Synoptic returns °F (per the `temp|F` request) while METAR returns °C, and altimeter arrives as inHg, hPa or Pa depending on source — so **never read either raw shape in a component**. `src/lib/conditions.ts` normalizes both into `ObservedConditions` (Celsius, statute miles, inHg) and is the only place that knows the difference.
+
+Two behaviors worth preserving:
+- Not every station reports sky/visibility in the 5-minute feed. `latestConditionObservation` walks backwards for the newest record that actually has conditions, and the panel falls back to METAR (with a visible note) when there are none.
+- ASOS ceilometers report at most 3 layers and only below 12,000 ft, so the 5-minute view can miss high layers METAR includes — meaning its ceiling can read *less* restrictive than METAR's. The panel says so in a footnote; don't remove it.
+
+### 9. NBM Ceilings: Null Means Unlimited
 
 `parseNbmBulletin` maps the sentinel values `888` and `-88` to `null` for `CIG` and `LCB`, matching NBM's "no ceiling / no clouds" encoding. Forecast views therefore render `null` as "Unlimited" rather than "unknown", and `ForecastConditions` pins those points to the top of the ceiling axis (capped at 12,000 ft).
 
-### 9. Timezone Handling
+### 10. Timezone Handling
 
 **Observations**: Synoptic API returns times in the airport's local timezone via the `obtimezone=local` parameter. The `time` field is display-only; use `timestamp` (Unix seconds) for calculations.
 
@@ -513,7 +534,9 @@ Both observations and forecasts display times in the **airport's local timezone*
 | Flight category badge | `src/components/FlightCategoryBadge.tsx` |
 | Shared stat tile | `src/components/StatTile.tsx` |
 | Weather utilities | `src/lib/weather.ts` |
+| Observation source normalization | `src/lib/conditions.ts` |
 | Weather utility tests | `src/lib/weather.test.ts` |
+| Source normalization tests | `src/lib/conditions.test.ts` |
 | Horizontal swipe lock hook | `src/lib/useHorizontalSwipeLock.ts` |
 | Type definitions | `src/lib/types.ts` |
 | Airport data | `src/lib/airports-data.json` |

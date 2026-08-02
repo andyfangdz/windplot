@@ -28,12 +28,40 @@ export interface WindDataPoint {
   wspd: number | null;
   wgst: number | null;
   wdir: number | null;
+  // Sky/surface conditions, present only for stations that report them in the
+  // 5-minute feed. Units follow the Synoptic request (temp|F, english).
+  temp?: number | null;       // Fahrenheit
+  dewp?: number | null;       // Fahrenheit
+  visib?: number | null;      // Statute miles; negative means "less than"
+  altim?: number | null;      // Inches of mercury
+  clouds?: CloudLayer[];      // Decoded from cloud_layer_N_code, lowest first
+  weather?: string | null;    // Present weather summary, when reported
 }
 
 export interface WindData {
   icao: string;
   name: string;
   observations: WindDataPoint[];
+  elevationFt?: number | null;  // Station elevation from Synoptic metadata
+}
+
+// Conditions normalized to one unit system so the UI can render either source
+export interface ObservedConditions {
+  source: 'synoptic' | 'metar';
+  timestamp: number | null;      // Unix seconds
+  tempC: number | null;
+  dewpC: number | null;
+  visibilitySm: number | null;
+  // True when the sensor reported "at or above" (METAR "10+") rather than exact
+  visibilityIsPlus: boolean;
+  // True when the sensor reported "less than" (Synoptic negative visibility)
+  visibilityIsBelow: boolean;
+  altimeterInHg: number | null;
+  clouds: CloudLayer[];
+  cover: string | null;          // Summary cover when no layers are listed
+  weather: string | null;        // Decoded present weather
+  vertVisFt: number | null;
+  rawOb: string | null;
 }
 
 // NBM Forecast data point (hourly forecast)

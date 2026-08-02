@@ -114,6 +114,9 @@ export default function ForecastDirectionChart({
     const centerX = width / 2;
     const centerY = height / 2;
     const maxRadius = Math.min(width, height) / 2 - 35;
+    // The canvas can measure zero mid-layout, which would make every ring
+    // radius negative and throw out of the draw pass
+    if (maxRadius <= 0) return;
 
     // Find max speed for scaling
     let maxSpeed = 0;

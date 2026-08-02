@@ -390,6 +390,16 @@ describe('parseNbmBulletin with real NBM V4.3 format', () => {
     expect(result?.station).toBe('KJFK');
   });
 
+  it('parses ceiling and visibility from the real format', () => {
+    const result = parseNbmBulletin(REAL_FORMAT_BULLETIN, 'KFRG');
+    expect(result).not.toBeNull();
+    // VIS row is all 100 (tenths of miles) -> 10 statute miles
+    expect(result!.vis[0]).toBe(10);
+    // CIG: -88 = unlimited, 210 = 21,000 ft
+    expect(result!.cig[0]).toBeNull();
+    expect(result!.cig[1]).toBe(21000);
+  });
+
   it('correctly extracts base time from header', () => {
     const result = parseNbmBulletin(REAL_FORMAT_BULLETIN, 'KFRG');
     expect(result).not.toBeNull();
@@ -399,6 +409,141 @@ describe('parseNbmBulletin with real NBM V4.3 format', () => {
     expect(firstTime.getUTCMonth()).toBe(1); // February
     expect(firstTime.getUTCDate()).toBe(5);
     expect(firstTime.getUTCHours()).toBe(1);
+  });
+});
+
+// NBM V5.0 sections captured from live NOMADS bulletins, used to verify the
+// ceiling / visibility / cloud / hazard rows
+const NBH_V5_BULLETIN = `
+ KFRG   NBM V5.0 NBH GUIDANCE    8/02/2026  1300 UTC
+ UTC  14 15 16 17 18 19 20 21 22 23 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14
+ TMP  81 82 82 82 82 81 81 80 79 77 76 75 74 74 75 75 75 75 75 75 74 74 76 77 78
+ DPT  72 71 71 71 72 72 71 71 72 72 73 73 73 74 75 74 75 75 74 74 74 73 74 74 75
+ SKY  68 78 69 77 81 58 64 67 81 82 97 95 94 96 90 93 95 90 92 90 91 86 90 78 92
+ WDR  18 17 17 17 17 16 16 15 15 15 15 16 17 18 18 19 19 19 19 20 20 20 20 20 20
+ WSP  10 11 11 12 12 12 12 11 11 10  9  8  8  9 10 11 11 12 13 14 14 14 14 14 14
+ GST  14 15 16 17 18 17 17 16 15 14 12 12 13 14 17 19 20 22 23 24 24 23 23 23 23
+ P01   1  0  0  0  0  1  0  0  3  2  4  5  7 20 24 24 30 36 36 40 40 57 48 43 35
+ T01   0  0  0  0  0  1  1  1  1  1  1  2  2  2  3  4  4  6  5  4  4  4  4  3  3
+ PZR   0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+ PSN   0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+ PPL   0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+ PRA   0  0  0  0 12  7  6 18 25 10 20 17 24 65 47 43 49 55 52 65 60 72 57 57 37
+ CIG 210220210220200160130130 22 15 13  8  8  7  8  8  8  9 11 11  9  8  7  6  5
+ MVC   0  1  0  0  0  0  4  6 37 52 53 60 62 66 61 58 53 52 53 55 59 64 72 80 91
+ IFC   0  0  0  0  0  0  0  0  8 13 15 30 31 39 32 30 28 26 23 24 29 33 40 47 54
+ LIC   0  0  0  0  0  0  0  0  1  2  4  7  9 16  9  7  7  7  7  7  5  5  6 11 15
+ LCB 170180180200190160110 28 14 12  8  8  8  7  8  8  8  8 10  9  8  8  7  6  5
+ VIS 100100100100100100100100100100100 90 70 60 70100100100100100 70 70 40 20 20
+`;
+
+const NBS_V5_BULLETIN = `
+ KFRG    NBM V5.0 NBS GUIDANCE    8/02/2026  1300 UTC
+ DT /AUG   2/AUG   3                /AUG   4                /AUG   5
+ UTC  18 21 00 03 06 09 12 15 18 21 00 03 06 09 12 15 18 21 00 03 06 09 12
+ FHR  05 08 11 14 17 20 23 26 29 32 35 38 41 44 47 50 53 56 59 62 65 68 71
+ TMP  82 80 76 74 75 75 76 79 80 79 76 73 70 68 71 79 82 81 76 72 70 69 73
+ DPT  72 71 73 74 75 74 74 75 76 75 73 70 67 64 64 63 63 64 65 66 67 67 68
+ SKY  81 67 97 96 95 90 90 95 75 85 84 63 64 41 32 31 39 45 63 57 66 54 52
+ WDR  17 15 15 18 19 20 20 20 21 21 25 31 34 34 35  1 18 17 17 17 17 16 16
+ WSP  12 11  9  9 11 14 14 14 15 13  9  6  6  6  6  6  6  7  5  3  0  0  0
+ GST  18 16 12 14 20 24 23 23 24 20 13  9  9  9  8  8  8  8  5  4  3  3  3
+ P06        21    58    93    81    86    36     1     2     2     2     8
+ T03   1  2  5  9 16 18 13 12 13 18 18 10  2  1  1  0  0  1  1  3  2  3  4
+ PRA  12 18 20 65 49 65 57 59 44 51 52  4  4  0  0  0  0  1  1  2  2 20 20
+ CIG 200130 13  7  8 11  7  5 15 22 45-88-88-88-88-88-88-88-88-88 25 14  7
+ IFC   0  0 15 39 28 24 40 54 13  9  7  6  4  4  5  2  1  1  3  7 15 27 34
+ LCB 190 28  8  7  8  9  7  5 13 22 36  6 26 39 60 50220220160 30 18  4  7
+ VIS 100100100 60100100 40 20 70 50 70100100100100100100100100100100 90 20
+`;
+
+describe('parseNbmBulletin conditions fields (NBM V5.0)', () => {
+  describe('NBH hourly product', () => {
+    const result = parseNbmBulletin(NBH_V5_BULLETIN, 'KFRG', 'nbh');
+
+    it('parses the station', () => {
+      expect(result).not.toBeNull();
+      expect(result!.times.length).toBe(25);
+    });
+
+    it('converts ceiling from hundreds of feet', () => {
+      expect(result!.cig[0]).toBe(21000);
+      expect(result!.cig[8]).toBe(2200);
+      expect(result!.cig[24]).toBe(500);
+    });
+
+    it('converts visibility from tenths of miles', () => {
+      expect(result!.vis[0]).toBe(10);
+      expect(result!.vis[11]).toBe(9);
+      expect(result!.vis[13]).toBe(6);
+      expect(result!.vis[23]).toBe(2);
+    });
+
+    it('converts the lowest cloud base from hundreds of feet', () => {
+      expect(result!.lcb[0]).toBe(17000);
+      expect(result!.lcb[7]).toBe(2800);
+    });
+
+    it('parses thunderstorm probability from T01', () => {
+      expect(result!.tstm[0]).toBe(0);
+      expect(result!.tstm[17]).toBe(6);
+    });
+
+    it('parses flight-category ceiling probabilities', () => {
+      expect(result!.mvc[8]).toBe(37);
+      expect(result!.ifc[8]).toBe(8);
+      expect(result!.lic[8]).toBe(1);
+    });
+
+    it('parses conditional precipitation type probabilities', () => {
+      expect(result!.pra[4]).toBe(12);
+      expect(result!.psn[4]).toBe(0);
+      expect(result!.ppl[4]).toBe(0);
+      expect(result!.pzr[4]).toBe(0);
+    });
+
+    it('parses dew point', () => {
+      expect(result!.dpt[0]).toBe(72);
+    });
+  });
+
+  describe('NBS 3-hourly product', () => {
+    const result = parseNbmBulletin(NBS_V5_BULLETIN, 'KFRG', 'nbs');
+
+    it('parses the station', () => {
+      expect(result).not.toBeNull();
+      expect(result!.times.length).toBe(23);
+    });
+
+    it('treats -88 ceilings as unlimited', () => {
+      expect(result!.cig[0]).toBe(20000);
+      expect(result!.cig[2]).toBe(1300);
+      expect(result!.cig[11]).toBeNull();
+      expect(result!.cig[20]).toBe(2500);
+    });
+
+    it('parses visibility', () => {
+      expect(result!.vis[3]).toBe(6);
+      expect(result!.vis[7]).toBe(2);
+      expect(result!.vis[21]).toBe(9);
+    });
+
+    it('parses the lowest cloud base even when values run together', () => {
+      expect(result!.lcb[0]).toBe(19000);
+      expect(result!.lcb[16]).toBe(22000);
+      expect(result!.lcb[22]).toBe(700);
+    });
+
+    it('falls back to T03 for thunderstorm probability', () => {
+      expect(result!.tstm[0]).toBe(1);
+      expect(result!.tstm[5]).toBe(18);
+    });
+
+    it('parses IFR probability and leaves absent rows empty', () => {
+      expect(result!.ifc[2]).toBe(15);
+      expect(result!.mvc).toEqual([]);
+      expect(result!.lic).toEqual([]);
+    });
   });
 });
 

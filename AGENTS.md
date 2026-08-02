@@ -18,6 +18,8 @@ This document provides comprehensive guidance for AI agents working on this code
 | Modify forecast fetch | `src/app/actions.ts`, `src/lib/nbm-parser.ts` | Toggle to Forecast view |
 | Modify NBM parser | `src/lib/nbm-parser.ts` | `npm run test:run` |
 | Modify nearby airports | `src/components/NearbyAirports.tsx`, `src/app/actions.ts` | Visual inspection, toggle Obs/Forecast |
+| Modify cloud/visibility display | `src/components/CurrentConditions.tsx`, `src/components/ForecastConditions.tsx` | Visual inspection on VFR + IFR airports |
+| Modify weather derivations | `src/lib/weather.ts` | `npm run test:run` |
 | Modify touch interactions | `src/lib/useHorizontalSwipeLock.ts` | Test on mobile/touch device |
 
 ---
@@ -62,15 +64,22 @@ src/
 │   ├── ForecastDirectionChart.tsx # NBM forecast polar radar with synced selection
 │   ├── ForecastWindTable.tsx # Forecast crosswind/headwind with time picker
 │   ├── AirportSelector.tsx   # Search + quick-select + forecast duration limits
-│   ├── NearbyAirports.tsx    # Nearby airports table with METAR wind data
+│   ├── NearbyAirports.tsx    # Nearby airports table with METAR wind + flight category
+│   ├── CurrentConditions.tsx # METAR clouds/visibility/temp/altimeter/density alt
+│   ├── ForecastConditions.tsx # NBM ceiling & visibility forecast with synced selection
+│   ├── SkyDiagram.tsx        # Cloud layer stack visualization (pure DOM)
+│   ├── FlightCategoryBadge.tsx # VFR/MVFR/IFR/LIFR badge
+│   ├── StatTile.tsx          # Shared labelled-value tile
 │   └── SettingsModal.tsx     # Runway surface filter settings
 ├── lib/
 │   ├── types.ts              # TypeScript interfaces
 │   ├── nbm-parser.ts         # NBM text bulletin parser (NBH + NBS products)
+│   ├── weather.ts            # Cloud/visibility/flight-category/derived-value utilities
 │   ├── cache.ts              # Staleness/cache utilities
 │   ├── windplot-route.ts     # URL route parsing/building helpers
 │   ├── useHorizontalSwipeLock.ts # Touch gesture hook: prevents scroll on horizontal swipe
 │   ├── airports.ts           # Airport utilities (unused, data in JSON)
+│   ├── weather.test.ts       # Weather utility unit tests (vitest)
 │   ├── airports-data.json    # 4,450 US airports from NASR
 │   └── spatial-index.bin     # Pre-built k-d tree for nearby queries
 scripts/
@@ -115,7 +124,7 @@ Chart Chart Table  ↓    ↓    ↓
 
 1. **WindDataPoint** (`src/lib/types.ts`): Normalized observation with timestamp, wspd, wgst, wdir.
 
-2. **ForecastDataPoint** (`src/lib/types.ts`): NBM forecast point with timestamp, wspd, wgst, wdir, temp, sky, pop.
+2. **ForecastDataPoint** (`src/lib/types.ts`): NBM forecast point with timestamp, wspd, wgst, wdir, temp, dewp, sky, pop, cig, vis, cloudBase, tstm, and the MVFR/IFR/LIFR and precipitation-type probabilities.
 
 3. **AirportFullData** (`src/app/actions.ts`): Combined payload with airport info, wind timeseries, and METAR.
 
@@ -125,7 +134,11 @@ Chart Chart Table  ↓    ↓    ↓
 
 6. **NbmParsedData** (`src/lib/nbm-parser.ts`): Parsed bulletin data with station, times, and aviation fields (wdr, wsp, gst, tmp, dpt, sky, cig, vis, pop).
 
-7. **Prefetch Cache**: Server-side prefetch of top 3 favorites; client caches results for instant switching.
+7. **CloudLayer** (`src/lib/types.ts`): One reported cloud layer — cover code plus base in feet AGL.
+
+8. **Weather utilities** (`src/lib/weather.ts`): Pure helpers shared by every conditions view — visibility parsing/formatting, ceiling extraction, flight category (VFR/MVFR/IFR/LIFR), METAR weather-string decoding, and derived values (relative humidity, pressure/density altitude).
+
+9. **Prefetch Cache**: Server-side prefetch of top 3 favorites; client caches results for instant switching.
 
 ---
 
@@ -170,6 +183,7 @@ Both polar radars use raw Canvas API, not Chart.js. Key points:
 - Handle device pixel ratio (`window.devicePixelRatio`) for crisp rendering
 - Redraw on resize via `ResizeObserver` or effect deps
 - Points stored in ref for tooltip hit detection and click-to-select
+- Bail out when the computed `maxRadius` is `<= 0`: the canvas can measure zero mid-layout, and a negative arc radius throws and aborts the whole draw pass
 - ForecastDirectionChart supports synced selection via `selectedIdx`/`onSelectIdx` props
 
 ### 5. URL State Sync
@@ -249,7 +263,9 @@ GET https://aviationweather.gov/api/data/metar?ids={icao}&format=json
 GET https://aviationweather.gov/api/data/metar?ids={icao1},{icao2},{icao3}&format=json
 ```
 
-Returns latest METAR with current conditions. Single-station fetch (`getMetar`) is used for "live" wind display when Synoptic is stale. Batch fetch (`getMetarBatch`) supports comma-separated IDs and is used by NearbyAirports to show wind data for multiple airports in one request.
+Returns latest METAR with current conditions. Single-station fetch (`getMetar`) is used for "live" wind display when Synoptic is stale. Batch fetch (`getMetarBatch`) supports comma-separated IDs and is used by NearbyAirports to show wind and flight category for multiple airports in one request. Both share the `toMetarData` normalizer in `actions.ts`.
+
+Fields consumed beyond wind: `clouds` (array of `{cover, base}` in feet AGL), `cover` (summary code — the API sends `clouds: []` with `cover: "CLR"` for a clear sky), `visib` (statute miles, sometimes `"10+"` or a fraction like `"1 1/2"`), `temp` / `dewp` (°C), `altim` (hPa), `wxString` (present weather groups), `vertVis` (indefinite ceiling, feet), and `elev` (station elevation in meters, used for density altitude).
 
 ### NOAA NBM Text Bulletins
 
@@ -276,9 +292,16 @@ Both bulletins share the same aviation-relevant fields:
 - `WSP` - Wind speed (knots)
 - `GST` - Wind gust (knots)
 - `TMP` - Temperature (°F)
+- `DPT` - Dew point (°F)
 - `SKY` - Sky cover (%)
-- `CIG` - Ceiling (hundreds of feet, 888 = unlimited)
+- `CIG` - Ceiling (hundreds of feet, 888 / -88 = unlimited)
 - `VIS` - Visibility (tenths of miles)
+- `LCB` - Lowest cloud base (hundreds of feet, same encoding as `CIG`)
+- `T01` / `T03` - Thunderstorm probability (% — `T01` on NBH, `T03` on NBS)
+- `MVC` / `IFC` / `LIC` - Probability of an MVFR / IFR / LIFR ceiling (%). NBS publishes only `IFC`; absent rows parse to an empty array.
+- `PRA` / `PSN` / `PPL` / `PZR` - Conditional probability of rain / snow / ice pellets / freezing rain (%)
+
+`CIG`, `VIS` and `LCB` are written as 3-character fixed-width fields that run together when values are 3 digits (`210220210`), so they are read with `parseFixedWidthRow` rather than a whitespace split.
 
 The parser (`src/lib/nbm-parser.ts`) extracts station-specific sections from the bulk bulletin file using delimiter patterns. The fetch logic (`fetchNbmBulletin` in `actions.ts`) includes fallback to the previous cycle hour if the current one is not yet available. Only airports that are NBM forecast stations will have forecast data.
 
@@ -311,8 +334,10 @@ npm run update-nasr:index  # Rebuild spatial index only
 | Airport search | Type partial ICAO/name, verify results |
 | URL routing | Navigate between airports/modes/hours and verify path updates + state persistence |
 | Mobile layout | Test on narrow viewport |
-| NBM parser | `npm run test:run` (37 test cases) |
-| Forecast view | Toggle Obs/Forecast, switch 24h/72h, verify synced selection |
+| NBM parser | `npm run test:run` |
+| Weather utilities | `npm run test:run` |
+| Conditions panels | Compare a VFR airport (KSFO), an MVFR/IFR airport (KMRY, KSEA), and one with many layers (KEWR) |
+| Forecast view | Toggle Obs/Forecast, switch 24h/72h, verify synced selection across all four forecast components |
 
 ---
 
@@ -440,7 +465,15 @@ In the NearbyAirports table, calm wind displays as **CALM**, airports with no ME
 
 `WindSpeedChart` and `ForecastChart` use the `useHorizontalSwipeLock` hook to prevent vertical page scrolling when the user swipes horizontally on the chart. The hook detects gesture direction on initial movement and locks it for the duration of the touch. Vertical swipes still scroll normally. If adding new interactive chart components, apply this hook to the chart container div to maintain the same behavior.
 
-### 7. Timezone Handling
+### 7. Flight Category Is Derived, Not Reported
+
+The app never reads the API's `fltCat` field. `computeFlightCategory` in `src/lib/weather.ts` derives it from the ceiling (lowest BKN/OVC/OVX layer, or vertical visibility) and visibility, taking the more restrictive of the two. This keeps observations and NBM forecasts on the same rules — NBM has no `fltCat` to read. A null ceiling means "no ceiling", so visibility alone decides; a null on both sides yields `null` and the badge renders as a dash.
+
+### 8. NBM Ceilings: Null Means Unlimited
+
+`parseNbmBulletin` maps the sentinel values `888` and `-88` to `null` for `CIG` and `LCB`, matching NBM's "no ceiling / no clouds" encoding. Forecast views therefore render `null` as "Unlimited" rather than "unknown", and `ForecastConditions` pins those points to the top of the ceiling axis (capped at 12,000 ft).
+
+### 9. Timezone Handling
 
 **Observations**: Synoptic API returns times in the airport's local timezone via the `obtimezone=local` parameter. The `time` field is display-only; use `timestamp` (Unix seconds) for calculations.
 
@@ -473,7 +506,14 @@ Both observations and forecasts display times in the **airport's local timezone*
 | Forecast direction | `src/components/ForecastDirectionChart.tsx` |
 | Forecast table | `src/components/ForecastWindTable.tsx` |
 | Airport search | `src/components/AirportSelector.tsx` |
-| Nearby airports (table + METAR wind) | `src/components/NearbyAirports.tsx` |
+| Nearby airports (table + METAR wind + category) | `src/components/NearbyAirports.tsx` |
+| Current conditions (clouds, visibility) | `src/components/CurrentConditions.tsx` |
+| Forecast conditions (ceiling, visibility) | `src/components/ForecastConditions.tsx` |
+| Cloud layer diagram | `src/components/SkyDiagram.tsx` |
+| Flight category badge | `src/components/FlightCategoryBadge.tsx` |
+| Shared stat tile | `src/components/StatTile.tsx` |
+| Weather utilities | `src/lib/weather.ts` |
+| Weather utility tests | `src/lib/weather.test.ts` |
 | Horizontal swipe lock hook | `src/lib/useHorizontalSwipeLock.ts` |
 | Type definitions | `src/lib/types.ts` |
 | Airport data | `src/lib/airports-data.json` |

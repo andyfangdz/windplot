@@ -9,6 +9,8 @@ import RunwayWindTable from './RunwayWindTable';
 import ForecastChart from './ForecastChart';
 import ForecastDirectionChart from './ForecastDirectionChart';
 import ForecastWindTable from './ForecastWindTable';
+import CurrentConditions from './CurrentConditions';
+import ForecastConditions from './ForecastConditions';
 import NearbyAirports from './NearbyAirports';
 import SettingsModal, { Settings, loadSettings } from './SettingsModal';
 import { WindData, ForecastData } from '@/lib/types';
@@ -505,6 +507,9 @@ export default function WindPlot({
                     Retry
                   </button>
                 </div>
+                {/* METAR is fetched independently of Synoptic, so conditions
+                    are often still available when the timeseries fails */}
+                <CurrentConditions metar={metarIcao === icao ? metar : null} now={now} />
                 <NearbyAirports icao={icao} onSelect={handleAirportChange} />
               </>
             )}
@@ -537,6 +542,7 @@ export default function WindPlot({
                     now={now}
                   />
                 )}
+                <CurrentConditions metar={metarIcao === icao ? metar : null} now={now} />
                 <NearbyAirports icao={icao} onSelect={handleAirportChange} />
               </>
             )}
@@ -546,6 +552,7 @@ export default function WindPlot({
                 <div className="text-center py-16">
                   <p className="text-[var(--text-secondary)] text-sm">No observations available for this period.</p>
                 </div>
+                <CurrentConditions metar={metarIcao === icao ? metar : null} now={now} />
                 <NearbyAirports icao={icao} onSelect={handleAirportChange} />
               </>
             )}
@@ -619,6 +626,11 @@ export default function WindPlot({
                     onSelectIdx={setSelectedForecastIdx}
                   />
                 )}
+                <ForecastConditions
+                  forecasts={filteredForecasts}
+                  selectedIdx={selectedForecastIdx}
+                  onSelectIdx={setSelectedForecastIdx}
+                />
                 <NearbyAirports icao={icao} onSelect={handleAirportChange} showWind={false} />
               </>
             )}

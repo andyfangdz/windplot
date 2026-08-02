@@ -17,6 +17,15 @@ export interface NbmParsedData {
   cig: (number | null)[];  // Ceiling in feet (null = unlimited)
   vis: (number | null)[];  // Visibility in miles
   pop: (number | null)[];  // Probability of precipitation %
+  lcb: (number | null)[];  // Lowest cloud base in feet (null = no clouds)
+  tstm: (number | null)[]; // Thunderstorm probability % (T01 for NBH, T03 for NBS)
+  mvc: (number | null)[];  // Probability of MVFR ceiling %
+  ifc: (number | null)[];  // Probability of IFR ceiling %
+  lic: (number | null)[];  // Probability of LIFR ceiling %
+  pra: (number | null)[];  // Conditional probability of rain %
+  psn: (number | null)[];  // Conditional probability of snow %
+  ppl: (number | null)[];  // Conditional probability of ice pellets %
+  pzr: (number | null)[];  // Conditional probability of freezing rain %
 }
 
 // Parse NBM text bulletin for a specific station
@@ -174,11 +183,26 @@ export function parseNbmBulletin(text: string, station: string, productType: Nbm
   const sky = parseRow('SKY');
   const cigRaw = parseFixedWidthRow('CIG');
   const visRaw = parseFixedWidthRow('VIS');
+  const lcbRaw = parseFixedWidthRow('LCB');
   // P01 for NBH (1-hour precip), P06 for NBS (6-hour precip)
   let pop = parseRow('P01');
   if (pop.length === 0) {
     pop = parseRow('P06');
   }
+  // T01 for NBH (1-hour thunder), T03 for NBS (3-hour thunder)
+  let tstm = parseRow('T01');
+  if (tstm.length === 0) {
+    tstm = parseRow('T03');
+  }
+  // Flight-category ceiling probabilities. NBS only publishes IFC.
+  const mvc = parseRow('MVC');
+  const ifc = parseRow('IFC');
+  const lic = parseRow('LIC');
+  // Conditional precipitation type probabilities
+  const pra = parseRow('PRA');
+  const psn = parseRow('PSN');
+  const ppl = parseRow('PPL');
+  const pzr = parseRow('PZR');
 
   // Convert wind direction from tens of degrees to degrees
   const wdr = wdrRaw.map(v => v !== null ? v * 10 : null);
@@ -193,6 +217,14 @@ export function parseNbmBulletin(text: string, station: string, productType: Nbm
   // Convert visibility from tenths of miles to miles
   const vis = visRaw.map(v => v !== null ? v / 10 : null);
 
+  // Lowest cloud base uses the same encoding as CIG (hundreds of feet,
+  // 888/-88 = no clouds)
+  const lcb = lcbRaw.map(v => {
+    if (v === null) return null;
+    if (v === 888 || v === -88) return null;
+    return v * 100;
+  });
+
   return {
     station,
     baseTime,
@@ -206,6 +238,15 @@ export function parseNbmBulletin(text: string, station: string, productType: Nbm
     cig,
     vis,
     pop,
+    lcb,
+    tstm,
+    mvc,
+    ifc,
+    lic,
+    pra,
+    psn,
+    ppl,
+    pzr,
   };
 }
 

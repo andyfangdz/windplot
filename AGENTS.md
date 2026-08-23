@@ -19,6 +19,7 @@ This document provides comprehensive guidance for AI agents working on this code
 | Modify NBM parser | `src/lib/nbm-parser.ts` | `npm run test:run` |
 | Modify nearby airports | `src/components/NearbyAirports.tsx`, `src/app/actions.ts` | Visual inspection, toggle Obs/Forecast |
 | Modify cloud/visibility display | `src/components/CurrentConditions.tsx`, `src/components/ForecastConditions.tsx` | Visual inspection on VFR + IFR airports |
+| Modify sky history plot | `src/components/ConditionsHistory.tsx` | Visual inspection on an airport whose ceiling changed |
 | Modify observation source handling | `src/lib/conditions.ts` | `npm run test:run` |
 | Modify weather derivations | `src/lib/weather.ts` | `npm run test:run` |
 | Modify touch interactions | `src/lib/useHorizontalSwipeLock.ts` | Test on mobile/touch device |
@@ -67,6 +68,7 @@ src/
 │   ├── AirportSelector.tsx   # Search + quick-select + forecast duration limits
 │   ├── NearbyAirports.tsx    # Nearby airports table with METAR wind + flight category
 │   ├── CurrentConditions.tsx # Clouds/visibility/temp/altimeter/density alt (5-min or METAR)
+│   ├── ConditionsHistory.tsx # Time-height plot of cloud layers + ceiling/visibility trend
 │   ├── ForecastConditions.tsx # NBM ceiling & visibility forecast with synced selection
 │   ├── SkyDiagram.tsx        # Cloud layer stack visualization (pure DOM)
 │   ├── FlightCategoryBadge.tsx # VFR/MVFR/IFR/LIFR badge
@@ -350,6 +352,7 @@ npm run update-nasr:index  # Rebuild spatial index only
 | NBM parser | `npm run test:run` |
 | Weather utilities | `npm run test:run` |
 | Conditions panels | Compare a VFR airport (KSFO), an MVFR/IFR airport (KMRY, KSEA), and one with many layers (KEWR); toggle 5-min/METAR on each |
+| Sky history | Pick an airport whose ceiling moved over the window; check the category strip and ceiling line track the layer dots |
 | Forecast view | Toggle Obs/Forecast, switch 24h/72h, verify synced selection across all four forecast components |
 
 ---
@@ -486,8 +489,10 @@ The app never reads the API's `fltCat` field. `computeFlightCategory` in `src/li
 
 `CurrentConditions` defaults to the Synoptic 5-minute observation and offers a METAR toggle, mirroring `RunwayWindTable`. The two sources disagree on units — Synoptic returns °F (per the `temp|F` request) while METAR returns °C, and altimeter arrives as inHg, hPa or Pa depending on source — so **never read either raw shape in a component**. `src/lib/conditions.ts` normalizes both into `ObservedConditions` (Celsius, statute miles, inHg) and is the only place that knows the difference.
 
+Because the conditions ride on every `WindDataPoint`, the whole window is a time series, not just a latest value — `ConditionsHistory` plots it as a time-height chart (one dot per reported layer, coloured by coverage) with the ceiling and visibility over the top. It shares the 12,000 ft / 10 sm caps with `ForecastConditions` so the observation and forecast panels read on the same scale, and it hides itself when no record carries a layer.
+
 Two behaviors worth preserving:
-- Not every station reports sky/visibility in the 5-minute feed. `latestConditionObservation` walks backwards for the newest record that actually has conditions, and the panel falls back to METAR (with a visible note) when there are none.
+- Not every station reports sky/visibility in the 5-minute feed. `latestConditionObservation` walks backwards for the newest record that actually has conditions, and the panel falls back to METAR (with a visible note) when there are none. `hasSkyData` is the narrower test used by the history plot — temperature alone would add an empty column.
 - ASOS ceilometers report at most 3 layers and only below 12,000 ft, so the 5-minute view can miss high layers METAR includes — meaning its ceiling can read *less* restrictive than METAR's. The panel says so in a footnote; don't remove it.
 
 ### 9. NBM Ceilings: Null Means Unlimited
@@ -529,6 +534,7 @@ Both observations and forecasts display times in the **airport's local timezone*
 | Airport search | `src/components/AirportSelector.tsx` |
 | Nearby airports (table + METAR wind + category) | `src/components/NearbyAirports.tsx` |
 | Current conditions (clouds, visibility) | `src/components/CurrentConditions.tsx` |
+| Sky condition history (layers over time) | `src/components/ConditionsHistory.tsx` |
 | Forecast conditions (ceiling, visibility) | `src/components/ForecastConditions.tsx` |
 | Cloud layer diagram | `src/components/SkyDiagram.tsx` |
 | Flight category badge | `src/components/FlightCategoryBadge.tsx` |

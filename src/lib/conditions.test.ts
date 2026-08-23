@@ -4,6 +4,7 @@ import {
   conditionsFlightCategory,
   formatConditionsVisibility,
   hasConditionData,
+  hasSkyData,
   latestConditionObservation,
   metarToConditions,
   synopticToConditions,
@@ -63,6 +64,19 @@ describe('hasConditionData', () => {
   it('handles missing input', () => {
     expect(hasConditionData(null)).toBe(false);
     expect(hasConditionData(undefined)).toBe(false);
+  });
+});
+
+describe('hasSkyData', () => {
+  it('requires layers or visibility, not just temperature', () => {
+    expect(hasSkyData(obs({ temp: 68, altim: 29.92 }))).toBe(false);
+    expect(hasSkyData(obs({ visib: 10 }))).toBe(true);
+    expect(hasSkyData(obs({ clouds: [{ cover: 'BKN', base: 2200 }] }))).toBe(true);
+  });
+
+  it('handles missing input', () => {
+    expect(hasSkyData(null)).toBe(false);
+    expect(hasSkyData(undefined)).toBe(false);
   });
 });
 

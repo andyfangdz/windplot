@@ -10,6 +10,7 @@ import ForecastChart from './ForecastChart';
 import ForecastDirectionChart from './ForecastDirectionChart';
 import ForecastWindTable from './ForecastWindTable';
 import CurrentConditions from './CurrentConditions';
+import ConditionsHistory from './ConditionsHistory';
 import ForecastConditions from './ForecastConditions';
 import NearbyAirports from './NearbyAirports';
 import SettingsModal, { Settings, loadSettings } from './SettingsModal';
@@ -563,6 +564,7 @@ export default function WindPlot({
                   elevationFt={elevationFt}
                   now={now}
                 />
+                <ConditionsHistory observations={data.observations} />
                 <NearbyAirports icao={icao} onSelect={handleAirportChange} />
               </>
             )}

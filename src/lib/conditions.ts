@@ -24,6 +24,14 @@ export function hasConditionData(point: WindDataPoint | null | undefined): boole
   );
 }
 
+// Narrower than hasConditionData: a record only belongs on the sky history
+// plot if it reports layers or visibility. Temperature alone would add an
+// empty column.
+export function hasSkyData(point: WindDataPoint | null | undefined): boolean {
+  if (!point) return false;
+  return (point.clouds?.length ?? 0) > 0 || point.visib !== null;
+}
+
 // Most recent 5-minute record that actually reports conditions. Stations drop
 // sky/visibility from individual records, so the newest point is not always
 // the newest usable one.

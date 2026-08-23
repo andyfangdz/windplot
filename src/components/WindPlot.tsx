@@ -9,10 +9,14 @@ import RunwayWindTable from './RunwayWindTable';
 import ForecastChart from './ForecastChart';
 import ForecastDirectionChart from './ForecastDirectionChart';
 import ForecastWindTable from './ForecastWindTable';
+import CurrentConditions from './CurrentConditions';
+import ConditionsHistory from './ConditionsHistory';
+import ForecastConditions from './ForecastConditions';
 import NearbyAirports from './NearbyAirports';
 import SettingsModal, { Settings, loadSettings } from './SettingsModal';
 import { WindData, ForecastData } from '@/lib/types';
 import { isWindDataStale } from '@/lib/cache';
+import { metersToFeet } from '@/lib/weather';
 import {
   getAirportFullData,
   getNbmForecast,
@@ -299,6 +303,15 @@ export default function WindPlot({
     });
   }, [airport?.runways, settings.allowedSurfaces]);
 
+  // Field elevation for density altitude. METAR reports it in meters and is
+  // the more reliable source; Synoptic station metadata is the fallback.
+  const elevationFt = useMemo(() => {
+    if (metarIcao === icao && typeof metar?.elev === 'number') {
+      return Math.round(metersToFeet(metar.elev));
+    }
+    return typeof data?.elevationFt === 'number' ? data.elevationFt : null;
+  }, [metar, metarIcao, icao, data]);
+
   // Filter forecasts by the hours limit
   const filteredForecasts = useMemo(() => {
     if (!forecast) return [];
@@ -505,6 +518,14 @@ export default function WindPlot({
                     Retry
                   </button>
                 </div>
+                {/* Synoptic failed, so there are no 5-minute records to read;
+                    METAR is fetched independently and is usually still there */}
+                <CurrentConditions
+                  observations={[]}
+                  metar={metarIcao === icao ? metar : null}
+                  elevationFt={elevationFt}
+                  now={now}
+                />
                 <NearbyAirports icao={icao} onSelect={handleAirportChange} />
               </>
             )}
@@ -537,6 +558,13 @@ export default function WindPlot({
                     now={now}
                   />
                 )}
+                <CurrentConditions
+                  observations={data?.observations ?? []}
+                  metar={metarIcao === icao ? metar : null}
+                  elevationFt={elevationFt}
+                  now={now}
+                />
+                <ConditionsHistory observations={data.observations} />
                 <NearbyAirports icao={icao} onSelect={handleAirportChange} />
               </>
             )}
@@ -546,6 +574,12 @@ export default function WindPlot({
                 <div className="text-center py-16">
                   <p className="text-[var(--text-secondary)] text-sm">No observations available for this period.</p>
                 </div>
+                <CurrentConditions
+                  observations={data?.observations ?? []}
+                  metar={metarIcao === icao ? metar : null}
+                  elevationFt={elevationFt}
+                  now={now}
+                />
                 <NearbyAirports icao={icao} onSelect={handleAirportChange} />
               </>
             )}
@@ -619,6 +653,11 @@ export default function WindPlot({
                     onSelectIdx={setSelectedForecastIdx}
                   />
                 )}
+                <ForecastConditions
+                  forecasts={filteredForecasts}
+                  selectedIdx={selectedForecastIdx}
+                  onSelectIdx={setSelectedForecastIdx}
+                />
                 <NearbyAirports icao={icao} onSelect={handleAirportChange} showWind={false} />
               </>
             )}

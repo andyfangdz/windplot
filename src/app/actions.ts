@@ -3,8 +3,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import airportsData from '@/lib/airports-data.json';
-import { WindData, WindDataPoint, ForecastData, ForecastDataPoint } from '@/lib/types';
+import { WindData, WindDataPoint, ForecastData, ForecastDataPoint, CloudLayer } from '@/lib/types';
 import { parseNbmBulletin, getNbmBulletinUrl, NbmProductType } from '@/lib/nbm-parser';
+import { decodeSynopticCloudLayer, normalizeAltimeterToInHg } from '@/lib/weather';
 import distance from '@turf/distance';
 import { point } from '@turf/helpers';
 import KDBush from 'kdbush';
@@ -69,11 +70,22 @@ interface SynopticObservations {
   wind_speed_set_1?: (number | null)[];
   wind_direction_set_1?: (number | null)[];
   wind_gust_set_1?: (number | null)[];
+  // Sky/surface condition variables — only present for reporting stations
+  air_temp_set_1?: (number | null)[];
+  dew_point_temperature_set_1?: (number | null)[];
+  visibility_set_1?: (number | null)[];
+  altimeter_set_1?: (number | null)[];
+  cloud_layer_1_code_set_1?: (number | null)[];
+  cloud_layer_2_code_set_1?: (number | null)[];
+  cloud_layer_3_code_set_1?: (number | null)[];
+  weather_condition_set_1?: (string | null)[];
+  weather_summary_set_1?: (string | null)[];
 }
 
 interface SynopticStation {
   STID: string;
   NAME: string;
+  ELEVATION?: string | number | null;
   OBSERVATIONS: SynopticObservations;
 }
 
@@ -81,6 +93,7 @@ interface SynopticResponse {
   SUMMARY: { RESPONSE_CODE: number; RESPONSE_MESSAGE: string };
   STATION?: SynopticStation[];
 }
+
 
 // Fetch wind data from Synoptic API
 export async function getWindData(
@@ -125,19 +138,47 @@ export async function getWindData(
     const obs = station.OBSERVATIONS;
     if (!obs.date_time?.length) return null;
 
-    const observations: WindDataPoint[] = obs.date_time.map((dt, i) => ({
-      time: dt.split('T')[1]?.split(/[-+]/)[0]?.substring(0, 5) || '',
-      timestamp: new Date(dt).getTime() / 1000,
-      wspd: obs.wind_speed_set_1?.[i] ?? null,
-      wgst: obs.wind_gust_set_1?.[i] ?? null,
-      wdir: obs.wind_direction_set_1?.[i] ?? null,
-    }));
+    const observations: WindDataPoint[] = obs.date_time.map((dt, i) => {
+      // Layers arrive as three separate variables; decode and order them
+      const clouds = [
+        obs.cloud_layer_1_code_set_1?.[i],
+        obs.cloud_layer_2_code_set_1?.[i],
+        obs.cloud_layer_3_code_set_1?.[i],
+      ]
+        .map(decodeSynopticCloudLayer)
+        .filter((layer): layer is CloudLayer => layer !== null)
+        .sort((a, b) => (a.base ?? Infinity) - (b.base ?? Infinity));
+
+      return {
+        time: dt.split('T')[1]?.split(/[-+]/)[0]?.substring(0, 5) || '',
+        timestamp: new Date(dt).getTime() / 1000,
+        wspd: obs.wind_speed_set_1?.[i] ?? null,
+        wgst: obs.wind_gust_set_1?.[i] ?? null,
+        wdir: obs.wind_direction_set_1?.[i] ?? null,
+        temp: obs.air_temp_set_1?.[i] ?? null,
+        dewp: obs.dew_point_temperature_set_1?.[i] ?? null,
+        visib: obs.visibility_set_1?.[i] ?? null,
+        altim: normalizeAltimeterToInHg(obs.altimeter_set_1?.[i]),
+        clouds,
+        weather:
+          obs.weather_condition_set_1?.[i] ?? obs.weather_summary_set_1?.[i] ?? null,
+      };
+    });
+
+    const elevationRaw = station.ELEVATION;
+    const elevationFt =
+      typeof elevationRaw === 'number'
+        ? elevationRaw
+        : typeof elevationRaw === 'string' && elevationRaw.trim() !== ''
+          ? Number(elevationRaw)
+          : null;
 
     const airport = await getAirport(upperIcao);
     return {
       icao: upperIcao,
       name: airport?.name || station.NAME || upperIcao,
       observations,
+      elevationFt: Number.isFinite(elevationFt) ? elevationFt : null,
     };
   } catch (error) {
     console.error('Synoptic fetch error:', error);
@@ -235,8 +276,70 @@ export interface MetarData {
   wdir: number | null;
   wspd: number | null;
   wgst: number | null;
+  temp: number | null;        // Celsius
+  dewp: number | null;        // Celsius
+  visib: string | number | null;  // Statute miles ("10+" for 10 or more)
+  altim: number | null;       // Hectopascals
+  clouds: CloudLayer[];       // Reported cloud layers, lowest first
+  cover: string | null;       // Summary cover code (e.g. "CLR" when no layers)
+  wxString: string | null;    // Present weather group(s), e.g. "-RA BR"
+  vertVis: number | null;     // Vertical visibility in feet (indefinite ceiling)
+  elev: number | null;        // Station elevation in meters
   rawOb?: string;
   obsTime?: number;
+}
+
+// Shape of a single entry in the Aviation Weather API METAR response
+interface AviationWeatherMetar {
+  icaoId?: string;
+  stationId?: string;
+  wdir?: number | string | null;
+  wspd?: number | null;
+  wgst?: number | null;
+  temp?: number | null;
+  dewp?: number | null;
+  visib?: string | number | null;
+  altim?: number | null;
+  clouds?: { cover?: string | null; base?: number | null }[] | null;
+  cover?: string | null;
+  wxString?: string | null;
+  vertVis?: number | null;
+  elev?: number | null;
+  rawOb?: string;
+  obsTime?: number;
+}
+
+// Normalize one API entry into MetarData
+function toMetarData(entry: AviationWeatherMetar): MetarData {
+  // The API reports variable wind as wdir=0 with wspd>0; direction is not
+  // meaningful there, so only keep wdir=0 when the wind is actually calm.
+  const wdirRaw = typeof entry.wdir === 'number' ? entry.wdir : null;
+  const wspd = entry.wspd ?? null;
+
+  const clouds: CloudLayer[] = (entry.clouds ?? [])
+    .filter((layer) => Boolean(layer?.cover))
+    .map((layer) => ({
+      cover: (layer.cover ?? '').toUpperCase(),
+      base: typeof layer.base === 'number' ? layer.base : null,
+    }))
+    .sort((a, b) => (a.base ?? Infinity) - (b.base ?? Infinity));
+
+  return {
+    wdir: wdirRaw === 0 && (wspd ?? 0) > 0 ? null : wdirRaw,
+    wspd,
+    wgst: entry.wgst ?? null,
+    temp: entry.temp ?? null,
+    dewp: entry.dewp ?? null,
+    visib: entry.visib ?? null,
+    altim: entry.altim ?? null,
+    clouds,
+    cover: entry.cover ? entry.cover.toUpperCase() : null,
+    wxString: entry.wxString ?? null,
+    vertVis: entry.vertVis ?? null,
+    elev: entry.elev ?? null,
+    rawOb: entry.rawOb,
+    obsTime: entry.obsTime,
+  };
 }
 
 // Fetch latest METAR for an airport
@@ -257,15 +360,7 @@ export async function getMetar(icao: string): Promise<MetarData | null> {
     const data = await response.json();
     if (!Array.isArray(data) || data.length === 0) return null;
 
-    const latest = data[0];
-    return {
-      // wdir=0 + wspd=0 means calm; wdir=0 + wspd>0 means variable (VRB), null out direction
-      wdir: (latest.wdir === 0 && (latest.wspd ?? 0) > 0) ? null : (latest.wdir ?? null),
-      wspd: latest.wspd ?? null,
-      wgst: latest.wgst ?? null,
-      rawOb: latest.rawOb,
-      obsTime: latest.obsTime,
-    };
+    return toMetarData(data[0]);
   } catch (error) {
     console.error('METAR fetch error:', error);
     return null;
@@ -293,16 +388,10 @@ export async function getMetarBatch(icaos: string[]): Promise<Record<string, Met
     if (!Array.isArray(data)) return {};
 
     const result: Record<string, MetarData> = {};
-    for (const entry of data) {
+    for (const entry of data as AviationWeatherMetar[]) {
       const stationId = (entry.icaoId ?? entry.stationId ?? '').toUpperCase();
       if (!stationId) continue;
-      result[stationId] = {
-        wdir: (entry.wdir === 0 && (entry.wspd ?? 0) > 0) ? null : (entry.wdir ?? null),
-        wspd: entry.wspd ?? null,
-        wgst: entry.wgst ?? null,
-        rawOb: entry.rawOb,
-        obsTime: entry.obsTime,
-      };
+      result[stationId] = toMetarData(entry);
     }
     return result;
   } catch (error) {
@@ -424,8 +513,20 @@ export async function getNbmForecast(
         wgst: nbmData.gst[i] ?? null,
         wdir: nbmData.wdr[i] ?? null,
         temp: nbmData.tmp[i] ?? null,
+        dewp: nbmData.dpt[i] ?? null,
         sky: nbmData.sky[i] ?? null,
         pop: nbmData.pop[i] ?? null,
+        cig: nbmData.cig[i] ?? null,
+        vis: nbmData.vis[i] ?? null,
+        cloudBase: nbmData.lcb[i] ?? null,
+        tstm: nbmData.tstm[i] ?? null,
+        mvfrProb: nbmData.mvc[i] ?? null,
+        ifrProb: nbmData.ifc[i] ?? null,
+        lifrProb: nbmData.lic[i] ?? null,
+        rainProb: nbmData.pra[i] ?? null,
+        snowProb: nbmData.psn[i] ?? null,
+        icePelletProb: nbmData.ppl[i] ?? null,
+        freezingRainProb: nbmData.pzr[i] ?? null,
       });
     }
 

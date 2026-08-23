@@ -2,6 +2,14 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { getNearbyAirports, getMetarBatch, NearbyAirport, MetarData } from '@/app/actions';
+import { FLIGHT_CATEGORY_STYLES, formatCeiling } from '@/lib/weather';
+import {
+  conditionsCeiling,
+  conditionsFlightCategory,
+  formatConditionsVisibility,
+  metarToConditions,
+} from '@/lib/conditions';
+import FlightCategoryBadge from './FlightCategoryBadge';
 
 interface NearbyAirportsProps {
   icao: string;
@@ -90,11 +98,27 @@ export default function NearbyAirports({ icao, onSelect, showWind = true }: Near
               <th className="py-2 px-3 text-left font-medium text-xs uppercase tracking-wider">Name</th>
               <th className="py-2 px-3 text-right font-medium text-xs uppercase tracking-wider">Dist</th>
               {showWind && <th className="py-2 px-3 text-right font-medium text-xs uppercase tracking-wider">Wind</th>}
+              {/* Narrow screens show the category as a dot beside the ICAO instead */}
+              {showWind && (
+                <th className="hidden sm:table-cell py-2 px-3 text-right font-medium text-xs uppercase tracking-wider">
+                  Cat
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
             {displayedAirports.map((airport) => {
-              const wind = showWind ? formatWind(metars[airport.icao], metarsLoaded) : null;
+              const metar = metars[airport.icao];
+              const wind = showWind ? formatWind(metar, metarsLoaded) : null;
+              // Go through the shared normalizer rather than reading raw METAR
+              // fields, so this column can never disagree with CurrentConditions
+              const conditions = metar ? metarToConditions(metar) : null;
+              const category = conditions ? conditionsFlightCategory(conditions) : null;
+              const categoryTitle = conditions
+                ? `${formatCeiling(conditionsCeiling(conditions))} · ${
+                    formatConditionsVisibility(conditions) ?? 'visibility unknown'
+                  }`
+                : undefined;
               const windColorClass = wind
                 ? wind.style === 'gust' ? 'text-amber-400' :
                   wind.style === 'missing' ? 'text-amber-400' :
@@ -109,8 +133,15 @@ export default function NearbyAirports({ icao, onSelect, showWind = true }: Near
                   onClick={() => onSelect(airport.icao)}
                   className="border-b border-[var(--border-color)] last:border-b-0 hover:bg-[var(--bg-hover)] cursor-pointer transition-colors"
                 >
-                  <td className="py-2 px-3">
+                  <td className="py-2 px-3 whitespace-nowrap">
                     <span className="font-mono text-[#1d9bf0] font-bold">{airport.icao}</span>
+                    {showWind && category && (
+                      <span
+                        className="sm:hidden inline-block w-1.5 h-1.5 rounded-full ml-1.5 align-middle"
+                        style={{ backgroundColor: FLIGHT_CATEGORY_STYLES[category].color }}
+                        title={categoryTitle ? `${category} — ${categoryTitle}` : category}
+                      />
+                    )}
                   </td>
                   <td className="py-2 px-3 text-[var(--text-secondary)] truncate max-w-[200px]">
                     {airport.name}
@@ -119,9 +150,21 @@ export default function NearbyAirports({ icao, onSelect, showWind = true }: Near
                     {airport.distance}nm
                   </td>
                   {wind && (
-                    <td className="py-2 px-3 text-right font-mono tabular-nums">
+                    <td className="py-2 px-3 text-right font-mono tabular-nums whitespace-nowrap">
                       <span className={windColorClass}>{wind.text}</span>
                       {showUnit && <span className="text-[var(--text-tertiary)]"> kt</span>}
+                    </td>
+                  )}
+                  {showWind && (
+                    <td
+                      className="hidden sm:table-cell py-2 px-3 text-right whitespace-nowrap"
+                      title={categoryTitle}
+                    >
+                      {metarsLoaded ? (
+                        <FlightCategoryBadge category={category} size="sm" />
+                      ) : (
+                        <span className="text-[var(--text-tertiary)] font-mono text-xs">...</span>
+                      )}
                     </td>
                   )}
                 </tr>

@@ -547,6 +547,90 @@ describe('parseNbmBulletin conditions fields (NBM V5.0)', () => {
   });
 });
 
+// Real KSFO section. Its VIS row opens with two-digit values, which are
+// RIGHT-ALIGNED inside 3-character columns — trimming that padding shifts
+// every later field and reads 7, 7, 801, 001 instead of 7, 7, 8, 10.
+const NBH_RIGHT_ALIGNED = `
+ KSFO   NBM V5.0 NBH GUIDANCE    8/02/2026  1300 UTC
+ UTC  14 15 16 17 18 19 20 21 22 23 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14
+ CIG -88-88-88-88-88-88-88-88-88-88-88-88-88-88-88-88-88-88-88 11 11  6  7  6  6
+ LCB   3  3  3  3-88-88-88-88-88-88-88-88-88-88-88-88-88-88-88  7  7  4  5  4  6
+ VIS  70 70 80100100100100100100100100100100100100100100100100100100100100 90 70
+`;
+
+// Real K07A section. Only one pair of columns runs together here (" 90"+"130"
+// -> " 90130"), a 5-character run that a "looks fixed-width" heuristic misses,
+// so the row used to be whitespace-split into a bogus 90130 (9,013,000 ft).
+const NBS_SINGLE_RUN = `
+ K07A    NBM V5.0 NBS GUIDANCE    8/02/2026  1300 UTC
+ DT /AUG   2/AUG   3                /AUG   4                /AUG   5
+ UTC  18 21 00 03 06 09 12 15 18 21 00 03 06 09 12 15 18 21 00 03 06 09 12
+ FHR  05 08 11 14 17 20 23 26 29 32 35 38 41 44 47 50 53 56 59 62 65 68 71
+ CIG -88-88-88-88-88-88-88-88-88-88-88-88-88-88-88-88-88-88-88-88-88-88-88
+ LCB 110 90130 80 70 60 27 39 47 60 41 27 21  6 10 28 40 70 70 60 60 70 70
+ VIS 100100100100100 80 70100100100100100 80 80 90100100100100100100100 70
+`;
+
+describe('parseNbmBulletin column alignment', () => {
+  describe('right-aligned columns (NBH)', () => {
+    const result = parseNbmBulletin(NBH_RIGHT_ALIGNED, 'KSFO', 'nbh');
+
+    it('yields one value per forecast hour', () => {
+      expect(result).not.toBeNull();
+      expect(result!.times.length).toBe(25);
+      expect(result!.vis.length).toBe(25);
+      expect(result!.cig.length).toBe(25);
+      expect(result!.lcb.length).toBe(25);
+    });
+
+    it('reads two-digit visibility columns without shifting later fields', () => {
+      expect(result!.vis.slice(0, 4)).toEqual([7, 7, 8, 10]);
+      expect(result!.vis[23]).toBe(9);
+      expect(result!.vis[24]).toBe(7);
+    });
+
+    it('never produces an out-of-range visibility', () => {
+      expect(result!.vis.every((v) => v === null || (v >= 0 && v <= 15))).toBe(true);
+    });
+
+    it('reads ceilings after the unlimited run', () => {
+      expect(result!.cig[0]).toBeNull();
+      expect(result!.cig[19]).toBe(1100);
+      expect(result!.cig[21]).toBe(600);
+    });
+
+    it('reads a low cloud base padded to the column width', () => {
+      expect(result!.lcb[0]).toBe(300);
+      expect(result!.lcb[4]).toBeNull();
+      expect(result!.lcb[19]).toBe(700);
+    });
+  });
+
+  describe('single merged pair (NBS)', () => {
+    const result = parseNbmBulletin(NBS_SINGLE_RUN, 'K07A', 'nbs');
+
+    it('yields one value per forecast hour', () => {
+      expect(result).not.toBeNull();
+      expect(result!.times.length).toBe(23);
+      expect(result!.lcb.length).toBe(23);
+      expect(result!.vis.length).toBe(23);
+    });
+
+    it('splits a lone merged pair instead of reading it as one number', () => {
+      expect(result!.lcb.slice(0, 4)).toEqual([11000, 9000, 13000, 8000]);
+      expect(result!.lcb[13]).toBe(600);
+    });
+
+    it('never produces an absurd cloud base', () => {
+      expect(result!.lcb.every((v) => v === null || v <= 35000)).toBe(true);
+    });
+
+    it('still reads visibility correctly', () => {
+      expect(result!.vis.slice(0, 7)).toEqual([10, 10, 10, 10, 10, 8, 7]);
+    });
+  });
+});
+
 // Integration test with real bulletin file (if available)
 describe('parseNbmBulletin integration test', () => {
   // This tests with actual downloaded bulletin data

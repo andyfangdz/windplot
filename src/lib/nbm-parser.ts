@@ -139,36 +139,46 @@ export function parseNbmBulletin(text: string, station: string, productType: Nbm
     return [];
   };
 
-  // Helper to parse fixed-width data row (3-char fields, no spaces)
-  // Used for CIG and VIS which can have values like "-88" that run together
+  // Helper to parse a fixed-width data row.
+  //
+  // CIG, VIS and LCB are written as 3-character RIGHT-ALIGNED columns, so
+  // adjacent values run together whenever they fill the width ("210220210",
+  // or " 90" + "130" -> " 90130"). A whitespace split then merges them into
+  // one bogus number. Guessing the layout from punctuation is unreliable —
+  // a single 5-character run is indistinguishable from a real value — so
+  // parse both ways and keep whichever yields one value per forecast hour.
   const parseFixedWidthRow = (prefix: string, width: number = 3): (number | null)[] => {
+    const toValue = (raw: string): number | null => {
+      const num = parseInt(raw);
+      if (isNaN(num) || num === -99 || raw === 'NG') return null;
+      return num;
+    };
+
     for (const line of lines) {
       if (line.startsWith(prefix) || line.startsWith(` ${prefix}`)) {
-        const dataSection = line.slice(4).trimStart();
-        // Check if this looks like fixed-width (no spaces between numbers)
-        if (!dataSection.includes(' ') || /[-\d]{3}[-\d]{3}/.test(dataSection)) {
-          // Parse as fixed-width
-          const values: (number | null)[] = [];
-          for (let i = 0; i < dataSection.length; i += width) {
-            const chunk = dataSection.slice(i, i + width).trim();
-            if (!chunk) continue;
-            const num = parseInt(chunk);
-            if (isNaN(num) || num === -99 || chunk === 'NG') {
-              values.push(null);
-            } else {
-              values.push(num);
-            }
-          }
-          return values;
-        } else {
-          // Fall back to space-separated
-          const values = dataSection.split(/\s+/);
-          return values.map(v => {
-            const num = parseInt(v);
-            if (isNaN(num) || num === -99 || v === 'NG') return null;
-            return num;
-          });
+        // Columns begin one space after the label. Do not trim: the padding in
+        // front of a short value is part of its column, and dropping it shifts
+        // every later field left.
+        const aligned = line.slice(line.indexOf(prefix) + prefix.length + 1);
+
+        const fixed: (number | null)[] = [];
+        for (let i = 0; i < aligned.length; i += width) {
+          const chunk = aligned.slice(i, i + width).trim();
+          fixed.push(chunk ? toValue(chunk) : null);
         }
+        // Trailing padding on the line shows up as empty columns
+        while (fixed.length > times.length && fixed[fixed.length - 1] === null) {
+          fixed.pop();
+        }
+
+        const spaced = aligned.trim().split(/\s+/).filter(Boolean).map(toValue);
+
+        // times.length is the authoritative column count for this bulletin
+        if (fixed.length === times.length) return fixed;
+        if (spaced.length === times.length) return spaced;
+        // Neither lines up (short or malformed row): real bulletins are
+        // fixed-width, so prefer that reading over the merged one.
+        return fixed;
       }
     }
     return [];

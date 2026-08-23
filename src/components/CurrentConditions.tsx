@@ -45,7 +45,17 @@ export default function CurrentConditions({
     [observations]
   );
 
-  const source = preferredSource === '5min' && !synoptic ? 'metar' : preferredSource;
+  // The preference sticks across airport changes, so the fallback has to run
+  // both ways: an airport can be missing either source, and falling back only
+  // one direction blanks the panel when the preferred source has no data.
+  const source =
+    preferredSource === '5min'
+      ? synoptic
+        ? '5min'
+        : 'metar'
+      : metar
+        ? 'metar'
+        : '5min';
 
   const conditions = useMemo(() => {
     if (source === 'metar') return metar ? metarToConditions(metar) : null;
@@ -132,10 +142,12 @@ export default function CurrentConditions({
         </div>
       </div>
 
-      {preferredSource === '5min' && !synoptic && (
+      {source !== preferredSource && (
         <div className="bg-amber-500/10 border border-amber-500/25 rounded-lg p-2 mb-3 text-center">
           <p className="text-amber-400 text-xs">
-            No sky or visibility in the 5-minute feed for this station — showing METAR
+            {preferredSource === '5min'
+              ? 'No sky or visibility in the 5-minute feed for this station — showing METAR'
+              : 'No METAR for this station — showing the 5-minute observation'}
           </p>
         </div>
       )}

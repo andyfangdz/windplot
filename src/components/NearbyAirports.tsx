@@ -2,14 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { getNearbyAirports, getMetarBatch, NearbyAirport, MetarData } from '@/app/actions';
+import { FLIGHT_CATEGORY_STYLES, formatCeiling } from '@/lib/weather';
 import {
-  FLIGHT_CATEGORY_STYLES,
-  ceilingFromClouds,
-  computeFlightCategory,
-  formatCeiling,
-  formatVisibility,
-  parseVisibility,
-} from '@/lib/weather';
+  conditionsCeiling,
+  conditionsFlightCategory,
+  formatConditionsVisibility,
+  metarToConditions,
+} from '@/lib/conditions';
 import FlightCategoryBadge from './FlightCategoryBadge';
 
 interface NearbyAirportsProps {
@@ -111,11 +110,14 @@ export default function NearbyAirports({ icao, onSelect, showWind = true }: Near
             {displayedAirports.map((airport) => {
               const metar = metars[airport.icao];
               const wind = showWind ? formatWind(metar, metarsLoaded) : null;
-              const ceiling = metar ? ceilingFromClouds(metar.clouds, metar.vertVis) : null;
-              const visibility = metar ? parseVisibility(metar.visib) : null;
-              const category = metar ? computeFlightCategory(ceiling, visibility) : null;
-              const categoryTitle = metar
-                ? `${formatCeiling(ceiling)} · ${formatVisibility(metar.visib) ?? 'visibility unknown'}`
+              // Go through the shared normalizer rather than reading raw METAR
+              // fields, so this column can never disagree with CurrentConditions
+              const conditions = metar ? metarToConditions(metar) : null;
+              const category = conditions ? conditionsFlightCategory(conditions) : null;
+              const categoryTitle = conditions
+                ? `${formatCeiling(conditionsCeiling(conditions))} · ${
+                    formatConditionsVisibility(conditions) ?? 'visibility unknown'
+                  }`
                 : undefined;
               const windColorClass = wind
                 ? wind.style === 'gust' ? 'text-amber-400' :

@@ -185,6 +185,44 @@ describe('metarToConditions', () => {
   });
 });
 
+// Mirrors the source selection in CurrentConditions: the preference sticks
+// across airport changes, so the fallback has to run in both directions.
+function resolveSource(
+  preferred: '5min' | 'metar',
+  hasSynoptic: boolean,
+  hasMetar: boolean
+): '5min' | 'metar' {
+  return preferred === '5min'
+    ? hasSynoptic
+      ? '5min'
+      : 'metar'
+    : hasMetar
+      ? 'metar'
+      : '5min';
+}
+
+describe('source fallback', () => {
+  it('honours the preference when that source has data', () => {
+    expect(resolveSource('5min', true, true)).toBe('5min');
+    expect(resolveSource('metar', true, true)).toBe('metar');
+  });
+
+  it('falls back to METAR when the 5-minute feed has no conditions', () => {
+    expect(resolveSource('5min', false, true)).toBe('metar');
+  });
+
+  it('falls back to the 5-minute feed when METAR is missing', () => {
+    // Preferring METAR then switching to an airport with no METAR response
+    // used to blank the panel even though 5-minute data was available
+    expect(resolveSource('metar', true, false)).toBe('5min');
+  });
+
+  it('picks a source even when neither has data, so the panel decides', () => {
+    expect(resolveSource('5min', false, false)).toBe('metar');
+    expect(resolveSource('metar', false, false)).toBe('5min');
+  });
+});
+
 describe('both sources agree on identical weather', () => {
   it('produces the same ceiling, category and visibility', () => {
     const layers = [

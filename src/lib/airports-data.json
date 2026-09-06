@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-30T11:26:10.414Z",
-  "count": 4451,
+  "generated": "2026-09-06T10:26:20.931Z",
+  "count": 4453,
   "airports": [
     {
       "icao": "CYCD",
@@ -4590,6 +4590,28 @@
       ]
     },
     {
+      "icao": "K12IL",
+      "faaId": "12IL",
+      "name": "NICHOLS AERO",
+      "city": "SOUTH BELOIT",
+      "state": "IL",
+      "lat": 42.48172838,
+      "lon": -88.98797361,
+      "runways": [
+        {
+          "id": "09/27",
+          "low": "09",
+          "high": "27",
+          "trueHdg": 88,
+          "length": 1800,
+          "width": 80,
+          "surface": "TURF",
+          "lowLda": 1800,
+          "highLda": 1800
+        }
+      ]
+    },
+    {
       "icao": "K12J",
       "faaId": "12J",
       "name": "BREWTON MUNI",
@@ -8097,9 +8119,9 @@
       "lon": -116.90986194,
       "runways": [
         {
-          "id": "01/19",
-          "low": "01",
-          "high": "19",
+          "id": "02/20",
+          "low": "02",
+          "high": "20",
           "trueHdg": 35,
           "length": 2983,
           "width": 50,
@@ -10064,6 +10086,28 @@
           "surface": "ASPH",
           "lowLda": 3299,
           "highLda": 3299
+        }
+      ]
+    },
+    {
+      "icao": "K2CN4",
+      "faaId": "2CN4",
+      "name": "WONDERFUL PISTACHIOS & ALMONDS",
+      "city": "LOST HILLS",
+      "state": "CA",
+      "lat": 35.66485747,
+      "lon": -119.8936763,
+      "runways": [
+        {
+          "id": "14/32",
+          "low": "14",
+          "high": "32",
+          "trueHdg": 148,
+          "length": 4827,
+          "width": 77,
+          "surface": "ASPH",
+          "lowLda": 4827,
+          "highLda": 4827
         }
       ]
     },
@@ -12528,6 +12572,28 @@
           "surface": "ASPH",
           "lowLda": 3200,
           "highLda": 3200
+        }
+      ]
+    },
+    {
+      "icao": "K37MI",
+      "faaId": "37MI",
+      "name": "MILWRICK FLYING M",
+      "city": "LINCOLN",
+      "state": "MI",
+      "lat": 44.7385505,
+      "lon": -83.379617,
+      "runways": [
+        {
+          "id": "10/28",
+          "low": "10",
+          "high": "28",
+          "trueHdg": 87,
+          "length": 2200,
+          "width": 90,
+          "surface": "TURF",
+          "lowLda": 2200,
+          "highLda": 2200
         }
       ]
     },
@@ -18562,7 +18628,7 @@
     {
       "icao": "K4U9",
       "faaId": "4U9",
-      "name": "DELL FLIGHT STRIP",
+      "name": "HYAK AIRBASE",
       "city": "DELL",
       "state": "MT",
       "lat": 44.73575,
@@ -19700,28 +19766,6 @@
           "surface": "TURF",
           "lowLda": 3090,
           "highLda": 3090
-        }
-      ]
-    },
-    {
-      "icao": "K55G",
-      "faaId": "55G",
-      "name": "ARNOLD FLD",
-      "city": "CROSWELL",
-      "state": "MI",
-      "lat": 43.2978,
-      "lon": -82.60786388,
-      "runways": [
-        {
-          "id": "18/36",
-          "low": "18",
-          "high": "36",
-          "trueHdg": 177,
-          "length": 2570,
-          "width": 140,
-          "surface": "TURF",
-          "lowLda": 2570,
-          "highLda": 2570
         }
       ]
     },
@@ -22008,19 +22052,19 @@
       "name": "BAUER FLD",
       "city": "REESE",
       "state": "MI",
-      "lat": 43.43847552,
-      "lon": -83.634153,
+      "lat": 43.43849655,
+      "lon": -83.629263,
       "runways": [
         {
           "id": "10/28",
           "low": "10",
           "high": "28",
           "trueHdg": 90,
-          "length": 1800,
+          "length": 4398,
           "width": 60,
           "surface": "TURF",
-          "lowLda": 1800,
-          "highLda": 1800
+          "lowLda": 4398,
+          "highLda": 4398
         }
       ]
     },
@@ -31005,7 +31049,7 @@
           "trueHdg": 90,
           "length": 4400,
           "width": 150,
-          "surface": "TURF",
+          "surface": "ASPH",
           "lowLda": 4400,
           "highLda": 4400
         }
@@ -39869,7 +39913,7 @@
     {
       "icao": "KBVN",
       "faaId": "BVN",
-      "name": "ALBION MUNI",
+      "name": "ALBION MUNI/RON LEVANDER FLD",
       "city": "ALBION",
       "state": "NE",
       "lat": 41.72857722,
@@ -40837,11 +40881,11 @@
           "low": "09",
           "high": "27",
           "trueHdg": 90,
-          "length": 5001,
+          "length": 5002,
           "width": 75,
           "surface": "CONC",
-          "lowLda": 5001,
-          "highLda": 5001
+          "lowLda": 5002,
+          "highLda": 5002
         }
       ]
     },
@@ -44067,9 +44111,9 @@
       "lon": -90.73784138,
       "runways": [
         {
-          "id": "01/19",
-          "low": "01",
-          "high": "19",
+          "id": "02/20",
+          "low": "02",
+          "high": "20",
           "trueHdg": 15,
           "length": 3032,
           "width": 95,
@@ -58294,7 +58338,7 @@
     {
       "icao": "KGBG",
       "faaId": "GBG",
-      "name": "HARREL W TIMMONS GALESBURG RGNL",
+      "name": "GALESBURG RGNL HW TIMMONS AIRPORT",
       "city": "GALESBURG",
       "state": "IL",
       "lat": 40.93800052,
@@ -59695,7 +59739,7 @@
           "width": 75,
           "surface": "ASPH",
           "lowLda": 5250,
-          "highLda": 5250
+          "highLda": 5200
         }
       ]
     },
@@ -61025,19 +61069,19 @@
       "name": "KGWS SUMERS AIRPARK",
       "city": "GLENWOOD SPRINGS",
       "state": "CO",
-      "lat": 39.506,
-      "lon": -107.30908333,
+      "lat": 39.50596197,
+      "lon": -107.30911713,
       "runways": [
         {
-          "id": "14/32",
-          "low": "14",
-          "high": "32",
-          "trueHdg": 153,
-          "length": 3305,
+          "id": "15/33",
+          "low": "15",
+          "high": "33",
+          "trueHdg": 154,
+          "length": 3309,
           "width": 50,
           "surface": "ASPH",
-          "lowLda": 3305,
-          "highLda": 3305
+          "lowLda": 3309,
+          "highLda": 3309
         }
       ]
     },
@@ -67416,14 +67460,14 @@
       "name": "KIRSCH MUNI",
       "city": "STURGIS",
       "state": "MI",
-      "lat": 41.81328761,
-      "lon": -85.43896072,
+      "lat": 41.81328833,
+      "lon": -85.43895805,
       "runways": [
         {
           "id": "01/19",
           "low": "01",
           "high": "19",
-          "trueHdg": 360,
+          "trueHdg": 0,
           "length": 5201,
           "width": 100,
           "surface": "ASPH",
@@ -67435,11 +67479,11 @@
           "low": "06",
           "high": "24",
           "trueHdg": 59,
-          "length": 3601,
+          "length": 3606,
           "width": 75,
           "surface": "ASPH",
-          "lowLda": 3601,
-          "highLda": 3601
+          "lowLda": 3606,
+          "highLda": 3606
         }
       ]
     },
@@ -74038,19 +74082,19 @@
       "name": "LAMONI MUNI",
       "city": "LAMONI",
       "state": "IA",
-      "lat": 40.63239194,
-      "lon": -93.90222611,
+      "lat": 40.63156916,
+      "lon": -93.90224916,
       "runways": [
         {
           "id": "18/36",
           "low": "18",
           "high": "36",
           "trueHdg": 181,
-          "length": 3400,
+          "length": 4001,
           "width": 60,
           "surface": "CONC",
-          "lowLda": 3400,
-          "highLda": 3400
+          "lowLda": 4001,
+          "highLda": 4001
         }
       ]
     },
@@ -97674,7 +97718,7 @@
     {
       "icao": "KSAW",
       "faaId": "SAW",
-      "name": "MARQUETTE/SAWYER RGNL",
+      "name": "MARQUETTE SAWYER RGNL",
       "city": "MARQUETTE",
       "state": "MI",
       "lat": 46.34915833,
@@ -110360,8 +110404,8 @@
       "name": "WEST WOODWARD",
       "city": "WOODWARD",
       "state": "OK",
-      "lat": 36.43840622,
-      "lon": -99.52257438,
+      "lat": 36.43840638,
+      "lon": -99.52257444,
       "runways": [
         {
           "id": "06/24",
@@ -110954,8 +110998,8 @@
       "name": "CAPE CANAVERAL SPACE FORCE STATION SKID STRIP",
       "city": "COCOA BEACH",
       "state": "FL",
-      "lat": 28.46758805,
-      "lon": -80.56661416,
+      "lat": 28.46758611,
+      "lon": -80.56661666,
       "runways": [
         {
           "id": "13/31",
@@ -115892,7 +115936,7 @@
           "trueHdg": 96,
           "length": 4003,
           "width": 75,
-          "surface": "GRVL-DIRT",
+          "surface": "TURF-GRVL",
           "lowLda": 4003,
           "highLda": 4003
         }
@@ -116860,7 +116904,7 @@
           "trueHdg": 88,
           "length": 3500,
           "width": 115,
-          "surface": "GRVL",
+          "surface": "TURF-GRVL",
           "lowLda": 3500,
           "highLda": 3500
         }

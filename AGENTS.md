@@ -89,7 +89,7 @@ src/
 │   └── spatial-index.bin     # Pre-built k-d tree for nearby queries
 scripts/
 ├── update-nasr.mjs           # Fetch/regenerate airport data
-└── update-nasr.test.mjs      # NASR Current-section selection regression tests
+└── update-nasr.test.mjs      # NASR Current-section selection and download-failure tests
 data/
 └── (NASR downloads cached here)
 ```

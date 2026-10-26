@@ -11,7 +11,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
 import KDBush from 'kdbush';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -64,30 +64,38 @@ function parseCSV(content) {
   });
 }
 
+export function getCurrentSubscriptionDate(indexPage) {
+  // FAA lists Preview before Current. Only use links inside the Current section.
+  const currentSection = indexPage.match(/<h2\b[^>]*>\s*Current\s*<\/h2>([\s\S]*?)(?=<h2\b|$)/i);
+  const dateMatch = currentSection?.[1].match(/NASR_Subscription\/(\d{4}-\d{2}-\d{2})/);
+  if (!dateMatch) {
+    throw new Error('Could not find current NASR subscription date in Current section');
+  }
+  return dateMatch[1];
+}
+
+function download(url, outputPath) {
+  return execFileSync('curl', [
+    '--fail', '--silent', '--show-error', '--location',
+    '--retry', '3', '--connect-timeout', '30', '--max-time', '300',
+    url, ...(outputPath ? ['--output', outputPath] : []),
+  ], { encoding: 'utf-8' });
+}
+
 async function downloadNASRData() {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
 
   console.log('Fetching NASR subscription index...');
-  const indexPage = execSync(
-    'curl -sL "https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/NASR_Subscription/"',
-    { encoding: 'utf-8' }
-  );
-
-  // Find the current subscription date (first date link after "Current")
-  const dateMatch = indexPage.match(/NASR_Subscription\/(\d{4}-\d{2}-\d{2})/);
-  if (!dateMatch) {
-    throw new Error('Could not find current NASR subscription date');
-  }
-
-  const subscriptionDate = dateMatch[1];
+  const indexPage = download('https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/NASR_Subscription/');
+  const subscriptionDate = getCurrentSubscriptionDate(indexPage);
   console.log(`Current subscription: ${subscriptionDate}`);
 
   // Fetch the specific subscription page to get the APT_CSV download link
   const subscriptionUrl = `https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/NASR_Subscription/${subscriptionDate}/`;
   console.log('Fetching subscription page...');
-  const subscriptionPage = execSync(`curl -sL "${subscriptionUrl}"`, { encoding: 'utf-8' });
+  const subscriptionPage = download(subscriptionUrl);
 
   // Look for the APT_CSV.zip URL
   const urlMatch = subscriptionPage.match(/href="(https:\/\/nfdc\.faa\.gov\/webContent\/28DaySub\/extra\/[^"]*APT_CSV\.zip)"/i);
@@ -100,7 +108,7 @@ async function downloadNASRData() {
   const zipPath = path.join(DATA_DIR, 'APT_CSV.zip');
 
   console.log(`Downloading ${zipName}...`);
-  execSync(`curl -sL "${zipUrl}" -o "${zipPath}"`);
+  download(zipUrl, zipPath);
 
   console.log('Extracting...');
   // Use unzip with python3 as fallback
@@ -341,7 +349,9 @@ async function main() {
   }
 }
 
-main().catch(err => {
-  console.error(err.message);
-  process.exit(1);
-});
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+  main().catch(err => {
+    console.error(err.message);
+    process.exit(1);
+  });
+}

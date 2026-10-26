@@ -88,7 +88,8 @@ src/
 │   ├── airports-data.json    # 4,450 US airports from NASR
 │   └── spatial-index.bin     # Pre-built k-d tree for nearby queries
 scripts/
-└── update-nasr.mjs           # Fetch/regenerate airport data
+├── update-nasr.mjs           # Fetch/regenerate airport data
+└── update-nasr.test.mjs      # NASR Current-section selection regression tests
 data/
 └── (NASR downloads cached here)
 ```
@@ -181,6 +182,8 @@ npm run update-nasr:index     # Rebuilds only spatial index from existing JSON
 ```
 
 Do not modify `airports-data.json` manually unless adding a single airport. If you do, run `npm run update-nasr:index` to rebuild the spatial index.
+
+The NASR updater selects the subscription link inside the FAA index's **Current** section; **Preview** can appear first and must not be used before its effective cycle. Downloads fail on HTTP errors and retry transient failures before parsing or extraction.
 
 ### 4. Canvas Rendering (WindDirectionChart, ForecastDirectionChart)
 

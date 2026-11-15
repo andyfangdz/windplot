@@ -2,8 +2,8 @@ name: Update NASR Data
 
 on:
   schedule:
-    # Run every Sunday at 6:00 AM UTC (after FAA's Thursday releases settle)
-    - cron: '0 6 * * 0'
+    # Run daily at 6:00 AM UTC so a failed update can recover the next day.
+    - cron: '0 6 * * *'
   workflow_dispatch: # Allow manual trigger
 
 permissions:

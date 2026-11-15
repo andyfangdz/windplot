@@ -153,9 +153,9 @@ describe('bounded curl retry behavior', () => {
     }
   }, 10000);
 
-  it('sets a hard job timeout and retains the weekly schedule', () => {
+  it('sets a hard job timeout and schedules daily recovery at 06:00 UTC', () => {
     const workflow = fs.readFileSync(fileURLToPath(new URL('../.github/workflows/update-nasr.yml', import.meta.url)), 'utf8');
     expect(workflow).toMatch(/^    timeout-minutes: 20$/m);
-    expect(workflow).toContain("- cron: '0 6 * * 0'");
+    expect(workflow).toContain("- cron: '0 6 * * *'");
   });
 });

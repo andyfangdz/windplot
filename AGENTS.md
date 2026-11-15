@@ -183,7 +183,7 @@ npm run update-nasr:index     # Rebuilds only spatial index from existing JSON
 
 Do not modify `airports-data.json` manually unless adding a single airport. If you do, run `npm run update-nasr:index` to rebuild the spatial index.
 
-The NASR updater selects the subscription link inside the FAA index's **Current** section; **Preview** can appear first and must not be used before its effective cycle. Downloads fail on HTTP errors and retry transient failures before parsing or extraction.
+The NASR updater selects the subscription link inside the FAA index's **Current** section; **Preview** can appear first and must not be used before its effective cycle. Downloads fail on HTTP errors and allow up to five transient retries, normally 60 seconds apart, while honoring curl's Retry-After behavior. Curl uses a 600-second retry-start window, a 30-second connection timeout and a 300-second limit per attempt; the workflow job has a hard 20-minute timeout. The weekly Sunday 06:00 UTC schedule is unchanged. Archive downloads use a temporary `.download` file, which is cleaned on ordinary failure; cached ZIP/CSVs and generated outputs remain unchanged when a download fails.
 
 ### 4. Canvas Rendering (WindDirectionChart, ForecastDirectionChart)
 

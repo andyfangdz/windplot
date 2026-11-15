@@ -12,6 +12,8 @@ permissions:
 jobs:
   update-nasr:
     runs-on: ubuntu-latest
+    # Hard cap includes Retry-After waits, downloads, install and generation.
+    timeout-minutes: 20
     
     steps:
       - name: Checkout repository

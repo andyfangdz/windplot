@@ -74,10 +74,17 @@ export function getCurrentSubscriptionDate(indexPage) {
   return dateMatch[1];
 }
 
+// Give transient FAA outages minutes to recover. Curl also honors Retry-After;
+// --retry-max-time bounds when another attempt may start, not total wall time.
+export const DOWNLOAD_CURL_OPTIONS = Object.freeze([
+  '--fail', '--silent', '--show-error', '--location',
+  '--retry', '5', '--retry-delay', '60', '--retry-max-time', '600',
+  '--connect-timeout', '30', '--max-time', '300',
+]);
+
 function download(url, outputPath) {
   return execFileSync('curl', [
-    '--fail', '--silent', '--show-error', '--location',
-    '--retry', '3', '--connect-timeout', '30', '--max-time', '300',
+    ...DOWNLOAD_CURL_OPTIONS,
     url, ...(outputPath ? ['--output', outputPath] : []),
   ], { encoding: 'utf-8' });
 }
@@ -108,7 +115,14 @@ async function downloadNASRData() {
   const zipPath = path.join(DATA_DIR, 'APT_CSV.zip');
 
   console.log(`Downloading ${zipName}...`);
-  download(zipUrl, zipPath);
+  // A failed/partial transfer must not replace the previously cached archive.
+  const pendingPath = `${zipPath}.download`;
+  try {
+    download(zipUrl, pendingPath);
+    fs.renameSync(pendingPath, zipPath);
+  } finally {
+    fs.rmSync(pendingPath, { force: true });
+  }
 
   console.log('Extracting...');
   // Use unzip with python3 as fallback

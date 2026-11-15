@@ -2,8 +2,8 @@ name: Update NASR Data
 
 on:
   schedule:
-    # Run every Sunday at 6:00 AM UTC (after FAA's Thursday releases settle)
-    - cron: '0 6 * * 0'
+    # Run daily at 6:00 AM UTC so a failed update can recover the next day.
+    - cron: '0 6 * * *'
   workflow_dispatch: # Allow manual trigger
 
 permissions:
@@ -12,6 +12,8 @@ permissions:
 jobs:
   update-nasr:
     runs-on: ubuntu-latest
+    # Hard cap includes Retry-After waits, downloads, install and generation.
+    timeout-minutes: 20
     
     steps:
       - name: Checkout repository
